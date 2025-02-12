@@ -398,7 +398,7 @@ button:active {
 /* Static Team Names */
 .team-name-top {
     position: absolute;
-    top: 10px;
+    top: 0;
     left: 0;
     width: 100%;
     text-align: center;
@@ -406,21 +406,23 @@ button:active {
     font-size: 28px;
     padding: 10px;
     background-color: var(--retro-dark);
-    z-index: 10;
+    z-index: 20;  /* Higher z-index to appear above left team name */
 }
 
 .team-name-left {
     position: absolute;
-    left: 10px;
+    left: 0;
     top: 50%;
+    width: calc(100vh - 80px);
+    transform-origin: 0 0;
     transform: rotate(-90deg) translateX(-50%);
-    transform-origin: left top;
     font-family: 'Press Start 2P', monospace;
     font-size: 28px;
     padding: 10px;
     background-color: var(--retro-dark);
     white-space: nowrap;
-    z-index: 10;
+    z-index: 10;  /* Lower z-index to appear below top team name */
+    text-align: center;
 }
     </style>
 </head>
@@ -720,6 +722,7 @@ function createGrid() {
 
     // Update team names with adjusted positioning
     const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
+	resetZoom();
 }
 
 const NFL_TEAMS = {
@@ -761,7 +764,7 @@ function addPlayer() {
     const initialInput = document.getElementById('playerInitial');
     const nameInput = document.getElementById('playerName');
     const initial = initialInput.value.toUpperCase();
-    const name = nameInput.value.trim();
+    const name = nameInput.value.trim().toUpperCase();;
 
     // Validate initial
     if (initial.length !== 1) {
@@ -962,7 +965,7 @@ function updateTeamBackgrounds(leftTeam, rightTeam) {
 }
 
 
-// Player management functions
+// Player list update function to ensure uppercase display
 function updatePlayerList() {
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = '';
@@ -981,12 +984,13 @@ function updatePlayerList() {
         playerInfo.style.whiteSpace = 'nowrap';
         playerInfo.style.overflow = 'hidden';
         playerInfo.style.textOverflow = 'ellipsis';
-        playerInfo.style.maxWidth = '150px';  // Adjust based on your layout
+        playerInfo.style.maxWidth = '150px';
+        // Ensure initial is displayed uppercase
         playerInfo.textContent = `${initial} - ${info.name}`;
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'X';  // Shorter text
+        deleteBtn.textContent = 'X';
         deleteBtn.style.fontSize = '10px';
         deleteBtn.style.padding = '4px 8px';
         deleteBtn.onclick = () => deletePlayer(initial);
@@ -1073,12 +1077,15 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Square interaction handlers
+// Square click handler with uppercase enforcement
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
     
-    // Create list of available players
-    let playerList = Object.keys(players).map(initial => `${initial} - ${players[initial].name}`).join('\n');
+    // Create list of available players (ensure display is uppercase)
+    let playerList = Object.keys(players)
+        .map(initial => `${initial} - ${players[initial].name}`)
+        .join('\n');
+    
     const value = prompt(`Enter player initial (1 letter):\n\nAvailable players:\n${playerList}`);
     if (!value) return;
     
@@ -1143,13 +1150,17 @@ function handleSquareDelete(row, col) {
     }
 }
 
+// Update square display function
 function updateSquare(row, col, value) {
     const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
     if (text.empty()) return;
 
-    text.text(value)
+    // Convert value to uppercase before display
+    const displayValue = value ? value.toUpperCase() : '';
+    
+    text.text(displayValue)
         .style("font-size", "12px")
-        .style("fill", value ? (players[value]?.color || "#ffffff") : "#ffffff");
+        .style("fill", value ? (players[value.toUpperCase()]?.color || "#ffffff") : "#ffffff");
 }
 
 
