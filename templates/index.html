@@ -114,8 +114,8 @@ body {
 
 /* Helmet Icon */
 .helmet-icon {
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
     image-rendering: pixelated;
 }
 
@@ -218,21 +218,6 @@ button:active {
     font-size: 10px;
 }
 
-/* Team Names */
-.team-name {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    fill: var(--retro-green);
-    dominant-baseline: middle;
-}
-
-.team-name.vertical {
-    text-anchor: end;
-}
-
-.team-name.horizontal {
-    text-anchor: middle;
-}
 
 /* Square Text */
 .square-text {
@@ -409,6 +394,34 @@ button:active {
     transform: rotate(-90deg);
     transform-origin: left center;
 }
+
+/* Static Team Names */
+.team-name-top {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    padding: 10px;
+    background-color: var(--retro-dark);
+    z-index: 10;
+}
+
+.team-name-left {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: rotate(-90deg) translateX(-50%);
+    transform-origin: left top;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    padding: 10px;
+    background-color: var(--retro-dark);
+    white-space: nowrap;
+    z-index: 10;
+}
     </style>
 </head>
 <body>
@@ -497,12 +510,12 @@ button:active {
             <button onclick="resetZoom()">Reset View</button>
         </div>
         <div class="main-content">
-            <div class="grid-container" id="grid">
-                <div class="team-background left"></div>
-                <div class="team-background right"></div>
-                <div class="team-name-display team-name-left"></div>
-                <div class="team-name-display team-name-right"></div>
-            </div>
+			<div class="grid-container" id="grid">
+				<div class="team-name-top"></div>
+				<div class="team-name-left"></div>
+				<div class="team-background left"></div>
+				<div class="team-background right"></div>
+			</div>
             <div class="legend-container">
                 <h2>Players</h2>
                 <div class="player-form">
@@ -739,7 +752,6 @@ function createGrid() {
 
     // Update team names with adjusted positioning
     const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
-    updateTeamNames(teamNameOffset);
 }
 
 const NFL_TEAMS = {
@@ -831,6 +843,64 @@ function addPlayer() {
     });
 }
 
+
+// Add these helper functions for contrast checking
+function getLuminance(r, g, b) {
+    let [rs, gs, bs] = [r, g, b].map(c => {
+        c = c / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(color1, color2) {
+    // Convert hex to RGB
+    const getRGB = (hex) => {
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    };
+
+    const rgb1 = getRGB(color1);
+    const rgb2 = getRGB(color2);
+    
+    if (!rgb1 || !rgb2) return 1;
+
+    const l1 = getLuminance(rgb1.r, rgb1.g, rgb1.b);
+    const l2 = getLuminance(rgb2.r, rgb2.g, rgb2.b);
+    
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+function getBestContrastColor(teamColors, backgroundColor = '#001100') {
+    let bestColor = teamColors[0];
+    let bestContrast = getContrastRatio(backgroundColor, teamColors[0]);
+    
+    for (let i = 1; i < teamColors.length; i++) {
+        const contrast = getContrastRatio(backgroundColor, teamColors[i]);
+        if (contrast > bestContrast) {
+            bestContrast = contrast;
+            bestColor = teamColors[i];
+        }
+    }
+    
+    // If contrast is still poor, default to a high-contrast color
+    if (bestContrast < 4.5) {  // WCAG AA standard for large text
+        return '#00ff00';  // Default to retro green for maximum visibility
+    }
+    
+    return bestColor;
+}
+
+
 // Update team colors and visuals with new helmet colors
 function updateTeamColors() {
     const leftSelect = document.getElementById('teamLeft');
@@ -863,36 +933,47 @@ function updateTeamColors() {
         document.getElementById('rightHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(defaultHelmet);
     }
 
-    // Rest of the team color updates...
-    // Update team names and backgrounds
-    d3.selectAll('.team-name').remove();
-    
+	// Update static team name displays
+    const leftNameDisplay = document.querySelector('.team-name-left');
+    const topNameDisplay = document.querySelector('.team-name-top');
+
     if (leftTeam && NFL_TEAMS[leftTeam]) {
-        axesGroups.left.append("g")
-            .attr("transform", `translate(-40, ${(maxScore * currentSize) / 2})`)
-            .append("text")
-            .attr("class", "team-name")
-            .attr("text-anchor", "middle")
-            .style("fill", NFL_TEAMS[leftTeam].colors[0])
-            .style("font-size", "20px")
-            .attr("transform", "rotate(-90)")
-            .text(NFL_TEAMS[leftTeam].name);
+        leftNameDisplay.textContent = NFL_TEAMS[leftTeam].name;
+        const leftColors = NFL_TEAMS[leftTeam].colors;
+        // Determine which color is brighter for text
+        const leftTextColor = getContrastRatio(leftColors[0], '#000000') > 
+            getContrastRatio(leftColors[1], '#000000') ? leftColors[0] : leftColors[1];
+        const leftBgColor = leftTextColor === leftColors[0] ? leftColors[1] : leftColors[0];
+        
+        leftNameDisplay.style.color = leftTextColor;
+        leftNameDisplay.style.backgroundColor = leftBgColor;
+        leftNameDisplay.style.display = 'block';
+        leftNameDisplay.style.padding = '10px';
+        leftNameDisplay.style.borderRadius = '4px';
+    } else {
+        leftNameDisplay.style.display = 'none';
     }
 
     if (rightTeam && NFL_TEAMS[rightTeam]) {
-        axesGroups.top.append("text")
-            .attr("class", "team-name")
-            .attr("x", (maxScore * currentSize) / 2)
-            .attr("y", -20)
-            .style("fill", NFL_TEAMS[rightTeam].colors[0])
-            .style("font-size", "12px")
-            .style("text-anchor", "middle")
-            .text(NFL_TEAMS[rightTeam].name);
+        topNameDisplay.textContent = NFL_TEAMS[rightTeam].name;
+        const rightColors = NFL_TEAMS[rightTeam].colors;
+        // Determine which color is brighter for text
+        const rightTextColor = getContrastRatio(rightColors[0], '#000000') > 
+            getContrastRatio(rightColors[1], '#000000') ? rightColors[0] : rightColors[1];
+        const rightBgColor = rightTextColor === rightColors[0] ? rightColors[1] : rightColors[0];
+        
+        topNameDisplay.style.color = rightTextColor;
+        topNameDisplay.style.backgroundColor = rightBgColor;
+        topNameDisplay.style.display = 'block';
+        topNameDisplay.style.padding = '10px';
+        topNameDisplay.style.borderRadius = '4px';
+    } else {
+        topNameDisplay.style.display = 'none';
     }
 
+    // Update team backgrounds
     updateTeamBackgrounds(leftTeam, rightTeam);
 }
-
 
 // Update team backgrounds
 function updateTeamBackgrounds(leftTeam, rightTeam) {
@@ -909,68 +990,6 @@ function updateTeamBackgrounds(leftTeam, rightTeam) {
         rightBg.style.setProperty('--team-color', NFL_TEAMS[rightTeam].colors[0]);
     } else {
         rightBg.style.setProperty('--team-color', 'transparent');
-    }
-}
-
-// Update team names
-function updateTeamNames() {
-    const leftTeam = document.getElementById('teamLeft').value;
-    const rightTeam = document.getElementById('teamRight').value;
-
-    // Remove existing team names
-    d3.selectAll('.team-name').remove();
-
-    // Add left (vertical) team name
-    if (leftTeam && NFL_TEAMS[leftTeam]) {
-        const leftNameGroup = axesGroups.left.append("g")
-            .attr("class", "team-name-group");
-
-        leftNameGroup.append("text")
-            .attr("class", "team-name vertical")
-            .attr("x", -40)
-            .attr("y", (maxScore * currentSize) / 2)
-            .attr("transform", "rotate(-90, -40, " + (maxScore * currentSize) / 2 + ")")
-            .style("fill", NFL_TEAMS[leftTeam].colors[0])
-            .style("font-size", "14px")
-            .style("dominant-baseline", "middle")
-            .style("text-anchor", "middle")
-            .text(NFL_TEAMS[leftTeam].name);
-    }
-
-    // Add top (horizontal) team name
-    if (rightTeam && NFL_TEAMS[rightTeam]) {
-        const topNameGroup = axesGroups.top.append("g")
-            .attr("class", "team-name-group");
-
-        topNameGroup.append("text")
-            .attr("class", "team-name horizontal")
-            .attr("x", (maxScore * currentSize) / 2)
-            .attr("y", -20)
-            .style("fill", NFL_TEAMS[rightTeam].colors[0])
-            .style("font-size", "14px")
-            .style("text-anchor", "middle")
-            .text(NFL_TEAMS[rightTeam].name);
-    }
-
-    // Add background highlight behind team names
-    if (leftTeam && NFL_TEAMS[leftTeam]) {
-        axesGroups.left.insert("rect", ".team-name-group")
-            .attr("x", -120)
-            .attr("y", (maxScore * currentSize) / 2 - 15)
-            .attr("width", 100)
-            .attr("height", 30)
-            .attr("fill", "var(--retro-dark)")
-            .attr("opacity", 0.8);
-    }
-
-    if (rightTeam && NFL_TEAMS[rightTeam]) {
-        axesGroups.top.insert("rect", ".team-name-group")
-            .attr("x", (maxScore * currentSize) / 2 - 100)
-            .attr("y", -35)
-            .attr("width", 200)
-            .attr("height", 30)
-            .attr("fill", "var(--retro-dark)")
-            .attr("opacity", 0.8);
     }
 }
 
