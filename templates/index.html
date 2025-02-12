@@ -431,79 +431,47 @@ button:active {
             <div class="team-selector">
                 <div class="team-selection">
                     <img id="leftHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Left Team">
-                    <select id="teamLeft" onchange="updateTeamColors()">
-                        <option value="">Select Left Team</option>
-                        <option value="ARI" data-colors="#97233F,#000000">Arizona Cardinals</option>
-                        <option value="ATL" data-colors="#A71930,#000000">Atlanta Falcons</option>
-                        <option value="BAL" data-colors="#241773,#000000">Baltimore Ravens</option>
-                        <option value="BUF" data-colors="#00338D,#C60C30">Buffalo Bills</option>
-                        <option value="CAR" data-colors="#0085CA,#000000">Carolina Panthers</option>
-                        <option value="CHI" data-colors="#C83803,#0B162A">Chicago Bears</option>
-                        <option value="CIN" data-colors="#FB4F14,#000000">Cincinnati Bengals</option>
-                        <option value="CLE" data-colors="#311D00,#FF3C00">Cleveland Browns</option>
-                        <option value="DAL" data-colors="#003594,#869397">Dallas Cowboys</option>
-                        <option value="DEN" data-colors="#FB4F14,#002244">Denver Broncos</option>
-                        <option value="DET" data-colors="#0076B6,#B0B7BC">Detroit Lions</option>
-                        <option value="GB" data-colors="#203731,#FFB612">Green Bay Packers</option>
-                        <option value="HOU" data-colors="#03202F,#A71930">Houston Texans</option>
-                        <option value="IND" data-colors="#002C5F,#A2AAAD">Indianapolis Colts</option>
-                        <option value="JAX" data-colors="#006778,#9F792C">Jacksonville Jaguars</option>
-                        <option value="KC" data-colors="#E31837,#FFB81C">Kansas City Chiefs</option>
-                        <option value="LAC" data-colors="#0080C6,#FFC20E">Los Angeles Chargers</option>
-                        <option value="LAR" data-colors="#003594,#FFA300">Los Angeles Rams</option>
-                        <option value="LV" data-colors="#000000,#A5ACAF">Las Vegas Raiders</option>
-                        <option value="MIA" data-colors="#008E97,#FC4C02">Miami Dolphins</option>
-                        <option value="MIN" data-colors="#4F2683,#FFC62F">Minnesota Vikings</option>
-                        <option value="NE" data-colors="#002244,#C60C30">New England Patriots</option>
-                        <option value="NO" data-colors="#D3BC8D,#101820">New Orleans Saints</option>
-                        <option value="NYG" data-colors="#0B2265,#A71930">New York Giants</option>
-                        <option value="NYJ" data-colors="#125740,#000000">New York Jets</option>
-                        <option value="PHI" data-colors="#004C54,#A5ACAF">Philadelphia Eagles</option>
-                        <option value="PIT" data-colors="#FFB612,#101820">Pittsburgh Steelers</option>
-                        <option value="SEA" data-colors="#002244,#69BE28">Seattle Seahawks</option>
-                        <option value="SF" data-colors="#AA0000,#B3995D">San Francisco 49ers</option>
-                        <option value="TB" data-colors="#D50A0A,#34302B">Tampa Bay Buccaneers</option>
-                        <option value="TEN" data-colors="#0C2340,#4B92DB">Tennessee Titans</option>
-                        <option value="WAS" data-colors="#773141,#FFB612">Washington Commanders</option>
-                    </select>
+					<select id="teamLeft" onchange="updateTeamColors()">
+						<option value="">Select AFC Team</option>
+						<option value="BAL" data-colors="#241773,#9E7C0C">Baltimore Ravens</option>
+						<option value="BUF" data-colors="#00338D,#C60C30">Buffalo Bills</option>
+						<option value="CIN" data-colors="#FB4F14,#000000">Cincinnati Bengals</option>
+						<option value="CLE" data-colors="#311D00,#FF3C00">Cleveland Browns</option>
+						<option value="DEN" data-colors="#FB4F14,#002244">Denver Broncos</option>
+						<option value="HOU" data-colors="#03202F,#A71930">Houston Texans</option>
+						<option value="IND" data-colors="#002C5F,#A2AAAD">Indianapolis Colts</option>
+						<option value="JAX" data-colors="#006778,#9F792C">Jacksonville Jaguars</option>
+						<option value="KC" data-colors="#E31837,#FFB81C">Kansas City Chiefs</option>
+						<option value="LAC" data-colors="#0080C6,#FFC20E">Los Angeles Chargers</option>
+						<option value="LV" data-colors="#000000,#A5ACAF">Las Vegas Raiders</option>
+						<option value="MIA" data-colors="#008E97,#FC4C02">Miami Dolphins</option>
+						<option value="NE" data-colors="#002244,#C60C30">New England Patriots</option>
+						<option value="NYJ" data-colors="#125740,#FFFFFF">New York Jets</option>
+						<option value="PIT" data-colors="#FFB612,#101820">Pittsburgh Steelers</option>
+						<option value="TEN" data-colors="#0C2340,#4B92DB">Tennessee Titans</option>
+					</select>
                 </div>
                 <div class="team-vs">VS</div>
                 <div class="team-selection">
-                    <select id="teamRight" onchange="updateTeamColors()">
-                        <option value="">Select Right Team</option>
-                        <option value="ARI" data-colors="#97233F,#000000">Arizona Cardinals</option>
-                        <option value="ATL" data-colors="#A71930,#000000">Atlanta Falcons</option>
-                        <option value="BAL" data-colors="#241773,#000000">Baltimore Ravens</option>
-                        <option value="BUF" data-colors="#00338D,#C60C30">Buffalo Bills</option>
-                        <option value="CAR" data-colors="#0085CA,#000000">Carolina Panthers</option>
-                        <option value="CHI" data-colors="#C83803,#0B162A">Chicago Bears</option>
-                        <option value="CIN" data-colors="#FB4F14,#000000">Cincinnati Bengals</option>
-                        <option value="CLE" data-colors="#311D00,#FF3C00">Cleveland Browns</option>
-                        <option value="DAL" data-colors="#003594,#869397">Dallas Cowboys</option>
-                        <option value="DEN" data-colors="#FB4F14,#002244">Denver Broncos</option>
-                        <option value="DET" data-colors="#0076B6,#B0B7BC">Detroit Lions</option>
-                        <option value="GB" data-colors="#203731,#FFB612">Green Bay Packers</option>
-                        <option value="HOU" data-colors="#03202F,#A71930">Houston Texans</option>
-                        <option value="IND" data-colors="#002C5F,#A2AAAD">Indianapolis Colts</option>
-                        <option value="JAX" data-colors="#006778,#9F792C">Jacksonville Jaguars</option>
-                        <option value="KC" data-colors="#E31837,#FFB81C">Kansas City Chiefs</option>
-                        <option value="LAC" data-colors="#0080C6,#FFC20E">Los Angeles Chargers</option>
-                        <option value="LAR" data-colors="#003594,#FFA300">Los Angeles Rams</option>
-                        <option value="LV" data-colors="#000000,#A5ACAF">Las Vegas Raiders</option>
-                        <option value="MIA" data-colors="#008E97,#FC4C02">Miami Dolphins</option>
-                        <option value="MIN" data-colors="#4F2683,#FFC62F">Minnesota Vikings</option>
-                        <option value="NE" data-colors="#002244,#C60C30">New England Patriots</option>
-                        <option value="NO" data-colors="#D3BC8D,#101820">New Orleans Saints</option>
-                        <option value="NYG" data-colors="#0B2265,#A71930">New York Giants</option>
-                        <option value="NYJ" data-colors="#125740,#000000">New York Jets</option>
-                        <option value="PHI" data-colors="#004C54,#A5ACAF">Philadelphia Eagles</option>
-                        <option value="PIT" data-colors="#FFB612,#101820">Pittsburgh Steelers</option>
-                        <option value="SEA" data-colors="#002244,#69BE28">Seattle Seahawks</option>
-                        <option value="SF" data-colors="#AA0000,#B3995D">San Francisco 49ers</option>
-                        <option value="TB" data-colors="#D50A0A,#34302B">Tampa Bay Buccaneers</option>
-                        <option value="TEN" data-colors="#0C2340,#4B92DB">Tennessee Titans</option>
-                        <option value="WAS" data-colors="#773141,#FFB612">Washington Commanders</option>
-                    </select>
+					<select id="teamRight" onchange="updateTeamColors()">
+						<option value="">Select NFC Team</option>
+						<option value="ARI" data-colors="#97233F,#FFFFFF">Arizona Cardinals</option>
+						<option value="ATL" data-colors="#A71930,#000000">Atlanta Falcons</option>
+						<option value="CAR" data-colors="#0085CA,#B2B4BB">Carolina Panthers</option>
+						<option value="CHI" data-colors="#C83803,#0B162A">Chicago Bears</option>
+						<option value="DAL" data-colors="#003594,#869397">Dallas Cowboys</option>
+						<option value="DET" data-colors="#0076B6,#B0B7BC">Detroit Lions</option>
+						<option value="GB" data-colors="#203731,#FFB612">Green Bay Packers</option>
+						<option value="LAR" data-colors="#003594,#FFA300">Los Angeles Rams</option>
+						<option value="MIN" data-colors="#4F2683,#FFC62F">Minnesota Vikings</option>
+						<option value="NO" data-colors="#D3BC8D,#101820">New Orleans Saints</option>
+						<option value="NYG" data-colors="#0B2265,#A71930">New York Giants</option>
+						<option value="PHI" data-colors="#004C54,#A5ACAF">Philadelphia Eagles</option>
+						<option value="SEA" data-colors="#002244,#69BE28">Seattle Seahawks</option>
+						<option value="SF" data-colors="#AA0000,#B3995D">San Francisco 49ers</option>
+						<option value="TB" data-colors="#D50A0A,#34302B">Tampa Bay Buccaneers</option>
+						<option value="WAS" data-colors="#773141,#FFB612">Washington Commanders</option>
+					</select>
                     <img id="rightHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Right Team">
                 </div>
             </div>
@@ -755,11 +723,11 @@ function createGrid() {
 }
 
 const NFL_TEAMS = {
-    "ARI": { name: "Arizona Cardinals", colors: ["#97233F", "#000000"] },
+    "ARI": { name: "Arizona Cardinals", colors: ["#97233F", "#FFFFFF"] },
     "ATL": { name: "Atlanta Falcons", colors: ["#A71930", "#000000"] },
-    "BAL": { name: "Baltimore Ravens", colors: ["#241773", "#000000"] },
+    "BAL": { name: "Baltimore Ravens", colors: ["#241773", "#9E7C0C"] },
     "BUF": { name: "Buffalo Bills", colors: ["#00338D", "#C60C30"] },
-    "CAR": { name: "Carolina Panthers", colors: ["#0085CA", "#000000"] },
+    "CAR": { name: "Carolina Panthers", colors: ["#0085CA", "#B2B4BB"] },
     "CHI": { name: "Chicago Bears", colors: ["#C83803", "#0B162A"] },
     "CIN": { name: "Cincinnati Bengals", colors: ["#FB4F14", "#000000"] },
     "CLE": { name: "Cleveland Browns", colors: ["#311D00", "#FF3C00"] },
@@ -779,7 +747,7 @@ const NFL_TEAMS = {
     "NE": { name: "New England Patriots", colors: ["#002244", "#C60C30"] },
     "NO": { name: "New Orleans Saints", colors: ["#D3BC8D", "#101820"] },
     "NYG": { name: "New York Giants", colors: ["#0B2265", "#A71930"] },
-    "NYJ": { name: "New York Jets", colors: ["#125740", "#000000"] },
+    "NYJ": { name: "New York Jets", colors: ["#125740", "#FFFFFF"] },
     "PHI": { name: "Philadelphia Eagles", colors: ["#004C54", "#A5ACAF"] },
     "PIT": { name: "Pittsburgh Steelers", colors: ["#FFB612", "#101820"] },
     "SEA": { name: "Seattle Seahawks", colors: ["#002244", "#69BE28"] },
