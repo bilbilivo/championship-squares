@@ -77,6 +77,7 @@ body {
     position: relative;
     overflow: hidden;
     box-shadow: 4px 4px 0 var(--retro-green);
+    flex-grow: 1;
 }
 
 /* Legend Container */
@@ -265,39 +266,56 @@ button:active {
     font-size: 12px;
 }
 
+/* Player List Styles */
 .player-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .player-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px;
-    background: var(--retro-dark);
-    border: var(--pixel-border);
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    background: var(--retro-dark) !important;
+    border: 2px solid var(--retro-green) !important;
+    height: 28px !important;
+}
+
+.player-info {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 150px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .color-dot {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--retro-green);
-    flex-shrink: 0;
+    width: 14px !important;
+    height: 14px !important;
+    border: 2px solid var(--retro-green) !important;
+    flex-shrink: 0 !important;
+    margin: 0 3px !important;
 }
 
-/* Delete Button */
 .delete-btn {
-    margin-left: auto;
-    min-width: 24px;
-    height: 24px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-left: auto !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    padding: 2px !important;
+    font-size: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 2px !important;
 }
-
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 12px;
@@ -424,6 +442,33 @@ button:active {
     z-index: 10;  /* Lower z-index to appear below top team name */
     text-align: center;
 }
+
+.delete-btn {
+	margin-left: auto;
+	min-width: 24px;
+	height: 24px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.reset-game-btn {
+	background-color: #8B0000;
+	color: var(--retro-green);
+	border-color: var(--retro-light);
+}
+
+.reset-game-btn:hover {
+	background-color: #A00000;
+}
+.legend-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: space-between;
+}
+
     </style>
 </head>
 <body>
@@ -477,7 +522,6 @@ button:active {
                     <img id="rightHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Right Team">
                 </div>
             </div>
-            <button onclick="resetZoom()">Reset View</button>
         </div>
         <div class="main-content">
 			<div class="grid-container" id="grid">
@@ -487,6 +531,10 @@ button:active {
 				<div class="team-background right"></div>
 			</div>
             <div class="legend-container">
+				<div class="legend-controls">
+                    <button onclick="resetZoom()">Reset View</button>
+                    <button onclick="resetGame()" class="reset-game-btn">Reset Game</button>
+                </div>
                 <h2>Players</h2>
                 <div class="player-form">
 					<input type="text" 
@@ -1196,6 +1244,44 @@ function resetZoom() {
     updateTeamColors();  // Ensure colors are correctly applied after reset
 }
 
+
+// Reset game function
+function resetGame() {
+    if (confirm('Are you sure you want to reset the game? This will clear all squares and remove all players.')) {
+        fetch('/api/reset', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear local players object
+                players = {};
+                // Update player list display
+                updatePlayerList();
+                // Clear all squares (except tie squares)
+                d3.selectAll('.square-text')
+                    .filter(function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        return row !== col; // Don't clear tie squares
+                    })
+                    .text('');
+                // Reset team selections
+                document.getElementById('teamLeft').value = '';
+                document.getElementById('teamRight').value = '';
+                updateTeamColors();
+                // Show success message
+                alert('Game has been reset successfully!');
+            } else {
+                alert('Failed to reset game. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error resetting game:', error);
+            alert('Failed to reset game. Please try again.');
+        });
+    }
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
