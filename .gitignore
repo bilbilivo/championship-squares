@@ -11,3 +11,4 @@ game_state.json
 !input/*template*.xlsx
 input/unwanted_files_(overrides_the_override_above)*TEST*xlsx
 *test*.py
+__pycache__/config.cpython-313.pyc
