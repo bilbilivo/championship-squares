@@ -514,6 +514,7 @@ const baseSize = 40;
 let currentSize = baseSize;
 const maxScore = 60;
 let players = {};
+const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
@@ -789,12 +790,15 @@ function addPlayer() {
         return;
     }
 
-    // Add player via API
-    fetch('/api/players', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial, name })
-    })
+	// Get next color from Category10 scale
+	const playerColor = playerColorScale(Object.keys(players).length);
+
+	// Add player via API
+	fetch('/api/players', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ initial, name, color: playerColor })
+	})
     .then(response => response.json())
     .then(data => {
         if (data.success) {
