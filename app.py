@@ -103,6 +103,17 @@ def add_player():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/reset', methods=['POST'])
+def reset_game():
+    try:
+        game_state.squares = [['' for _ in range(config.config['grid_size'])] for _ in range(config.config['grid_size'])]
+        game_state.players = {}
+        game_state.next_color_index = 0
+        game_state.save_state()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/players/<initial>', methods=['DELETE'])
 def delete_player(initial):
     try:
