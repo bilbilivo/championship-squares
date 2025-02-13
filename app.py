@@ -16,21 +16,6 @@ class GameState:
         self.players = {}  # Format: {'A': {'name': 'Alice', 'color': '#FF5733'}}
         self.next_color_index = 0
     
-    def generate_color(self):
-        # Generate colors with good contrast using HSV color space
-        golden_ratio = 0.618033988749895
-        hue = (self.next_color_index * golden_ratio) % 1
-        self.next_color_index += 1
-        
-        # Convert HSV to RGB
-        rgb = colorsys.hsv_to_rgb(hue, 0.8, 0.95)
-        # Convert RGB to hex
-        return '#{:02x}{:02x}{:02x}'.format(
-            int(rgb[0] * 255),
-            int(rgb[1] * 255),
-            int(rgb[2] * 255)
-        )
-
     def save_state(self):
         """Save game state to file"""
         try:
@@ -111,7 +96,7 @@ def add_player():
         if len(game_state.players) >= config.config['max_players']:
             return jsonify({'error': 'Maximum number of players reached'}), 400
 
-        color = game_state.generate_color()
+        color = data.get('color', '#FFFFFF')  # Use provided color or default to white
         game_state.players[initial] = {'name': name, 'color': color}
         game_state.save_state()  # Save state after adding player
         return jsonify({'success': True, 'color': color})
