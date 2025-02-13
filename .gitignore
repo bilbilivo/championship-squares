@@ -1,0 +1,12 @@
+*.pyc
+*DEV.py
+log/*
+input/*
+output/*
+venv/*
+game_state.json
+!input/*_inputList.txt
+!input/required_files_(overrides_above)*TEST*.xlsx
+!input/*template*.xlsx
+input/unwanted_files_(overrides_the_override_above)*TEST*xlsx
+*test*.py
