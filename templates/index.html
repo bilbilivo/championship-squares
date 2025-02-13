@@ -197,12 +197,12 @@ button:active {
 }
 
 .square.tie-square {
-    fill: #444444 !important;
+    fill: var(--grid-bg) !important;
     cursor: not-allowed !important;
 }
 
 .square.tie-square:hover {
-    fill: #444444 !important;
+    fill: var(--grid-bg) !important;
 }
 
 /* Axis Styles */
@@ -602,16 +602,16 @@ const zoom = d3.zoom()
         updateAxesPositions(clampedTransform);
         zoomLevel = transform.k;
         
-        // Update text sizes
+        // Update all text sizes
         updateTextSizes(transform.k);
     });
-
 svg.call(zoom);
 
 // Update text sizes based on zoom level
 function updateTextSizes(k) {
-    d3.selectAll(".team-name, .header-text")
-        .style("font-size", `${12 / k}px`);
+    // Update all text elements consistently
+    d3.selectAll(".square-text, .header-text, .tie-text")
+        .style("font-size", `${14 / k}px`);
 }
 
 // Create grid function
@@ -698,7 +698,7 @@ function createGrid() {
                         const leftTeam = document.getElementById('teamLeft').value;
                         const rightTeam = document.getElementById('teamRight').value;
                         tooltip.style("opacity", 1)
-                            .html(`${leftTeam}: ${row}<br>${rightTeam}: ${col}`)
+                            .html(`${leftTeam}: ${row}<br><br>${rightTeam}: ${col}`)
                             .style("left", (event.pageX + 10) + "px")
                             .style("top", (event.pageY - 10) + "px");
                     }
@@ -715,7 +715,6 @@ function createGrid() {
                 .attr("data-row", row)
                 .attr("data-col", col)
                 .style("font-size", "12px")
-                .style("fill", "#ffffff")
                 .text(isTieSquare ? row : '');
         }
     }
@@ -1042,20 +1041,40 @@ function deletePlayer(initial) {
 // Add or update CSS styles
 const style = document.createElement('style');
 style.textContent = `
+    .square {
+        stroke: var(--retro-green);
+        stroke-width: 2;
+        fill: var(--grid-bg);
+        transition: fill 0.3s ease;
+    }
+
+    .square:hover {
+        fill: var(--retro-light);
+        cursor: pointer;
+    }
+
+    .header-square {
+        cursor: default;
+    }
+
     .tie-square {
-        fill: #444444;
+        fill: var(--grid-bg) !important;
         cursor: not-allowed !important;
     }
     
     .tie-square:hover {
-        fill: #444444 !important;
+        fill: var(--grid-bg) !important;
     }
-    
-    .tie-text {
-        fill: #ffffff;
+
+    .square-text, .header-text, .tie-text {
+        font-family: 'Press Start 2P', monospace;
+        fill: var(--retro-green);
+        text-anchor: middle;
+        dominant-baseline: middle;
         pointer-events: none;
+        transition: font-size 0.3s ease;
     }
-    
+
     .player-item {
         font-family: 'Press Start 2P', monospace;
         margin-bottom: 8px;
