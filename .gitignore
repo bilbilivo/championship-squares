@@ -1,4 +1,4 @@
-*.pyc
+*.py[cod]
 *DEV.py
 log/*
 input/*
