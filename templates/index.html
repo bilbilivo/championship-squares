@@ -94,7 +94,7 @@ body {
 .team-selector {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 20px;
     padding: 15px;
     border: var(--pixel-border);
@@ -558,15 +558,35 @@ button:active {
 
 .score {
   cursor: pointer;
-  padding: 5px;
-  border: var(--pixel-border);
-  background: var(--grid-bg);
+  padding: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 2.5em;
+  color: #AAFF00;
+  min-width: 70px;
+  text-align: center;
+  margin: 0 20px;
+  background: #000000;
+  border: none;
+  position: relative;
+  letter-spacing: 2px;
+  text-shadow: 
+    0 0 4px rgba(170, 255, 0, 0.4),
+    0 0 8px rgba(170, 255, 0, 0.2);
+  image-rendering: pixelated;
 }
 
 .score:hover {
-  background: var(--retro-light);
+  color: #CCFF33;
+  text-shadow: 
+    0 0 6px rgba(170, 255, 0, 0.6),
+    0 0 12px rgba(170, 255, 0, 0.3);
 }
 
+/* Remove any existing borders or box shadows */
+.score::before,
+.score::after {
+  display: none;
+}
 .highlight {
   fill: var(--retro-light) !important;
 }
@@ -608,11 +628,11 @@ button:active {
 						<option value="PIT" data-colors="#FFB612,#101820">Pittsburgh Steelers</option>
 						<option value="TEN" data-colors="#0C2340,#4B92DB">Tennessee Titans</option>
 					</select>
-					<span id="leftScore" class="score" onclick="updateScore('left')">0</span>
                 </div>
+				<span id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</span>
                 <div class="team-vs">VS</div>
+                <span id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</span>
                 <div class="team-selection">
-					<span id="rightScore" class="score" onclick="updateScore('right')">0</span>
 					<select id="teamRight" onchange="updateTeamColors()">
 						<option value="">Select NFC Team</option>
 						<option value="ARI" data-colors="#97233F,#FFFFFF">Arizona Cardinals</option>
