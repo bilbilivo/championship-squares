@@ -469,10 +469,106 @@ button:active {
     justify-content: space-between;
 }
 
+.landing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--retro-dark);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.landing-content {
+    text-align: center;
+    padding: 40px;
+    border: var(--pixel-border);
+    background: var(--grid-bg);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    animation: glow 2s infinite alternate;
+}
+
+.landing-title {
+    color: var(--retro-green);
+    font-size: 3em;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    animation: blink 2s infinite;
+}
+
+.landing-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.landing-btn {
+    background: var(--retro-dark);
+    color: var(--retro-green);
+    border: var(--pixel-border);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    width: 240px;
+    transition: all 0.3s ease;
+}
+
+.landing-btn:hover {
+    background: var(--retro-green);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.landing-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+    }
+}
+
+/* Add loading spinner styles */
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--retro-dark);
+    border-top: 4px solid var(--retro-green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="landing-overlay" class="landing-overlay">
+		<div class="landing-content">
+			<h1 class="landing-title">Super Bowl Squares</h1>
+			<div class="landing-buttons">
+				<button id="newGameBtn" class="landing-btn">New Game</button>
+				<button id="loadGameBtn" class="landing-btn">Load Game</button>
+			</div>
+		</div>
+	</div>
+	<div class="container">
         <h1 class="title">Super Bowl Squares</h1>
         <div class="controls">
             <div class="team-selector">
@@ -1287,18 +1383,6 @@ function resetGame() {
     }
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    createGrid();
-    updatePlayerList();
-    
-    // Initialize team color dropdowns with first option
-    const leftSelect = document.getElementById('teamLeft');
-    const rightSelect = document.getElementById('teamRight');
-    
-    // Update team colors and background
-    updateTeamColors();
-});
 
 // Handle window resize
 window.addEventListener('resize', () => {
@@ -1308,6 +1392,103 @@ window.addEventListener('resize', () => {
         newWidth + margin.left + margin.right, 
         newHeight + margin.top + margin.bottom]);
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const newGameBtn = document.getElementById('newGameBtn');
+    const loadGameBtn = document.getElementById('loadGameBtn');
+    const landingOverlay = document.getElementById('landing-overlay');
+
+    newGameBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to start a new game? This will reset the current game.')) {
+            fetch('/api/reset', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear local players object
+                    players = {};
+                    // Update player list display
+                    updatePlayerList();
+                    // Clear all squares (except tie squares)
+                    d3.selectAll('.square-text')
+                        .filter(function() {
+                            const row = d3.select(this).attr('data-row');
+                            const col = d3.select(this).attr('data-col');
+                            return row !== col; // Don't clear tie squares
+                        })
+                        .text('');
+                    // Reset team selections
+                    document.getElementById('teamLeft').value = '';
+                    document.getElementById('teamRight').value = '';
+                    updateTeamColors();
+                    // Hide landing overlay
+                    landingOverlay.style.display = 'none';
+                    // Show success message
+                    alert('New game started successfully!');
+                } else {
+                    alert('Failed to start new game. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting new game:', error);
+                alert('Failed to start new game. Please try again.');
+            });
+        }
+    });
+
+    loadGameBtn.addEventListener('click', () => {
+        fetch('/api/state', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.squares && data.players) {
+                // Load players
+                players = data.players;
+                updatePlayerList();
+                // Create the grid
+                createGrid();
+                // Load squares
+                d3.selectAll('.square-text')
+                    .filter(function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        return row !== col; // Don't clear tie squares
+                    })
+                    .text(function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        return data.squares[row][col];
+                    })
+                    .style("fill", function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        const value = data.squares[row][col];
+                        return value ? (players[value]?.color || "#ffffff") : "#ffffff";
+                    });
+                // Update team colors
+                updateTeamColors();
+                // Hide landing overlay
+                landingOverlay.style.display = 'none';
+                alert('Game loaded successfully!');
+            } else {
+                alert('Failed to load game state. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game state:', error);
+            alert('Failed to load game state. Please try again.');
+        });
+    });
+
+    // Ensure the grid is created on initial load
+    createGrid();
+});
+
+
+
     </script>
 </body>
 </html>
