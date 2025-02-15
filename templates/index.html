@@ -556,6 +556,21 @@ button:active {
     100% { transform: rotate(360deg); }
 }
 
+.score {
+  cursor: pointer;
+  padding: 5px;
+  border: var(--pixel-border);
+  background: var(--grid-bg);
+}
+
+.score:hover {
+  background: var(--retro-light);
+}
+
+.highlight {
+  fill: var(--retro-light) !important;
+}
+
     </style>
 </head>
 <body>
@@ -593,9 +608,11 @@ button:active {
 						<option value="PIT" data-colors="#FFB612,#101820">Pittsburgh Steelers</option>
 						<option value="TEN" data-colors="#0C2340,#4B92DB">Tennessee Titans</option>
 					</select>
+					<span id="leftScore" class="score" onclick="updateScore('left')">0</span>
                 </div>
                 <div class="team-vs">VS</div>
                 <div class="team-selection">
+					<span id="rightScore" class="score" onclick="updateScore('right')">0</span>
 					<select id="teamRight" onchange="updateTeamColors()">
 						<option value="">Select NFC Team</option>
 						<option value="ARI" data-colors="#97233F,#FFFFFF">Arizona Cardinals</option>
@@ -759,114 +776,136 @@ function updateTextSizes(k) {
         .style("font-size", `${14 / k}px`);
 }
 
-// Create grid function
+let currentLeftScore = 0;
+let currentRightScore = 0;
+
+function updateScore(team) {
+  const newScore = prompt(`Enter new score for ${team === 'left' ? 'Left' : 'Right'} Team:`);
+  if (newScore !== null && !isNaN(newScore) && newScore >= 0 && newScore <= maxScore) {
+    if (team === 'left') {
+      currentLeftScore = parseInt(newScore);
+      document.getElementById('leftScore').textContent = currentLeftScore;
+    } else {
+      currentRightScore = parseInt(newScore);
+      document.getElementById('rightScore').textContent = currentRightScore;
+    }
+    highlightCurrentScore();
+  } else {
+    alert('Please enter a valid score between 0 and ' + maxScore);
+  }
+}
+
+function highlightCurrentScore() {
+  d3.selectAll('.square').classed('highlight', false);
+  d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`).classed('highlight', true);
+}
+
+// Update the createGrid function to add data attributes to the squares
 function createGrid() {
-    // Clear existing elements
-    mainGroup.selectAll("*").remove();
-    Object.values(axesGroups).forEach(group => group.selectAll("*").remove());
-    
-    const squaresGroup = mainGroup.append("g");
-    
-    // Create scales for grid positioning
-    const xScale = d3.scaleLinear()
-        .domain([0, maxScore])
-        .range([0, maxScore * currentSize]);
-        
-    const yScale = d3.scaleLinear()
-        .domain([0, maxScore])
-        .range([0, maxScore * currentSize]);
+  // Clear existing elements
+  mainGroup.selectAll("*").remove();
+  Object.values(axesGroups).forEach(group => group.selectAll("*").remove());
 
-    // Create header cells for scores (0-9)
-    // Top header (horizontal)
-    for (let i = 0; i <= maxScore; i++) {
-        squaresGroup.append("rect")
-            .attr("class", "square header-square")
-            .attr("x", i * currentSize)
-            .attr("y", -currentSize)  // Position above main grid
-            .attr("width", currentSize)
-            .attr("height", currentSize)
-            .attr("fill", "var(--grid-bg)")
-            .attr("stroke", "var(--retro-green)");
+  const squaresGroup = mainGroup.append("g");
 
-        squaresGroup.append("text")
-            .attr("class", "square-text header-text")
-            .attr("x", i * currentSize + currentSize / 2)
-            .attr("y", -currentSize / 2)
-            .attr("text-anchor", "middle")
-            .attr("dominant-baseline", "middle")
-            .style("fill", "var(--retro-green)")
-            .style("font-size", "12px")
-            .text(i);
+  // Create scales for grid positioning
+  const xScale = d3.scaleLinear()
+    .domain([0, maxScore])
+    .range([0, maxScore * currentSize]);
+
+  const yScale = d3.scaleLinear()
+    .domain([0, maxScore])
+    .range([0, maxScore * currentSize]);
+
+  // Create header cells for scores (0-9)
+  // Top header (horizontal)
+  for (let i = 0; i <= maxScore; i++) {
+    squaresGroup.append("rect")
+      .attr("class", "square header-square")
+      .attr("x", i * currentSize)
+      .attr("y", -currentSize) // Position above main grid
+      .attr("width", currentSize)
+      .attr("height", currentSize)
+      .attr("fill", "var(--grid-bg)")
+      .attr("stroke", "var(--retro-green)");
+    squaresGroup.append("text")
+      .attr("class", "square-text header-text")
+      .attr("x", i * currentSize + currentSize / 2)
+      .attr("y", -currentSize / 2)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .style("fill", "var(--retro-green)")
+      .style("font-size", "12px")
+      .text(i);
+  }
+
+  // Left header (vertical)
+  for (let i = 0; i <= maxScore; i++) {
+    squaresGroup.append("rect")
+      .attr("class", "square header-square")
+      .attr("x", -currentSize) // Position left of main grid
+      .attr("y", i * currentSize)
+      .attr("width", currentSize)
+      .attr("height", currentSize)
+      .attr("fill", "var(--grid-bg)")
+      .attr("stroke", "var(--retro-green)");
+    squaresGroup.append("text")
+      .attr("class", "square-text header-text")
+      .attr("x", -currentSize / 2)
+      .attr("y", i * currentSize + currentSize / 2)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .style("fill", "var(--retro-green)")
+      .style("font-size", "12px")
+      .text(i);
+  }
+
+  // Create main grid squares
+  for (let row = 0; row <= maxScore; row++) {
+    for (let col = 0; col <= maxScore; col++) {
+      const isTieSquare = row === col;
+
+      // Create square
+      squaresGroup.append("rect")
+        .attr("class", `square ${isTieSquare ? 'tie-square' : ''}`)
+        .attr("x", col * currentSize)
+        .attr("y", row * currentSize)
+        .attr("width", currentSize)
+        .attr("height", currentSize)
+        .attr("data-row", row)
+        .attr("data-col", col)
+        .on("click", () => !isTieSquare && handleSquareClick(row, col))
+        .on("contextmenu", (event) => {
+          event.preventDefault();
+          if (!isTieSquare) handleSquareDelete(row, col);
+        })
+        .on("mouseover", (event) => {
+          const leftTeam = document.getElementById('teamLeft').value;
+          const rightTeam = document.getElementById('teamRight').value;
+          tooltip.style("opacity", 1)
+            .html(`${leftTeam}: ${row}<br><br>${rightTeam}: ${col}`)
+            .style("left", (event.pageX + 10) + "px")
+            .style("top", (event.pageY - 10) + "px");
+        })
+        .on("mouseout", () => {
+          tooltip.style("opacity", 0);
+        });
+
+      // Add text for squares
+      squaresGroup.append("text")
+        .attr("class", `square-text ${isTieSquare ? 'tie-text' : ''}`)
+        .attr("x", col * currentSize + currentSize / 2)
+        .attr("y", row * currentSize + currentSize / 2)
+        .attr("data-row", row)
+        .attr("data-col", col)
+        .style("font-size", "12px")
+        .text(isTieSquare ? row : '');
     }
+  }
 
-    // Left header (vertical)
-    for (let i = 0; i <= maxScore; i++) {
-        squaresGroup.append("rect")
-            .attr("class", "square header-square")
-            .attr("x", -currentSize)  // Position left of main grid
-            .attr("y", i * currentSize)
-            .attr("width", currentSize)
-            .attr("height", currentSize)
-            .attr("fill", "var(--grid-bg)")
-            .attr("stroke", "var(--retro-green)");
-
-        squaresGroup.append("text")
-            .attr("class", "square-text header-text")
-            .attr("x", -currentSize / 2)
-            .attr("y", i * currentSize + currentSize / 2)
-            .attr("text-anchor", "middle")
-            .attr("dominant-baseline", "middle")
-            .style("fill", "var(--retro-green)")
-            .style("font-size", "12px")
-            .text(i);
-    }
-
-    // Create main grid squares
-    for (let row = 0; row <= maxScore; row++) {
-        for (let col = 0; col <= maxScore; col++) {
-            const isTieSquare = row === col;
-            
-            // Create square
-            squaresGroup.append("rect")
-                .attr("class", `square ${isTieSquare ? 'tie-square' : ''}`)
-                .attr("x", col * currentSize)
-                .attr("y", row * currentSize)
-                .attr("width", currentSize)
-                .attr("height", currentSize)
-                .on("click", () => !isTieSquare && handleSquareClick(row, col))
-                .on("contextmenu", (event) => {
-                    event.preventDefault();
-                    if (!isTieSquare) handleSquareDelete(row, col);
-                })
-                .on("mouseover", (event) => {
-                    if (!isTieSquare) {
-                        const leftTeam = document.getElementById('teamLeft').value;
-                        const rightTeam = document.getElementById('teamRight').value;
-                        tooltip.style("opacity", 1)
-                            .html(`${leftTeam}: ${row}<br><br>${rightTeam}: ${col}`)
-                            .style("left", (event.pageX + 10) + "px")
-                            .style("top", (event.pageY - 10) + "px");
-                    }
-                })
-                .on("mouseout", () => {
-                    tooltip.style("opacity", 0);
-                });
-
-            // Add text for squares
-            squaresGroup.append("text")
-                .attr("class", `square-text ${isTieSquare ? 'tie-text' : ''}`)
-                .attr("x", col * currentSize + currentSize / 2)
-                .attr("y", row * currentSize + currentSize / 2)
-                .attr("data-row", row)
-                .attr("data-col", col)
-                .style("font-size", "12px")
-                .text(isTieSquare ? row : '');
-        }
-    }
-
-    // Update team names with adjusted positioning
-    const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
-	resetZoom();
+  // Update team names with adjusted positioning
+  const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
+  resetZoom();
 }
 
 const NFL_TEAMS = {
@@ -1018,6 +1057,29 @@ function getBestContrastColor(teamColors, backgroundColor = '#001100') {
     return bestColor;
 }
 
+// Add function to save team selections
+function saveTeams() {
+    const leftTeam = document.getElementById('teamLeft').value;
+    const rightTeam = document.getElementById('teamRight').value;
+    
+    fetch('/api/teams', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            left: leftTeam,
+            right: rightTeam
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Failed to save teams');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving teams:', error);
+    });
+}
 
 // Update team colors and visuals with new helmet colors
 function updateTeamColors() {
@@ -1091,6 +1153,8 @@ function updateTeamColors() {
 
     // Update team backgrounds
     updateTeamBackgrounds(leftTeam, rightTeam);
+	// Save team selections
+    saveTeams();
 }
 
 // Update team backgrounds
@@ -1419,14 +1483,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             return row !== col; // Don't clear tie squares
                         })
                         .text('');
+					// Ensure the grid is created on initial load
+					createGrid();
                     // Reset team selections
                     document.getElementById('teamLeft').value = '';
                     document.getElementById('teamRight').value = '';
-                    updateTeamColors();
+					updateTeamColors();
                     // Hide landing overlay
                     landingOverlay.style.display = 'none';
-                    // Show success message
-                    alert('New game started successfully!');
                 } else {
                     alert('Failed to start new game. Please try again.');
                 }
@@ -1438,53 +1502,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    loadGameBtn.addEventListener('click', () => {
-        fetch('/api/state', {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.squares && data.players) {
-                // Load players
-                players = data.players;
-                updatePlayerList();
-                // Create the grid
-                createGrid();
-                // Load squares
-                d3.selectAll('.square-text')
-                    .filter(function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        return row !== col; // Don't clear tie squares
-                    })
-                    .text(function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        return data.squares[row][col];
-                    })
-                    .style("fill", function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        const value = data.squares[row][col];
-                        return value ? (players[value]?.color || "#ffffff") : "#ffffff";
-                    });
-                // Update team colors
-                updateTeamColors();
-                // Hide landing overlay
-                landingOverlay.style.display = 'none';
-                alert('Game loaded successfully!');
-            } else {
-                alert('Failed to load game state. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading game state:', error);
-            alert('Failed to load game state. Please try again.');
-        });
-    });
+	// Updated loadGameBtn event listener
+	loadGameBtn.addEventListener('click', () => {
+		fetch('/api/state', {
+			method: 'GET'
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.squares && data.players && data.teams) {
+				// Load players
+				players = data.players;
+				updatePlayerList();
+				
+				// Set team dropdown values first
+				const teamLeft = document.getElementById('teamLeft');
+				const teamRight = document.getElementById('teamRight');
+				
+				// Log the elements to the console
+				console.log('data:', data);
 
-    // Ensure the grid is created on initial load
-    createGrid();
+				// Ensure the dropdowns exist before setting values
+				if (teamLeft && teamRight) {
+					teamLeft.value = data.teams.left || '';
+					teamRight.value = data.teams.right || '';
+				}
+				// Log the elements to the console
+				console.log('data.players:', data.players);
+				console.log('data.players:', data.teams);
+				// Create the grid
+				createGrid();
+				
+				// Load squares
+				d3.selectAll('.square-text')
+					.filter(function() {
+						const row = d3.select(this).attr('data-row');
+						const col = d3.select(this).attr('data-col');
+						return row !== col; // Don't clear tie squares
+					})
+					.text(function() {
+						const row = d3.select(this).attr('data-row');
+						const col = d3.select(this).attr('data-col');
+						return data.squares[row][col];
+					})
+					.style("fill", function() {
+						const row = d3.select(this).attr('data-row');
+						const col = d3.select(this).attr('data-col');
+						const value = data.squares[row][col];
+						return value ? (players[value]?.color || "#ffffff") : "#ffffff";
+					});
+				
+				// Update team colors and visuals after setting dropdown values
+				updateTeamColors();
+				
+				// Hide landing overlay
+				landingOverlay.style.display = 'none';
+			} else {
+				alert('Failed to load game state. Please try again.');
+			}
+		})
+		.catch(error => {
+			console.error('Error loading game state:', error);
+			alert('Failed to load game state. Please try again.');
+		});
+	});
+
 });
 
 
