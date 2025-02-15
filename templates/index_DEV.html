@@ -192,7 +192,7 @@ button:active {
     stroke: var(--retro-green);
     stroke-width: 2;
     fill: var(--grid-bg);
-    transition: fill 0.3s ease;
+    transition: fill 0.3s ease, fill-opacity 0.3s ease;
 }
 
 .square:hover {
@@ -224,13 +224,14 @@ button:active {
 
 
 /* Square Text */
-.square-text {
+.square-text, .header-text, .tie-text {
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
-    fill: var(--retro-green);
+	fill: var(--retro-green);
     text-anchor: middle;
     dominant-baseline: middle;
     pointer-events: none;
+    transition: font-size 0.3s ease;
 }
 
 /* Tooltip */
@@ -578,6 +579,29 @@ button:active {
   image-rendering: pixelated;
 }
 
+.quarter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.quarter-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    color: var(--retro-green);
+    cursor: pointer;
+    padding: 5px 10px;
+    border: 2px solid var(--retro-green);
+    background: var(--retro-dark);
+    transition: all 0.3s ease;
+}
+
+.quarter-display:hover {
+    background: var(--retro-green);
+    color: var(--retro-dark);
+}
+
 .score:hover {
   color: #E5D820;
   text-shadow: 
@@ -590,9 +614,7 @@ button:active {
 .score::after {
   display: none;
 }
-.highlight {
-  fill: var(--retro-light) !important;
-}
+
 /* Alert Overlay */
 .alert-overlay {
     position: fixed;
@@ -837,6 +859,15 @@ button:active {
 .base-overlay {
     animation: overlayFadeIn 0.3s ease-out;
 }
+
+.current-score-highlight {
+	fill: #4CAF50 !important;
+	fill-opacity: 0.6 !important;
+}
+.square {
+    transition: fill 0.3s ease, fill-opacity 0.3s ease;
+}
+
     </style>
 </head>
 <body>
@@ -899,7 +930,9 @@ button:active {
 					</select>
                 </div>
 				<span id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</span>
-                <div class="team-vs">VS</div>
+                <div class="quarter-container">
+					<div id="currentQuarter" class="quarter-display" onclick="updateQuarter()">QTR: 0</div>
+				</div>
                 <span id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</span>
                 <div class="team-selection">
 					<select id="teamRight" onchange="updateTeamColors()">
@@ -965,6 +998,9 @@ let currentSize = baseSize;
 const maxScore = 60;
 let players = {};
 const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+let currentQuarter = 0;
+const QUARTERS = ['0', '1', '2', '3', '4', 'END'];
+let squares = Array(maxScore+1).fill().map(() => Array(maxScore+1).fill(''));
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
@@ -1058,49 +1094,40 @@ const zoom = d3.zoom()
     });
 svg.call(zoom);
 
-<!-- // Update text sizes based on zoom level -->
-<!-- function updateTextSizes(k) { -->
-    <!-- // Update all text elements consistently -->
-    <!-- d3.selectAll(".square-text, .header-text, .tie-text") -->
-        <!-- .style("font-size", `${14 / k}px`); -->
-<!-- } -->
+// Update text sizes based on zoom level
+function updateTextSizes(k) {
+    // Update all text elements consistently
+    d3.selectAll(".square-text, .header-text, .tie-text")
+        .style("font-size", `${14 / k}px`);
+}
 
 let currentLeftScore = 0;
 let currentRightScore = 0;
 
+// Modified updateScore function
 function updateScore(team) {
-    // Get team name based on selection
     const teamSelect = document.getElementById(team === 'left' ? 'teamLeft' : 'teamRight');
     const teamCode = teamSelect.value;
     const teamName = teamCode ? NFL_TEAMS[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
 
     showGenericPrompt({
         title: 'Update Score',
-        message: `Enter new score for ${teamCode} `,
+        message: `Enter new score for ${teamName} (0-${maxScore}):`,
         inputType: 'number',
         maxLength: 2,
         minValue: 0,
         maxValue: maxScore,
         validateInput: (value) => {
-            if (!value) {
-                return { isValid: false, message: 'Enter score' };
-            }
-            if (!/^\d+$/.test(value)) {
-                return { isValid: false, message: 'Enter numbers' };
-            }
+            if (!value) return { isValid: false, message: 'Please enter a score' };
+            if (!/^\d+$/.test(value)) return { isValid: false, message: 'Please enter only numbers' };
             const score = parseInt(value);
-            if (isNaN(score)) {
-                return { isValid: false, message: 'Enter valid number' };
-            }
-            if (score < 0 || score > maxScore) {
-                return { isValid: false, message: `Score between 0 and ${maxScore}` };
-            }
+            if (isNaN(score)) return { isValid: false, message: 'Please enter a valid number' };
+            if (score < 0 || score > maxScore) return { isValid: false, message: `Score must be between 0 and ${maxScore}` };
             return { isValid: true };
         },
         onConfirm: (value) => {
             const score = parseInt(value);
             
-            // Update score
             if (team === 'left') {
                 currentLeftScore = score;
                 document.getElementById('leftScore').textContent = currentLeftScore;
@@ -1109,7 +1136,7 @@ function updateScore(team) {
                 document.getElementById('rightScore').textContent = currentRightScore;
             }
 
-            // Save scores to backend
+            // Update scores in backend
             fetch('/api/scores', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1123,7 +1150,8 @@ function updateScore(team) {
                 if (!data.success) {
                     showAlert('Failed to save scores');
                 }
-                highlightCurrentScore();
+                // Update highlights after successful score update
+                updateHighlights();
             })
             .catch(error => {
                 console.error('Error saving scores:', error);
@@ -1133,16 +1161,7 @@ function updateScore(team) {
     });
 }
 
-// Update the highlight function to work with all squares including tie squares
-function highlightCurrentScore() {
-    // Remove highlight from all squares
-    d3.selectAll('.square').classed('highlight', false);
-    
-    // Add highlight to current score square
-    // This will work for both regular squares and tie squares
-    d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`)
-        .classed('highlight', true);
-}
+
 
 // Update the createGrid function to add data attributes to the squares
 function createGrid() {
@@ -1336,12 +1355,12 @@ function addPlayer() {
             initialInput.value = '';
             nameInput.value = '';
         } else {
-            showAlert(data.error || "Failed to add player");
+            showAlert(data.error || "Failed to add player.");
         }
     })
     .catch(error => {
         console.error("Error adding player:", error);
-        showAlert("Failed to add player");
+        showAlert("Failed to add player. Please try again.");
     });
 }
 
@@ -1607,12 +1626,6 @@ function deletePlayer(initial) {
 // Add or update CSS styles
 const style = document.createElement('style');
 style.textContent = `
-    .square {
-        stroke: var(--retro-green);
-        stroke-width: 2;
-        fill: var(--grid-bg);
-        transition: fill 0.3s ease;
-    }
 
     .square:hover {
         fill: var(--retro-light);
@@ -1623,9 +1636,9 @@ style.textContent = `
         cursor: default;
     }
 
-	.tie-square.highlight {
-		fill: var(--retro-light) !important;
-	}
+	.square.highlight, .tie-square.highlight {
+        fill: var(--retro-light) !important;
+    }
 
 	/* Keep existing tie-square styles but remove the !important from the fill */
 	.tie-square {
@@ -1637,15 +1650,6 @@ style.textContent = `
 		fill: var(--grid-bg);
 	}
 
-    .square-text, .header-text, .tie-text {
-        font-family: 'Press Start 2P', monospace;
-        fill: var(--retro-green);
-        text-anchor: middle;
-        dominant-baseline: middle;
-        pointer-events: none;
-        transition: font-size 0.3s ease;
-    }
-
     .player-item {
         font-family: 'Press Start 2P', monospace;
         margin-bottom: 8px;
@@ -1655,32 +1659,17 @@ style.textContent = `
         padding: 6px;
     }
 
-    .delete-btn {
-        margin-left: auto;
-        min-width: 24px;
-        height: 24px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
 `;
 document.head.appendChild(style);
 
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
-
-    const currentValue = d3.select(`text[data-row='${row}'][data-col='${col}']`).text();
-    if (currentValue) {
-        showAlert(`Owned by ${currentValue}`, 'Square taken');
-        return;
-    }
-
+    
     // Create player list content
     const playerList = Object.keys(players)
         .map(initial => `${initial}`)
         .join(', ');
-
+    
     showGenericPrompt({
         title: 'Select Player',
         message: 'Player initial',
@@ -1699,8 +1688,7 @@ function handleSquareClick(row, col) {
         },
         onConfirm: (value) => {
             const initial = value.trim().toUpperCase();
-
-            // Update square via API
+            
             fetch('/api/squares', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1890,19 +1878,91 @@ function handleSquareDelete(row, col) {
     );
 }
 
-// Update square display function
+// Modified updateSquare function
 function updateSquare(row, col, value) {
-    const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
-    if (text.empty()) return;
+    // Update squares array
+    squares[row][col] = value;
 
-    // Convert value to uppercase before display
-    const displayValue = value ? value.toUpperCase() : '';
-    
-    text.text(displayValue)
-        .style("font-size", "12px")
-        .style("fill", value ? (players[value.toUpperCase()]?.color || "#ffffff") : "#ffffff");
+    // Update text and color in the grid
+    const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
+    if (!text.empty()) {
+        const displayValue = value ? value.toUpperCase() : '';
+        text.text(displayValue)
+            .style("fill", value ? (players[value.toUpperCase()]?.color || "#ffffff") : "#ffffff");
+    }
+
+    // Update the square color
+    const square = d3.select(`rect[data-row='${row}'][data-col='${col}']`);
+    if (!square.empty()) {
+        if (value) {
+            const playerColor = players[value.toUpperCase()]?.color;
+            if (playerColor) {
+                square.style("fill", playerColor)
+                    .style("fill-opacity", 0.2);
+            }
+        } else {
+            square.style("fill", "var(--grid-bg)")
+                .style("fill-opacity", 1);
+        }
+    }
+
+    // Update highlights
+    updateHighlights();
+
+    // Fetch request to update the backend
+    fetch('/api/squares', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ row, col, value })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            showAlert('Failed to update square');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('Failed to update square');
+    });
 }
 
+// Simplified updateHighlights function - removes winner logic and fixes highlight issues
+function updateHighlights() {
+    // First clear ALL existing highlights and restore original colors
+    d3.selectAll('.square')
+        .classed('current-score-highlight', false)
+        .style('fill', function() {
+            const row = d3.select(this).attr('data-row');
+            const col = d3.select(this).attr('data-col');
+            
+            // Skip tie squares
+            if (row === col) {
+                return 'var(--grid-bg)';
+            }
+            
+            // Get player color if square is occupied
+            const playerInitial = squares[row][col];
+            if (playerInitial && players[playerInitial]) {
+                return players[playerInitial].color;
+            }
+            return 'var(--grid-bg)';
+        })
+        .style('fill-opacity', function() {
+            const row = d3.select(this).attr('data-row');
+            const col = d3.select(this).attr('data-col');
+            return squares[row][col] ? 0.2 : 1;
+        });
+
+    // Then apply the current score highlight
+    const currentScoreSquare = d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`);
+    if (!currentScoreSquare.empty()) {
+        currentScoreSquare
+            .classed('current-score-highlight', true)
+            .style('fill', '#4CAF50')
+            .style('fill-opacity', 0.6);
+    }
+}
 
 function resetZoom() {
     svg.transition()
@@ -1951,6 +2011,47 @@ function resetGame() {
             }
         }
     );
+}
+
+function updateQuarter() {
+    showGenericPrompt({
+        title: 'Select Quarter',
+        message: 'Select current quarter:\n0: Not Started\n1-4: Quarters\nEND: Game Over',
+        inputType: 'text',
+        defaultValue: QUARTERS[currentQuarter],
+        validateInput: (value) => {
+            const upperValue = value.toUpperCase();
+            if (!QUARTERS.includes(upperValue)) {
+                return { 
+                    isValid: false, 
+                    message: 'Invalid quarter. Choose 0, 1, 2, 3, 4, or END' 
+                };
+            }
+            return { isValid: true };
+        },
+        onConfirm: (value) => {
+            const upperValue = value.toUpperCase();
+            currentQuarter = QUARTERS.indexOf(upperValue);
+            document.getElementById('currentQuarter').textContent = `QTR: ${upperValue}`;
+            
+            // Save quarter update to backend
+            fetch('/api/quarter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quarter: upperValue })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showAlert('Failed to save quarter');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving quarter:', error);
+                showAlert('Failed to save quarter');
+            });
+        }
+    });
 }
 
 // Handle window resize
@@ -2002,7 +2103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 							updateTeamColors();
 							
 							// Highlight current score square
-							highlightCurrentScore();
+							updateHighlights();
                             // Hide landing overlay
                             landingOverlay.style.display = 'none';
                         } else {
@@ -2024,7 +2125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.squares && data.players && data.teams && data.scores) {
+            if (data.squares && data.players && data.teams && data.scores && data.quarter !== undefined) {
                 // Load players
                 players = data.players;
                 updatePlayerList();
@@ -2044,6 +2145,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('leftScore').textContent = currentLeftScore;
                 document.getElementById('rightScore').textContent = currentRightScore;
                 
+				// Update quarter display
+				currentQuarter = QUARTERS.indexOf(data.quarter);
+				document.getElementById('currentQuarter').textContent = `QTR: ${data.quarter}`;
+								
+
+				
                 // Create the grid
                 createGrid();
                 
@@ -2070,7 +2177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateTeamColors();
                 
                 // Highlight current score square
-                highlightCurrentScore();
+                updateHighlights();
                 
                 // Hide landing overlay
                 landingOverlay.style.display = 'none';
