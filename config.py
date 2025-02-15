@@ -20,7 +20,7 @@ class Config:
             'host': '0.0.0.0',  # Listen on all interfaces
             'port': 5000,
             'debug': False,
-            'max_players': 12,
+            'max_players': 10,
             'grid_size': 61
         }
         

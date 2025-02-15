@@ -808,11 +808,12 @@ const NFL_TEAMS = {
     "WAS": { name: "Washington Commanders", colors: ["#773141", "#FFB612"] }
 };
 
+// Modified addPlayer function to maintain sorting
 function addPlayer() {
     const initialInput = document.getElementById('playerInitial');
     const nameInput = document.getElementById('playerName');
     const initial = initialInput.value.toUpperCase();
-    const name = nameInput.value.trim().toUpperCase();;
+    const name = nameInput.value.trim().toUpperCase();
 
     // Validate initial
     if (initial.length !== 1) {
@@ -828,7 +829,7 @@ function addPlayer() {
     
     if (name.length > 8) {
         alert("Name must be 8 characters or less.");
-        nameInput.value = name.substring(0, 8); // Trim to 8 characters
+        nameInput.value = name.substring(0, 8);
         return;
     }
 
@@ -838,20 +839,20 @@ function addPlayer() {
         return;
     }
 
-	// Get next color from Category10 scale
-	const playerColor = playerColorScale(Object.keys(players).length);
+    // Get next color from Category10 scale
+    const playerColor = playerColorScale(Object.keys(players).length);
 
-	// Add player via API
-	fetch('/api/players', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ initial, name, color: playerColor })
-	})
+    // Add player via API
+    fetch('/api/players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initial, name, color: playerColor })
+    })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             players[initial] = { name, color: data.color };
-            updatePlayerList();
+            updatePlayerList(); // This will now show the sorted list
             // Clear inputs after successful addition
             initialInput.value = '';
             nameInput.value = '';
@@ -864,7 +865,6 @@ function addPlayer() {
         alert("Failed to add player. Please try again.");
     });
 }
-
 
 // Add these helper functions for contrast checking
 function getLuminance(r, g, b) {
@@ -1016,12 +1016,16 @@ function updateTeamBackgrounds(leftTeam, rightTeam) {
 }
 
 
-// Player list update function to ensure uppercase display
+// Player list update function with alphabetical sorting
 function updatePlayerList() {
     const playerList = document.getElementById('playerList');
     playerList.innerHTML = '';
     
-    Object.entries(players).forEach(([initial, info]) => {
+    // Convert players object to array and sort alphabetically by initial
+    const sortedPlayers = Object.entries(players)
+        .sort(([initialA], [initialB]) => initialA.localeCompare(initialB));
+    
+    sortedPlayers.forEach(([initial, info]) => {
         const playerItem = document.createElement('div');
         playerItem.className = 'player-item';
         
@@ -1036,7 +1040,6 @@ function updatePlayerList() {
         playerInfo.style.overflow = 'hidden';
         playerInfo.style.textOverflow = 'ellipsis';
         playerInfo.style.maxWidth = '150px';
-        // Ensure initial is displayed uppercase
         playerInfo.textContent = `${initial} - ${info.name}`;
         
         const deleteBtn = document.createElement('button');
@@ -1052,6 +1055,7 @@ function updatePlayerList() {
         playerList.appendChild(playerItem);
     });
 }
+
 
 function deletePlayer(initial) {
     // First confirm deletion
