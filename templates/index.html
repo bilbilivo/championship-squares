@@ -1672,12 +1672,12 @@ function handleSquareClick(row, col) {
     
     // Create player list content
     const playerList = Object.keys(players)
-        .map(initial => `${initial} - ${players[initial].name}`)
-        .join('\n');
+        .map(initial => `${initial}`)
+        .join(', ');
     
     showGenericPrompt({
         title: 'Select Player',
-        message: 'Enter player initial (1 letter):',
+        message: 'Player initial',
         maxLength: 1,
         showPlayerList: true,
         playerListContent: 'Available players:\n' + playerList,
