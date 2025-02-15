@@ -1981,6 +1981,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             document.getElementById('teamLeft').value = '';
                             document.getElementById('teamRight').value = '';
                             updateTeamColors();
+							// Create the grid
+							createGrid();
+							// Update team colors and visuals
+							updateTeamColors();
+							
+							// Highlight current score square
+							highlightCurrentScore();
                             // Hide landing overlay
                             landingOverlay.style.display = 'none';
                         } else {
