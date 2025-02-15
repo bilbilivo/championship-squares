@@ -15,14 +15,16 @@ class GameState:
         self.squares = [['' for _ in range(grid_size)] for _ in range(grid_size)]
         self.players = {}  # Format: {'A': {'name': 'Alice', 'color': '#FF5733'}}
         self.next_color_index = 0
-    
+        self.teams = {}  # Store team code (e.g., 'KC', 'SF')
+
     def save_state(self):
         """Save game state to file"""
         try:
             state = {
                 'squares': self.squares,
                 'players': self.players,
-                'next_color_index': self.next_color_index
+                'next_color_index': self.next_color_index,
+                'teams': self.teams  # Add teams to saved state
             }
             with open(config.base_dir / 'game_state.json', 'w') as f:
                 json.dump(state, f)
@@ -39,6 +41,7 @@ class GameState:
                     self.squares = state.get('squares', self.squares)
                     self.players = state.get('players', self.players)
                     self.next_color_index = state.get('next_color_index', 0)
+                    self.teams = state.get('teams', {'left': '', 'right': ''})  # Load teams with default
         except Exception as e:
             print(f"Error loading game state: {e}")
 
@@ -57,7 +60,8 @@ def get_state():
     try:
         return jsonify({
             'squares': game_state.squares,
-            'players': game_state.players
+            'players': game_state.players,
+            'teams': game_state.teams  # Include teams in state response
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -109,6 +113,7 @@ def reset_game():
         game_state.squares = [['' for _ in range(config.config['grid_size'])] for _ in range(config.config['grid_size'])]
         game_state.players = {}
         game_state.next_color_index = 0
+        game_state.teams = {'left': '', 'right': ''}  # Reset teams
         game_state.save_state()
         return jsonify({'success': True})
     except Exception as e:
@@ -131,6 +136,24 @@ def delete_player(initial):
         return jsonify({'error': 'Player not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# Add new route to handle team updates
+@app.route('/api/teams', methods=['POST'])
+def update_teams():
+    try:
+        data = request.json
+        left_team = data.get('left', '')
+        right_team = data.get('right', '')
+        
+        # Update team state
+        game_state.teams['left'] = left_team
+        game_state.teams['right'] = right_team
+        game_state.save_state()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 def open_browser():
     """Open the browser to the application URL"""
