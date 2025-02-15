@@ -593,7 +593,250 @@ button:active {
 .highlight {
   fill: var(--retro-light) !important;
 }
+/* Alert Overlay */
+.alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--retro-dark);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
+/* Alert Content */
+.alert-content {
+    text-align: center;
+    padding: 40px;
+    border: var(--pixel-border);
+    background: var(--grid-bg);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    animation: glow 2s infinite alternate;
+}
+
+/* Alert Title */
+.alert-title {
+    color: var(--retro-green);
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 2s infinite;
+}
+
+/* Alert Message */
+.alert-message {
+    color: var(--retro-green);
+    font-size: 1.2em;
+    margin-bottom: 30px;
+}
+
+/* Alert Buttons */
+.alert-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.alert-btn {
+    background: var(--retro-dark);
+    color: var(--retro-green);
+    border: var(--pixel-border);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.alert-btn:hover {
+    background: var(--retro-green);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.alert-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+.prompt-input {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    padding: 8px;
+    color: var(--retro-green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    margin: 20px 0;
+    width: 80%;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.player-list-prompt {
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 10px;
+    border: var(--pixel-border);
+    background: var(--retro-dark);
+    text-align: left;
+}
+
+.alert-message {
+    margin: 20px 0;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Base overlay styles */
+.base-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;  /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 34, 0, 0.9);  /* Slightly transparent background */
+}
+
+/* Landing overlay - lowest layer */
+.landing-overlay {
+    composes: base-overlay;
+    z-index: 1000;
+}
+
+/* Prompt overlay - middle layer */
+.generic-prompt {
+    composes: base-overlay;
+    z-index: 2000;
+}
+
+/* Alert overlay - top layer */
+.alert-overlay {
+    composes: base-overlay;
+    z-index: 3000;
+    background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */
+}
+
+/* Content containers */
+.overlay-content {
+    text-align: center;
+    padding: 40px;
+    border: 2px solid var(--retro-green);
+    background: var(--grid-bg);
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    animation: glow 2s infinite alternate;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Title styles */
+.overlay-title {
+    color: var(--retro-green);
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 2s infinite;
+}
+
+/* Message styles */
+.overlay-message {
+    color: var(--retro-green);
+    font-size: 1.2em;
+    margin: 20px 0;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Button container */
+.overlay-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Button styles */
+.overlay-btn {
+    background: var(--retro-dark);
+    color: var(--retro-green);
+    border: 2px solid var(--retro-green);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.overlay-btn:hover {
+    background: var(--retro-green);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.overlay-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* Input field styles */
+.overlay-input {
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-green);
+    padding: 8px;
+    color: var(--retro-green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    margin: 20px 0;
+    width: 80%;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Player list in prompt */
+.overlay-player-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 10px;
+    border: 2px solid var(--retro-green);
+    background: var(--retro-dark);
+    text-align: left;
+    font-size: 0.8em;
+}
+
+/* Scrollbar styles for overlays */
+.overlay-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.overlay-content::-webkit-scrollbar-track {
+    background: var(--retro-dark);
+}
+
+.overlay-content::-webkit-scrollbar-thumb {
+    background: var(--retro-green);
+    border: 1px solid var(--retro-dark);
+}
+
+/* Animations */
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.base-overlay {
+    animation: overlayFadeIn 0.3s ease-out;
+}
     </style>
 </head>
 <body>
@@ -603,6 +846,29 @@ button:active {
 			<div class="landing-buttons">
 				<button id="newGameBtn" class="landing-btn">New Game</button>
 				<button id="loadGameBtn" class="landing-btn">Load Game</button>
+			</div>
+		</div>
+	</div>
+	<div id="genericAlert" class="alert-overlay" style="display: none;">
+		<div class="alert-content">
+			<h2 id="genericAlertTitle" class="alert-title">Alert</h2>
+			<p id="genericAlertMessage" class="alert-message"></p>
+			<div class="alert-buttons">
+				<button id="genericAlertOkBtn" class="alert-btn">OK</button>
+				<button id="genericAlertCancelBtn" class="alert-btn" style="display: none;">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="genericPrompt" class="alert-overlay" style="display: none;">
+		<div class="alert-content">
+			<h2 id="genericPromptTitle" class="alert-title">Input Required</h2>
+			<p id="genericPromptMessage" class="alert-message"></p>
+			<input type="text" id="genericPromptInput" class="prompt-input" />
+			<div id="genericPromptPlayerList" class="player-list-prompt"></div>
+			<div class="alert-buttons">
+				<button id="genericPromptOkBtn" class="alert-btn">OK</button>
+				<button id="genericPromptCancelBtn" class="alert-btn">Cancel</button>
 			</div>
 		</div>
 	</div>
@@ -802,41 +1068,69 @@ function updateTextSizes(k) {
 let currentLeftScore = 0;
 let currentRightScore = 0;
 
-// Update updateScore function to save scores to backend
 function updateScore(team) {
-    const newScore = prompt(`Enter new score for ${team === 'left' ? 'Left' : 'Right'} Team:`);
-    if (newScore !== null && !isNaN(newScore) && newScore >= 0 && newScore <= maxScore) {
-        const scoreValue = parseInt(newScore);
-        if (team === 'left') {
-            currentLeftScore = scoreValue;
-            document.getElementById('leftScore').textContent = currentLeftScore;
-        } else {
-            currentRightScore = scoreValue;
-            document.getElementById('rightScore').textContent = currentRightScore;
-        }
-        
-        // Save scores to backend
-        fetch('/api/scores', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                left: currentLeftScore,
-                right: currentRightScore
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                console.error('Failed to save scores');
+    // Get team name based on selection
+    const teamSelect = document.getElementById(team === 'left' ? 'teamLeft' : 'teamRight');
+    const teamCode = teamSelect.value;
+    const teamName = teamCode ? NFL_TEAMS[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
+
+    showGenericPrompt({
+        title: 'Update Score',
+        message: `Enter new score for ${teamName} (0-${maxScore}):`,
+        inputType: 'number',
+        maxLength: 2,
+        minValue: 0,
+        maxValue: maxScore,
+        validateInput: (value) => {
+            if (!value) {
+                return { isValid: false, message: 'Please enter a score' };
             }
-            highlightCurrentScore();
-        })
-        .catch(error => {
-            console.error('Error saving scores:', error);
-        });
-    } else {
-        alert('Please enter a valid score between 0 and ' + maxScore);
-    }
+            if (!/^\d+$/.test(value)) {
+                return { isValid: false, message: 'Please enter only numbers' };
+            }
+            const score = parseInt(value);
+            if (isNaN(score)) {
+                return { isValid: false, message: 'Please enter a valid number' };
+            }
+            if (score < 0 || score > maxScore) {
+                return { isValid: false, message: `Score must be between 0 and ${maxScore}` };
+            }
+            return { isValid: true };
+        },
+        onConfirm: (value) => {
+            const score = parseInt(value);
+            
+            // Update score
+            if (team === 'left') {
+                currentLeftScore = score;
+                document.getElementById('leftScore').textContent = currentLeftScore;
+            } else {
+                currentRightScore = score;
+                document.getElementById('rightScore').textContent = currentRightScore;
+            }
+
+            // Save scores to backend
+            fetch('/api/scores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    left: currentLeftScore,
+                    right: currentRightScore
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    showAlert('Failed to save scores');
+                }
+                highlightCurrentScore();
+            })
+            .catch(error => {
+                console.error('Error saving scores:', error);
+                showAlert('Failed to save scores');
+            });
+        }
+    });
 }
 
 // Update the highlight function to work with all squares including tie squares
@@ -1268,40 +1562,46 @@ function updatePlayerList() {
 
 
 function deletePlayer(initial) {
-    // First confirm deletion
-    if (!confirm(`Are you sure you want to delete player ${initial} - ${players[initial].name}?`)) {
-        return;
-    }
-
-    // Delete player via API
-    fetch(`/api/players/${initial}`, {
-        method: 'DELETE',
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove from local players object
-            delete players[initial];
-            // Update the player list display
-            updatePlayerList();
-            // Clear any squares with this player's initial
-            d3.selectAll('.square-text')
-                .filter(function() {
-                    return d3.select(this).text() === initial;
+    const playerName = players[initial]?.name || 'Unknown Player';
+    
+    showAlert(
+        `Player: ${initial} - ${playerName}`,
+        'Delete Player',
+        true,
+        (confirmed) => {
+            if (confirmed) {
+                // Delete player via API
+                fetch(`/api/players/${initial}`, {
+                    method: 'DELETE',
                 })
-                .each(function() {
-                    const row = d3.select(this).attr('data-row');
-                    const col = d3.select(this).attr('data-col');
-                    updateSquare(row, col, '');
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove from local players object
+                        delete players[initial];
+                        // Update the player list display
+                        updatePlayerList();
+                        // Clear any squares with this player's initial
+                        d3.selectAll('.square-text')
+                            .filter(function() {
+                                return d3.select(this).text() === initial;
+                            })
+                            .each(function() {
+                                const row = d3.select(this).attr('data-row');
+                                const col = d3.select(this).attr('data-col');
+                                updateSquare(row, col, '');
+                            });
+                    } else {
+                        showAlert(data.error || "Failed to delete player");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting player:", error);
+                    showAlert("Failed to delete player");
                 });
-        } else {
-            alert(data.error || "Failed to delete player");
+            }
         }
-    })
-    .catch(error => {
-        console.error("Error deleting player:", error);
-        alert("Failed to delete player. Please try again.");
-    });
+    );
 }
 
 // Add or update CSS styles
@@ -1367,48 +1667,178 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Square click handler with uppercase enforcement
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
     
-    // Create list of available players (ensure display is uppercase)
-    let playerList = Object.keys(players)
+    // Create player list content
+    const playerList = Object.keys(players)
         .map(initial => `${initial} - ${players[initial].name}`)
         .join('\n');
     
-    const value = prompt(`Enter player initial (1 letter):\n\nAvailable players:\n${playerList}`);
-    if (!value) return;
-    
-    const initial = value.toUpperCase();
-    
-    if (initial.length !== 1) {
-        alert("Initial must be exactly 1 letter.");
-        return;
-    }
-    
-    if (!players[initial]) {
-        alert("Please register your initial in the legend first.");
-        return;
-    }
-    
-    // Update square via API
-    fetch('/api/squares', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ row, col, value: initial })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updateSquare(row, col, initial);
-        } else {
-            alert("Failed to update square.");
+    showGenericPrompt({
+        title: 'Select Player',
+        message: 'Enter player initial (1 letter):',
+        maxLength: 1,
+        showPlayerList: true,
+        playerListContent: 'Available players:\n' + playerList,
+        validateInput: (value) => {
+            const initial = value.trim().toUpperCase();
+            if (initial.length !== 1) {
+                return { isValid: false, message: 'Initial must be 1 letter' };
+            }
+            if (!players[initial]) {
+                return { isValid: false, message: 'Please register first' };
+            }
+            return { isValid: true };
+        },
+        onConfirm: (value) => {
+            const initial = value.trim().toUpperCase();
+            
+            // Update square via API
+            fetch('/api/squares', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ row, col, value: initial })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateSquare(row, col, initial);
+                } else {
+                    showAlert('Failed to update square');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Failed to update square');
+            });
         }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Failed to update square.");
     });
+}
+
+// Generic prompt method for input dialogs
+function showGenericPrompt({
+    title = 'Input Required',
+    message = '',
+    defaultValue = '',
+    inputType = 'text',
+    maxLength = null,
+    minValue = null,
+    maxValue = null,
+    showPlayerList = false,
+    playerListContent = '',
+    validateInput = null,
+    onConfirm = null,
+    onCancel = null
+}) {
+    const genericPrompt = document.getElementById('genericPrompt');
+    const promptTitle = document.getElementById('genericPromptTitle');
+    const promptMessage = document.getElementById('genericPromptMessage');
+    const promptInput = document.getElementById('genericPromptInput');
+    const promptPlayerList = document.getElementById('genericPromptPlayerList');
+    const okBtn = document.getElementById('genericPromptOkBtn');
+    const cancelBtn = document.getElementById('genericPromptCancelBtn');
+
+    // Set up prompt content
+    promptTitle.textContent = title.toUpperCase();
+    promptMessage.textContent = message.toUpperCase();
+    promptInput.value = defaultValue;
+    promptInput.type = inputType;
+    
+    if (maxLength !== null) promptInput.maxLength = maxLength;
+    if (minValue !== null) promptInput.min = minValue;
+    if (maxValue !== null) promptInput.max = maxValue;
+
+    // Handle player list visibility
+    promptPlayerList.style.display = showPlayerList ? 'block' : 'none';
+    if (showPlayerList) {
+        promptPlayerList.textContent = playerListContent;
+    }
+
+    // Show prompt
+    genericPrompt.style.display = 'flex';
+    promptInput.focus();
+
+    // Input validation handler
+    const handleValidation = (value) => {
+        if (!validateInput) return { isValid: true };
+        const result = validateInput(value);
+        if (!result.isValid) {
+            // Hide prompt temporarily
+            genericPrompt.style.display = 'none';
+            
+            // Show error alert
+            showAlert(result.message, 'Invalid Input', false, () => {
+                // After alert is dismissed, show prompt again
+                genericPrompt.style.display = 'flex';
+                promptInput.value = '';
+                promptInput.focus();
+            });
+        }
+        return result;
+    };
+
+    // Input event handler
+    promptInput.oninput = (e) => {
+        const value = e.target.value;
+        if (!value) return; // Allow empty for backspace
+        handleValidation(value);
+    };
+
+    // Keyboard event handler
+    promptInput.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            okBtn.click();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelBtn.click();
+        }
+    };
+
+    // Button handlers
+    okBtn.onclick = () => {
+        const value = promptInput.value.trim();
+        const validationResult = handleValidation(value);
+        
+        if (validationResult.isValid) {
+            genericPrompt.style.display = 'none';
+            promptInput.type = 'text'; // Reset input type
+            promptPlayerList.style.display = 'block'; // Reset player list display
+            if (onConfirm) onConfirm(value);
+        }
+    };
+
+    cancelBtn.onclick = () => {
+        genericPrompt.style.display = 'none';
+        promptInput.type = 'text'; // Reset input type
+        promptPlayerList.style.display = 'block'; // Reset player list display
+        if (onCancel) onCancel();
+    };
+}
+
+// Generic alert method for messages and confirmations
+function showAlert(message, title = 'Alert', showCancel = false, callback = null) {
+    const genericAlert = document.getElementById('genericAlert');
+    const alertTitle = document.getElementById('genericAlertTitle');
+    const alertMessage = document.getElementById('genericAlertMessage');
+    const okBtn = document.getElementById('genericAlertOkBtn');
+    const cancelBtn = document.getElementById('genericAlertCancelBtn');
+    
+    alertTitle.textContent = title.toUpperCase();
+    alertMessage.textContent = message.toUpperCase();
+    cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+    genericAlert.style.display = 'flex';
+    
+    okBtn.onclick = () => {
+        genericAlert.style.display = 'none';
+        if (callback) callback(true);
+    };
+    
+    cancelBtn.onclick = () => {
+        genericAlert.style.display = 'none';
+        if (callback) callback(false);
+    };
 }
 
 function handleSquareDelete(row, col) {
@@ -1418,26 +1848,31 @@ function handleSquareDelete(row, col) {
     if (!currentValue) return; // No need to confirm if square is empty
     
     const playerName = players[currentValue]?.name || 'Unknown Player';
-    if (confirm(`Are you sure you want to delete this square?\nPlayer: ${currentValue} - ${playerName}`)) {
-        // Update square via API
-        fetch('/api/squares', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ row, col, value: '' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateSquare(row, col, '');
-            } else {
-                alert("Failed to delete square.");
+    showAlert(
+        `Player: ${currentValue} - ${playerName}`, 'Delete Square',
+        true,
+        (confirmed) => {
+            if (confirmed) {
+                fetch('/api/squares', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ row, col, value: '' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateSquare(row, col, '');
+                    } else {
+                        showAlert("Failed to delete square");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    showAlert("Failed to delete square");
+                });
             }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Failed to delete square.");
-        });
-    }
+        }
+    );
 }
 
 // Update square display function
@@ -1466,42 +1901,42 @@ function resetZoom() {
 
 // Reset game function
 function resetGame() {
-    if (confirm('Are you sure you want to reset the game? This will clear all squares and remove all players.')) {
-        fetch('/api/reset', {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Clear local players object
-                players = {};
-                // Update player list display
-                updatePlayerList();
-                // Clear all squares (except tie squares)
-                d3.selectAll('.square-text')
-                    .filter(function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        return row !== col; // Don't clear tie squares
-                    })
-                    .text('');
-                // Reset team selections
-                document.getElementById('teamLeft').value = '';
-                document.getElementById('teamRight').value = '';
-                updateTeamColors();
-                // Show success message
-                alert('Game has been reset successfully!');
-            } else {
-                alert('Failed to reset game. Please try again.');
+    showAlert(
+        'Confirm', 'Reset Game?',
+        true,
+        (confirmed) => {
+            if (confirmed) {
+                fetch('/api/reset', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        players = {};
+                        updatePlayerList();
+                        d3.selectAll('.square-text')
+                            .filter(function() {
+                                const row = d3.select(this).attr('data-row');
+                                const col = d3.select(this).attr('data-col');
+                                return row !== col;
+                            })
+                            .text('');
+                        document.getElementById('teamLeft').value = '';
+                        document.getElementById('teamRight').value = '';
+                        updateTeamColors();
+                        showAlert('Game has been reset successfully!');
+                    } else {
+                        showAlert('Failed to reset game');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error resetting game:', error);
+                    showAlert('Failed to reset game');
+                });
             }
-        })
-        .catch(error => {
-            console.error('Error resetting game:', error);
-            alert('Failed to reset game. Please try again.');
-        });
-    }
+        }
+    );
 }
-
 
 // Handle window resize
 window.addEventListener('resize', () => {
@@ -1519,110 +1954,113 @@ document.addEventListener('DOMContentLoaded', () => {
     const landingOverlay = document.getElementById('landing-overlay');
 
     newGameBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to start a new game? This will reset the current game.')) {
-            fetch('/api/reset', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Clear local players object
-                    players = {};
-                    // Update player list display
-                    updatePlayerList();
-                    // Clear all squares (except tie squares)
-                    d3.selectAll('.square-text')
-                        .filter(function() {
-                            const row = d3.select(this).attr('data-row');
-                            const col = d3.select(this).attr('data-col');
-                            return row !== col; // Don't clear tie squares
-                        })
-                        .text('');
-					// Ensure the grid is created on initial load
-					createGrid();
-                    // Reset team selections
-                    document.getElementById('teamLeft').value = '';
-                    document.getElementById('teamRight').value = '';
-					updateTeamColors();
-                    // Hide landing overlay
-                    landingOverlay.style.display = 'none';
-                } else {
-                    alert('Failed to start new game. Please try again.');
+        showAlert(
+            'Confirm', 'New game?', 
+            true,
+            (confirmed) => {
+                if (confirmed) {
+                    fetch('/api/reset', {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Clear local players object
+                            players = {};
+                            // Update player list display
+                            updatePlayerList();
+                            // Clear all squares (except tie squares)
+                            d3.selectAll('.square-text')
+                                .filter(function() {
+                                    const row = d3.select(this).attr('data-row');
+                                    const col = d3.select(this).attr('data-col');
+                                    return row !== col; // Don't clear tie squares
+                                })
+                                .text('');
+                            // Reset team selections
+                            document.getElementById('teamLeft').value = '';
+                            document.getElementById('teamRight').value = '';
+                            updateTeamColors();
+                            // Hide landing overlay
+                            landingOverlay.style.display = 'none';
+                        } else {
+                            showAlert('Failed to start new game');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error starting new game:', error);
+                        showAlert('Failed to start new game');
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Error starting new game:', error);
-                alert('Failed to start new game. Please try again.');
-            });
-        }
+            }
+        );
     });
 
-	// Update loadGameBtn event listener to handle scores
-	loadGameBtn.addEventListener('click', () => {
-		fetch('/api/state', {
-			method: 'GET'
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.squares && data.players && data.teams && data.scores) {
-				// Load players
-				players = data.players;
-				updatePlayerList();
-				
-				// Set team dropdown values
-				const teamLeft = document.getElementById('teamLeft');
-				const teamRight = document.getElementById('teamRight');
-				
-				if (teamLeft && teamRight) {
-					teamLeft.value = data.teams.left || '';
-					teamRight.value = data.teams.right || '';
-				}
-
-				// Load scores
-				currentLeftScore = data.scores.left;
-				currentRightScore = data.scores.right;
-				document.getElementById('leftScore').textContent = currentLeftScore;
-				document.getElementById('rightScore').textContent = currentRightScore;
-				
-				// Create the grid
-				createGrid();
-				
-				// Load squares
-				d3.selectAll('.square-text')
-					.filter(function() {
-						const row = d3.select(this).attr('data-row');
-						const col = d3.select(this).attr('data-col');
-						return row !== col; // Don't clear tie squares
-					})
-					.text(function() {
-						const row = d3.select(this).attr('data-row');
-						const col = d3.select(this).attr('data-col');
-						return data.squares[row][col];
-					})
-					.style("fill", function() {
-						const row = d3.select(this).attr('data-row');
-						const col = d3.select(this).attr('data-col');
-						const value = data.squares[row][col];
-						return value ? (players[value]?.color || "#ffffff") : "#ffffff";
-					});
-				
-				// Update team colors and visuals
-				updateTeamColors();
-				
-				// Highlight current score square
-				highlightCurrentScore();
-				
-				// Hide landing overlay
-				landingOverlay.style.display = 'none';
-			} else {
-				alert('Failed to load game state. Please try again.');
-			}
-		})
-		.catch(error => {
-			console.error('Error loading game state:', error);
-			alert('Failed to load game state. Please try again.');
-		});
-	});
+    loadGameBtn.addEventListener('click', () => {
+        fetch('/api/state', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.squares && data.players && data.teams && data.scores) {
+                // Load players
+                players = data.players;
+                updatePlayerList();
+                
+                // Set team dropdown values
+                const teamLeft = document.getElementById('teamLeft');
+                const teamRight = document.getElementById('teamRight');
+                
+                if (teamLeft && teamRight) {
+                    teamLeft.value = data.teams.left || '';
+                    teamRight.value = data.teams.right || '';
+                }
+                
+                // Load scores
+                currentLeftScore = data.scores.left;
+                currentRightScore = data.scores.right;
+                document.getElementById('leftScore').textContent = currentLeftScore;
+                document.getElementById('rightScore').textContent = currentRightScore;
+                
+                // Create the grid
+                createGrid();
+                
+                // Load squares
+                d3.selectAll('.square-text')
+                    .filter(function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        return row !== col; // Don't clear tie squares
+                    })
+                    .text(function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        return data.squares[row][col];
+                    })
+                    .style("fill", function() {
+                        const row = d3.select(this).attr('data-row');
+                        const col = d3.select(this).attr('data-col');
+                        const value = data.squares[row][col];
+                        return value ? (players[value]?.color || "#ffffff") : "#ffffff";
+                    });
+                
+                // Update team colors and visuals
+                updateTeamColors();
+                
+                // Highlight current score square
+                highlightCurrentScore();
+                
+                // Hide landing overlay
+                landingOverlay.style.display = 'none';
+            } else {
+                showAlert('Failed to load game state');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game state:', error);
+            showAlert('Failed to load game state');
+        });
+    });
 });
 
 
