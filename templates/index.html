@@ -839,9 +839,15 @@ function updateScore(team) {
     }
 }
 
+// Update the highlight function to work with all squares including tie squares
 function highlightCurrentScore() {
-  d3.selectAll('.square').classed('highlight', false);
-  d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`).classed('highlight', true);
+    // Remove highlight from all squares
+    d3.selectAll('.square').classed('highlight', false);
+    
+    // Add highlight to current score square
+    // This will work for both regular squares and tie squares
+    d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`)
+        .classed('highlight', true);
 }
 
 // Update the createGrid function to add data attributes to the squares
@@ -1317,14 +1323,19 @@ style.textContent = `
         cursor: default;
     }
 
-    .tie-square {
-        fill: var(--grid-bg) !important;
-        cursor: not-allowed !important;
-    }
-    
-    .tie-square:hover {
-        fill: var(--grid-bg) !important;
-    }
+	.tie-square.highlight {
+		fill: var(--retro-light) !important;
+	}
+
+	/* Keep existing tie-square styles but remove the !important from the fill */
+	.tie-square {
+		fill: var(--grid-bg);
+		cursor: not-allowed;
+	}
+
+	.tie-square:hover {
+		fill: var(--grid-bg);
+	}
 
     .square-text, .header-text, .tie-text {
         font-family: 'Press Start 2P', monospace;
