@@ -16,7 +16,8 @@ class GameState:
         self.players = {}  # Format: {'A': {'name': 'Alice', 'color': '#FF5733'}}
         self.next_color_index = 0
         self.teams = {}  # Store team code (e.g., 'KC', 'SF')
-
+        self.scores = {'left': 0, 'right': 0}  # Add scores storage
+        
     def save_state(self):
         """Save game state to file"""
         try:
@@ -24,7 +25,8 @@ class GameState:
                 'squares': self.squares,
                 'players': self.players,
                 'next_color_index': self.next_color_index,
-                'teams': self.teams  # Add teams to saved state
+                'teams': self.teams,
+                'scores': self.scores
             }
             with open(config.base_dir / 'game_state.json', 'w') as f:
                 json.dump(state, f)
@@ -42,6 +44,7 @@ class GameState:
                     self.players = state.get('players', self.players)
                     self.next_color_index = state.get('next_color_index', 0)
                     self.teams = state.get('teams', {'left': '', 'right': ''})  # Load teams with default
+                    self.scores = state.get('scores', {'left': 0, 'right': 0})
         except Exception as e:
             print(f"Error loading game state: {e}")
 
@@ -55,13 +58,36 @@ def index():
     except Exception as e:
         return f"Error loading template: {e}", 500
 
+# Add new route for updating scores
+@app.route('/api/scores', methods=['POST'])
+def update_scores():
+    try:
+        data = request.json
+        left_score = data.get('left', 0)
+        right_score = data.get('right', 0)
+        
+        # Validate scores
+        if not (isinstance(left_score, int) and isinstance(right_score, int)):
+            return jsonify({'error': 'Invalid score values'}), 400
+            
+        # Update score state
+        game_state.scores['left'] = left_score
+        game_state.scores['right'] = right_score
+        game_state.save_state()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Update the state endpoint to include scores
 @app.route('/api/state', methods=['GET'])
 def get_state():
     try:
         return jsonify({
             'squares': game_state.squares,
             'players': game_state.players,
-            'teams': game_state.teams  # Include teams in state response
+            'teams': game_state.teams,
+            'scores': game_state.scores  # Include scores in state response
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -107,13 +133,15 @@ def add_player():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Update reset endpoint to reset scores
 @app.route('/api/reset', methods=['POST'])
 def reset_game():
     try:
         game_state.squares = [['' for _ in range(config.config['grid_size'])] for _ in range(config.config['grid_size'])]
         game_state.players = {}
         game_state.next_color_index = 0
-        game_state.teams = {'left': '', 'right': ''}  # Reset teams
+        game_state.teams = {'left': '', 'right': ''}
+        game_state.scores = {'left': 0, 'right': 0}  # Reset scores
         game_state.save_state()
         return jsonify({'success': True})
     except Exception as e:

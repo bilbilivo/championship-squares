@@ -115,8 +115,8 @@ body {
 
 /* Helmet Icon */
 .helmet-icon {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
     image-rendering: pixelated;
 }
 
@@ -125,15 +125,18 @@ select {
     background: var(--retro-dark);
     color: var(--retro-green);
     border: var(--pixel-border);
-    padding: 8px;
+    padding: 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 20px;
     cursor: pointer;
+    min-width: 200px;
 }
 
 select option {
     background: var(--retro-dark);
     color: var(--retro-green);
+    font-size: 20px;
+    padding: 6px;
 }
 
 /* Button Styles */
@@ -561,7 +564,7 @@ button:active {
   padding: 8px;
   font-family: 'Press Start 2P', monospace;
   font-size: 2.5em;
-  color: #AAFF00;
+  color: #E7E7A7;
   min-width: 70px;
   text-align: center;
   margin: 0 20px;
@@ -576,7 +579,7 @@ button:active {
 }
 
 .score:hover {
-  color: #CCFF33;
+  color: #E5D820;
   text-shadow: 
     0 0 6px rgba(170, 255, 0, 0.6),
     0 0 12px rgba(170, 255, 0, 0.3);
@@ -716,7 +719,7 @@ function generateHelmetSVG(primaryColor, secondaryColor) {
             <!-- Secondary color stripe -->
             <path d="M10 12 L22 12 L24 16 L22 20 L10 20 L8 16 Z" fill="${secondaryColor}"/>
             <!-- Facemask -->
-            <path d="M12 14 L20 14 L21 16 L20 18 L12 18 L11 16 Z" fill="#444444"/>
+            <path d="M12 14 L20 14 L21 16 L20 18 L12 18 L11 16 Z" fill="${primaryColor}"/>
         </svg>`;
 }
 
@@ -799,20 +802,41 @@ function updateTextSizes(k) {
 let currentLeftScore = 0;
 let currentRightScore = 0;
 
+// Update updateScore function to save scores to backend
 function updateScore(team) {
-  const newScore = prompt(`Enter new score for ${team === 'left' ? 'Left' : 'Right'} Team:`);
-  if (newScore !== null && !isNaN(newScore) && newScore >= 0 && newScore <= maxScore) {
-    if (team === 'left') {
-      currentLeftScore = parseInt(newScore);
-      document.getElementById('leftScore').textContent = currentLeftScore;
+    const newScore = prompt(`Enter new score for ${team === 'left' ? 'Left' : 'Right'} Team:`);
+    if (newScore !== null && !isNaN(newScore) && newScore >= 0 && newScore <= maxScore) {
+        const scoreValue = parseInt(newScore);
+        if (team === 'left') {
+            currentLeftScore = scoreValue;
+            document.getElementById('leftScore').textContent = currentLeftScore;
+        } else {
+            currentRightScore = scoreValue;
+            document.getElementById('rightScore').textContent = currentRightScore;
+        }
+        
+        // Save scores to backend
+        fetch('/api/scores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                left: currentLeftScore,
+                right: currentRightScore
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Failed to save scores');
+            }
+            highlightCurrentScore();
+        })
+        .catch(error => {
+            console.error('Error saving scores:', error);
+        });
     } else {
-      currentRightScore = parseInt(newScore);
-      document.getElementById('rightScore').textContent = currentRightScore;
+        alert('Please enter a valid score between 0 and ' + maxScore);
     }
-    highlightCurrentScore();
-  } else {
-    alert('Please enter a valid score between 0 and ' + maxScore);
-  }
 }
 
 function highlightCurrentScore() {
@@ -1522,33 +1546,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-	// Updated loadGameBtn event listener
+	// Update loadGameBtn event listener to handle scores
 	loadGameBtn.addEventListener('click', () => {
 		fetch('/api/state', {
 			method: 'GET'
 		})
 		.then(response => response.json())
 		.then(data => {
-			if (data.squares && data.players && data.teams) {
+			if (data.squares && data.players && data.teams && data.scores) {
 				// Load players
 				players = data.players;
 				updatePlayerList();
 				
-				// Set team dropdown values first
+				// Set team dropdown values
 				const teamLeft = document.getElementById('teamLeft');
 				const teamRight = document.getElementById('teamRight');
 				
-				// Log the elements to the console
-				console.log('data:', data);
-
-				// Ensure the dropdowns exist before setting values
 				if (teamLeft && teamRight) {
 					teamLeft.value = data.teams.left || '';
 					teamRight.value = data.teams.right || '';
 				}
-				// Log the elements to the console
-				console.log('data.players:', data.players);
-				console.log('data.players:', data.teams);
+
+				// Load scores
+				currentLeftScore = data.scores.left;
+				currentRightScore = data.scores.right;
+				document.getElementById('leftScore').textContent = currentLeftScore;
+				document.getElementById('rightScore').textContent = currentRightScore;
+				
 				// Create the grid
 				createGrid();
 				
@@ -1571,8 +1595,11 @@ document.addEventListener('DOMContentLoaded', () => {
 						return value ? (players[value]?.color || "#ffffff") : "#ffffff";
 					});
 				
-				// Update team colors and visuals after setting dropdown values
+				// Update team colors and visuals
 				updateTeamColors();
+				
+				// Highlight current score square
+				highlightCurrentScore();
 				
 				// Hide landing overlay
 				landingOverlay.style.display = 'none';
@@ -1585,7 +1612,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			alert('Failed to load game state. Please try again.');
 		});
 	});
-
 });
 
 
