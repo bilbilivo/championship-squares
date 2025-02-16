@@ -1076,14 +1076,14 @@ function updateScore(team) {
 
     showGenericPrompt({
         title: 'Update Score',
-        message: `Enter new score for ${teamCode} `,
+        message: `Enter new score for ${teamCode}`,
         inputType: 'number',
         maxLength: 2,
         minValue: 0,
         maxValue: maxScore,
         validateInput: (value) => {
             if (!value) {
-                return { isValid: false, message: 'Enter score' };
+                return { isValid: false, message: 'Enter score or cancel' };
             }
             if (!/^\d+$/.test(value)) {
                 return { isValid: false, message: 'Enter numbers' };
@@ -1917,7 +1917,7 @@ function resetZoom() {
 // Reset game function
 function resetGame() {
     showAlert(
-        'Confirm', 'Reset Game?',
+        'Erase all data?', null,
         true,
         (confirmed) => {
             if (confirmed) {
@@ -1939,7 +1939,7 @@ function resetGame() {
                         document.getElementById('teamLeft').value = '';
                         document.getElementById('teamRight').value = '';
                         updateTeamColors();
-                        showAlert('Game reset successfully');
+                        showAlert('Memory Cleared');
                     } else {
                         showAlert('Failed to reset game');
                     }
@@ -1995,12 +1995,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Reset team selections
                             document.getElementById('teamLeft').value = '';
                             document.getElementById('teamRight').value = '';
-                            updateTeamColors();
+
 							// Create the grid
 							createGrid();
 							// Update team colors and visuals
 							updateTeamColors();
-							
 							// Highlight current score square
 							highlightCurrentScore();
                             // Hide landing overlay
@@ -2068,10 +2067,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Update team colors and visuals
                 updateTeamColors();
-                
                 // Highlight current score square
                 highlightCurrentScore();
-                
                 // Hide landing overlay
                 landingOverlay.style.display = 'none';
             } else {
