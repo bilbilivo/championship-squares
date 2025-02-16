@@ -102,9 +102,20 @@ def update_square():
         
         if not (0 <= row < config.config['grid_size'] and 0 <= col < config.config['grid_size']):
             return jsonify({'error': 'Invalid input'}), 400
+            
+        # Get current value before update
+        current_value = game_state.squares[row][col]
         
-        # Clear the square if value is empty or update with uppercase initial
-        game_state.squares[row][col] = value.upper() if value else ''
+        # Update bet counts
+        if current_value and current_value in game_state.players:
+            game_state.players[current_value]['bets'] = max(0, game_state.players[current_value].get('bets', 0) - 1)
+            
+        new_value = value.upper() if value else ''
+        if new_value and new_value in game_state.players:
+            game_state.players[new_value]['bets'] = game_state.players[new_value].get('bets', 0) + 1
+        
+        # Update square
+        game_state.squares[row][col] = new_value
         game_state.save_state()  # Save state after update
         return jsonify({'success': True})
     except Exception as e:
@@ -127,7 +138,11 @@ def add_player():
             return jsonify({'error': 'Maximum number of players reached'}), 400
 
         color = data.get('color', '#FFFFFF')  # Use provided color or default to white
-        game_state.players[initial] = {'name': name, 'color': color}
+        game_state.players[initial] = {
+            'name': name, 
+            'color': color,
+            'bets': 0  # Initialize bet counter
+        }
         game_state.save_state()  # Save state after adding player
         return jsonify({'success': True, 'color': color})
     except Exception as e:
@@ -138,7 +153,7 @@ def add_player():
 def reset_game():
     try:
         game_state.squares = [['' for _ in range(config.config['grid_size'])] for _ in range(config.config['grid_size'])]
-        game_state.players = {}
+        game_state.players = {}  # Clear all player information
         game_state.next_color_index = 0
         game_state.teams = {'left': '', 'right': ''}
         game_state.scores = {'left': 0, 'right': 0}  # Reset scores
