@@ -12,29 +12,37 @@ app = Flask(__name__,
 class GameState:
     def __init__(self):
         grid_size = config.config['grid_size']
+        max_players = config.config['max_players']
         self.squares = [['' for _ in range(grid_size)] for _ in range(grid_size)]
-        self.players = {}  # Format: {'A': {'name': 'Alice', 'colorIndex': 0}}
-        self.next_color_index = 0
+        self.players = {}  # Format: {'A': {'name': 'Alice', 'playerIndex': 0}}
         self.teams = {}
         self.scores = {'left': 0, 'right': 0}
-        
+        self.available_indices = list(range(max_players))  # Initialize based on max_players
+
+    def get_next_player_index(self):
+        if not self.available_indices:
+            raise Exception('No more player slots available')
+        return self.available_indices.pop(0)
+
+    def release_player_index(self, index):
+        max_players = config.config['max_players']
+        # Only add back indices that are within current max_players range
+        if index < max_players and index not in self.available_indices:
+            self.available_indices.append(index)
+            self.available_indices.sort()
+
     def save_state(self):
-        """Save game state to file"""
-        try:
-            state = {
-                'squares': self.squares,
-                'players': self.players,
-                'next_color_index': self.next_color_index,
-                'teams': self.teams,
-                'scores': self.scores
-            }
-            with open(config.base_dir / 'game_state.json', 'w') as f:
-                json.dump(state, f)
-        except Exception as e:
-            print(f"Error saving game state: {e}")
+        state = {
+            'squares': self.squares,
+            'players': self.players,
+            'teams': self.teams,
+            'scores': self.scores,
+            'available_indices': self.available_indices
+        }
+        with open(config.base_dir / 'game_state.json', 'w') as f:
+            json.dump(state, f)
 
     def load_state(self):
-        """Load game state from file"""
         try:
             state_file = config.base_dir / 'game_state.json'
             if state_file.exists():
@@ -42,9 +50,35 @@ class GameState:
                     state = json.load(f)
                     self.squares = state.get('squares', self.squares)
                     self.players = state.get('players', self.players)
-                    self.next_color_index = state.get('next_color_index', 0)
-                    self.teams = state.get('teams', {'left': '', 'right': ''})  # Load teams with default
+                    self.teams = state.get('teams', {'left': '', 'right': ''})
                     self.scores = state.get('scores', {'left': 0, 'right': 0})
+                    
+                    # Handle max_players changes when loading state
+                    max_players = config.config['max_players']
+                    loaded_indices = state.get('available_indices', list(range(max_players)))
+                    
+                    # Filter out any indices that exceed current max_players
+                    self.available_indices = [i for i in loaded_indices if i < max_players]
+                    
+                    # Add any new indices if max_players increased
+                    current_indices = set(self.available_indices)
+                    for i in range(max_players):
+                        if i not in current_indices:
+                            # Only add if this index isn't used by any existing player
+                            if not any(p['playerIndex'] == i for p in self.players.values()):
+                                self.available_indices.append(i)
+                    
+                    self.available_indices.sort()
+                    
+                    # Handle existing players with indices beyond max_players
+                    for initial, player in self.players.items():
+                        if player['playerIndex'] >= max_players:
+                            try:
+                                # Try to assign a new index
+                                new_index = self.get_next_player_index()
+                                player['playerIndex'] = new_index
+                            except Exception:
+                                print(f"Warning: Could not reassign index for player {initial}")
         except Exception as e:
             print(f"Error loading game state: {e}")
 
@@ -137,33 +171,36 @@ def add_player():
         if len(game_state.players) >= config.config['max_players']:
             return jsonify({'error': 'Maximum number of players reached'}), 400
             
-        # Store only the color index
+        try:
+            player_index = game_state.get_next_player_index()
+        except Exception as e:
+            return jsonify({'error': 'No more player slots available'}), 400
+
         game_state.players[initial] = {
             'name': name, 
-            'colorIndex': game_state.next_color_index,
+            'playerIndex': player_index,
             'bets': 0
         }
         
-        # Increment color index
-        game_state.next_color_index += 1
         game_state.save_state()
         
         return jsonify({
             'success': True, 
-            'colorIndex': game_state.players[initial]['colorIndex']
+            'playerIndex': player_index  # Frontend still uses this index for color selection
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 # Update reset endpoint to reset scores
 @app.route('/api/reset', methods=['POST'])
 def reset_game():
     try:
         game_state.squares = [['' for _ in range(config.config['grid_size'])] for _ in range(config.config['grid_size'])]
-        game_state.players = {}  # Clear all player information
-        game_state.next_color_index = 0
+        game_state.players = {}
         game_state.teams = {'left': '', 'right': ''}
-        game_state.scores = {'left': 0, 'right': 0}  # Reset scores
+        game_state.scores = {'left': 0, 'right': 0}
+        game_state.available_indices = list(range(config.config['max_players']))
         game_state.save_state()
         return jsonify({'success': True})
     except Exception as e:
@@ -174,14 +211,19 @@ def delete_player(initial):
     try:
         initial = initial.upper()
         if initial in game_state.players:
+            # Release the player index back to the pool
+            player_index = game_state.players[initial]['playerIndex']
+            game_state.release_player_index(player_index)
+            
             # Clear all squares with this player's initial
             for i in range(len(game_state.squares)):
                 for j in range(len(game_state.squares[i])):
                     if game_state.squares[i][j] == initial:
                         game_state.squares[i][j] = ''
+            
             # Remove player from players dict
             del game_state.players[initial]
-            game_state.save_state()  # Save state after deletion
+            game_state.save_state()
             return jsonify({'success': True})
         return jsonify({'error': 'Player not found'}), 404
     except Exception as e:

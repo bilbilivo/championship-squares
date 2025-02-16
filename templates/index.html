@@ -934,7 +934,7 @@ button:active {
 			</div>
             <div class="legend-container">
 				<div class="legend-controls">
-                    <button onclick="resetZoom()">Reset View</button>
+                    <button onclick="resetZoom()">Reset Zoom</button>
                     <button onclick="resetGame()" class="reset-game-btn">Reset Game</button>
                 </div>
                 <h2>Players</h2>
@@ -963,7 +963,7 @@ let zoomLevel = 1;
 const baseSize = 40;
 let currentSize = baseSize;
 const maxScore = 60;
-let players = {};  // Format: {'A': {'name': 'Alice', 'colorIndex': 0, 'bets': 0}}
+let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0}
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
@@ -1347,7 +1347,7 @@ function addPlayer() {
         if (data.success) {
             players[initial] = {
                 name: name,
-                colorIndex: data.colorIndex,
+                playerIndex: data.playerIndex,  // Changed from colorIndex
                 bets: 0
             };
             updatePlayerList();
@@ -1553,7 +1553,7 @@ function updatePlayerList() {
         
         const colorDot = document.createElement('div');
         colorDot.className = 'color-dot';
-        colorDot.style.backgroundColor = playerColorScale(info.colorIndex); // Fix: Use info.colorIndex
+        colorDot.style.backgroundColor = playerColorScale(info.playerIndex); 
         
         const playerInfo = document.createElement('div');
         playerInfo.className = 'player-info';
@@ -1909,7 +1909,7 @@ function handleSquareDelete(row, col) {
     );
 }
 
-// Update square display function
+// Update square display function with proper color handling
 function updateSquare(row, col, value) {
     const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
     if (text.empty()) return;
@@ -1931,9 +1931,15 @@ function updateSquare(row, col, value) {
         players[displayValue].bets = (players[displayValue].bets || 0) + 1;
     }
     
-    text.text(displayValue)
-        .style("font-size", "12px")
-        .style("fill", value ? playerColorScale(players[value.toUpperCase()]?.colorIndex) : "#ffffff");
+    // Set text and color
+    text.text(displayValue);
+    
+    // Only apply color if there's a value and it belongs to a player
+    if (displayValue && players[displayValue]) {
+        text.style("fill", playerColorScale(players[displayValue].playerIndex));
+    } else {
+        text.style("fill", "var(--retro-green)");
+    }
         
     // Update player list to reflect new bet counts
     updatePlayerList();
@@ -1976,8 +1982,11 @@ function resetGame() {
                         document.getElementById('rightScore').textContent = '0'; // Update score display
                         document.getElementById('teamLeft').value = '';
                         document.getElementById('teamRight').value = '';
+                        // Recreate grid and update visuals
+                        createGrid();
                         updateTeamColors();
-                        showAlert('Memory Cleared');
+                        highlightCurrentScore();
+                        showAlert('Game started');
                     } else {
                         showAlert('Failed to reset game');
                     }
@@ -2006,118 +2015,74 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadGameBtn = document.getElementById('loadGameBtn');
     const landingOverlay = document.getElementById('landing-overlay');
 
-    newGameBtn.addEventListener('click', () => {
-        showAlert(
-            'Confirm', 'New game?', 
-            true,
-            (confirmed) => {
-                if (confirmed) {
-                    fetch('/api/reset', {
-                        method: 'POST'
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Clear local players object
-                            players = {};
-                            // Update player list display
-                            updatePlayerList();
-                            // Clear all squares (except tie squares)
-                            d3.selectAll('.square-text')
-                                .filter(function() {
-                                    const row = d3.select(this).attr('data-row');
-                                    const col = d3.select(this).attr('data-col');
-                                    return row !== col; // Don't clear tie squares
-                                })
-                                .text('');
-                            // Reset team selections
-                            document.getElementById('teamLeft').value = '';
-                            document.getElementById('teamRight').value = '';
+        newGameBtn.addEventListener('click', () => {
+			showAlert(
+				'New game?', null, 
+				true,
+				(confirmed) => {
+					if (confirmed) {
+						resetGame();
+						landingOverlay.style.display = 'none';
+					}
+				}
+			);
+		});
 
-							// Create the grid
-							createGrid();
-							// Update team colors and visuals
-							updateTeamColors();
-							// Highlight current score square
-							highlightCurrentScore();
-                            // Hide landing overlay
-                            landingOverlay.style.display = 'none';
-                        } else {
-                            showAlert('Failed to start new game');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error starting new game:', error);
-                        showAlert('Failed to start new game');
-                    });
-                }
-            }
-        );
-    });
-
-    loadGameBtn.addEventListener('click', () => {
-        fetch('/api/state', {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.squares && data.players && data.teams && data.scores) {
-                // Load players
-                players = data.players;
-                updatePlayerList();
-                
-                // Set team dropdown values
-                const teamLeft = document.getElementById('teamLeft');
-                const teamRight = document.getElementById('teamRight');
-                
-                if (teamLeft && teamRight) {
-                    teamLeft.value = data.teams.left || '';
-                    teamRight.value = data.teams.right || '';
-                }
-                
-                // Load scores
-                currentLeftScore = data.scores.left;
-                currentRightScore = data.scores.right;
-                document.getElementById('leftScore').textContent = currentLeftScore;
-                document.getElementById('rightScore').textContent = currentRightScore;
-                
-                // Create the grid
-                createGrid();
-                
-                // Load squares
-                d3.selectAll('.square-text')
-                    .filter(function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        return row !== col; // Don't clear tie squares
-                    })
-                    .text(function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        return data.squares[row][col];
-                    })
-                    .style("fill", function() {
-                        const row = d3.select(this).attr('data-row');
-                        const col = d3.select(this).attr('data-col');
-                        const value = data.squares[row][col];
-                        return value ? (players[value]?.color || "#ffffff") : "#ffffff";
-                    });
-                
-                // Update team colors and visuals
-                updateTeamColors();
-                // Highlight current score square
-                highlightCurrentScore();
-                // Hide landing overlay
-                landingOverlay.style.display = 'none';
-            } else {
-                showAlert('Failed to load game state');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading game state:', error);
-            showAlert('Failed to load game state');
-        });
-    });
+	// Modified loadGameBtn click handler
+	loadGameBtn.addEventListener('click', () => {
+		fetch('/api/state', {
+			method: 'GET'
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.squares && data.players && data.teams && data.scores) {
+				// Load players
+				players = data.players;
+				updatePlayerList();
+				
+				// Set team dropdown values
+				const teamLeft = document.getElementById('teamLeft');
+				const teamRight = document.getElementById('teamRight');
+				
+				if (teamLeft && teamRight) {
+					teamLeft.value = data.teams.left || '';
+					teamRight.value = data.teams.right || '';
+				}
+				
+				// Load scores
+				currentLeftScore = data.scores.left;
+				currentRightScore = data.scores.right;
+				document.getElementById('leftScore').textContent = currentLeftScore;
+				document.getElementById('rightScore').textContent = currentRightScore;
+				
+				// Create the grid
+				createGrid();
+				
+				// Load squares with proper color assignment
+				for (let row = 0; row < data.squares.length; row++) {
+					for (let col = 0; col < data.squares[row].length; col++) {
+						const value = data.squares[row][col];
+						if (row !== col) { // Skip tie squares
+							updateSquare(row, col, value);
+						}
+					}
+				}
+				
+				// Update team colors and visuals
+				updateTeamColors();
+				// Highlight current score square
+				highlightCurrentScore();
+				// Hide landing overlay
+				landingOverlay.style.display = 'none';
+			} else {
+				showAlert('Failed to load game state');
+			}
+		})
+		.catch(error => {
+			console.error('Error loading game state:', error);
+			showAlert('Failed to load game state');
+		});
+	});
 });
 
 
