@@ -219,14 +219,14 @@ button:active {
 .axis text {
     fill: var(--retro-green);
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 12px !important;
 }
 
 
 /* Square Text */
 .square-text {
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
+    font-size: 12px !important;
     fill: var(--retro-green);
     text-anchor: middle;
     dominant-baseline: middle;
@@ -295,7 +295,7 @@ button:active {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 150px !important;
+    max-width: 200px !important;
     margin: 0 !important;
     padding: 0 !important;
 }
@@ -313,7 +313,7 @@ button:active {
     min-width: 20px !important;
     height: 20px !important;
     padding: 2px !important;
-    font-size: 10px !important;
+    font-size: 12px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1057,7 +1057,7 @@ const zoom = d3.zoom()
         zoomLevel = transform.k;
         
         // Update all text sizes
-        updateTextSizes(transform.k);
+        <!-- updateTextSizes(transform.k); -->
     });
 svg.call(zoom);
 
@@ -1066,6 +1066,20 @@ svg.call(zoom);
     <!-- // Update all text elements consistently -->
     <!-- d3.selectAll(".square-text, .header-text, .tie-text") -->
         <!-- .style("font-size", `${14 / k}px`); -->
+<!-- } -->
+
+<!-- // Update text sizes based on zoom level -->
+<!-- function updateTextSizes(k) { -->
+    <!-- // Get square size adjusted for zoom -->
+    <!-- const adjustedSize = currentSize / k; -->
+    
+    <!-- // Calculate font size as a proportion of square size -->
+    <!-- // Using 40% of square size for optimal visibility -->
+    <!-- const fontSize = Math.min(adjustedSize * 0.8, 24); -->
+    
+    <!-- // Update all text elements -->
+    <!-- d3.selectAll(".square-text, .header-text, .tie-text") -->
+        <!-- .style("font-size", `${fontSize}px`); -->
 <!-- } -->
 
 let currentLeftScore = 0;
@@ -1546,14 +1560,14 @@ function updatePlayerList() {
         playerInfo.style.whiteSpace = 'nowrap';
         playerInfo.style.overflow = 'hidden';
         playerInfo.style.textOverflow = 'ellipsis';
-        playerInfo.style.maxWidth = '150px';
-        playerInfo.textContent = `${initial} - ${info.name}`;
+        playerInfo.style.maxWidth = '200px';
+        playerInfo.textContent = `${initial}-${info.name}-${info.bets || 0}`;
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'X';
-        deleteBtn.style.fontSize = '10px';
-        deleteBtn.style.padding = '4px 8px';
+        deleteBtn.style.fontSize = '12px';
+        deleteBtn.style.padding = '2px 4px';
         deleteBtn.onclick = () => deletePlayer(initial);
         
         playerItem.appendChild(colorDot);
@@ -1681,7 +1695,8 @@ function handleSquareClick(row, col) {
 
     // Create player list content
     const playerList = Object.keys(players)
-        .map(initial => `${initial}`)
+        .sort() // Sort the initials alphabetically
+		.map(initial => `${initial}`)
         .join(', ');
 
     showGenericPrompt({
@@ -1898,12 +1913,29 @@ function updateSquare(row, col, value) {
     const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
     if (text.empty()) return;
 
+    // Get current value before update
+    const currentValue = text.text();
+    
     // Convert value to uppercase before display
     const displayValue = value ? value.toUpperCase() : '';
+    
+    // Update bet counts if needed
+    if (currentValue && players[currentValue]) {
+        // Decrement bet count for previous player
+        players[currentValue].bets = Math.max(0, (players[currentValue].bets || 0) - 1);
+    }
+    
+    if (displayValue && players[displayValue]) {
+        // Increment bet count for new player
+        players[displayValue].bets = (players[displayValue].bets || 0) + 1;
+    }
     
     text.text(displayValue)
         .style("font-size", "12px")
         .style("fill", value ? (players[value.toUpperCase()]?.color || "#ffffff") : "#ffffff");
+        
+    // Update player list to reflect new bet counts
+    updatePlayerList();
 }
 
 
