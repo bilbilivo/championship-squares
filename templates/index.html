@@ -963,17 +963,19 @@ let zoomLevel = 1;
 const baseSize = 40;
 let currentSize = baseSize;
 const maxScore = 60;
-let players = {};
-const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeObservable10); -->
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
+let players = {};  // Format: {'A': {'name': 'Alice', 'colorIndex': 0, 'bets': 0}}
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
 const gridContainer = document.querySelector('.grid-container');
 const width = gridContainer.clientWidth;
 const height = gridContainer.clientHeight;
+
+// Get color from index using d3's color scale
+const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeObservable10); -->
+<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
+<!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
 
 // Generate 8-bit helmet SVG with both team colors
 function generateHelmetSVG(primaryColor, secondaryColor) {
@@ -1304,7 +1306,6 @@ const NFL_TEAMS = {
     "WAS": { name: "Washington Commanders", colors: ["#773141", "#FFB612"] }
 };
 
-// Modified addPlayer function to maintain sorting
 function addPlayer() {
     const initialInput = document.getElementById('playerInitial');
     const nameInput = document.getElementById('playerName');
@@ -1335,21 +1336,21 @@ function addPlayer() {
         return;
     }
 
-    // Get next color from Category10 scale
-    const playerColor = playerColorScale(Object.keys(players).length);
-
     // Add player via API
     fetch('/api/players', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initial, name, color: playerColor })
+        body: JSON.stringify({ initial, name })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            players[initial] = { name, color: data.color };
-            updatePlayerList(); // This will now show the sorted list
-            // Clear inputs after successful addition
+            players[initial] = {
+                name: name,
+                colorIndex: data.colorIndex,
+                bets: 0
+            };
+            updatePlayerList();
             initialInput.value = '';
             nameInput.value = '';
         } else {
@@ -1552,7 +1553,7 @@ function updatePlayerList() {
         
         const colorDot = document.createElement('div');
         colorDot.className = 'color-dot';
-        colorDot.style.backgroundColor = info.color;
+        colorDot.style.backgroundColor = playerColorScale(info.colorIndex); // Fix: Use info.colorIndex
         
         const playerInfo = document.createElement('div');
         playerInfo.className = 'player-info';
@@ -1697,7 +1698,7 @@ function handleSquareClick(row, col) {
     const playerList = Object.keys(players)
         .sort() // Sort the initials alphabetically
 		.map(initial => `${initial}`)
-        .join(', ');
+        .join(',');
 
     showGenericPrompt({
         title: 'Select Player',
@@ -1932,7 +1933,7 @@ function updateSquare(row, col, value) {
     
     text.text(displayValue)
         .style("font-size", "12px")
-        .style("fill", value ? (players[value.toUpperCase()]?.color || "#ffffff") : "#ffffff");
+        .style("fill", value ? playerColorScale(players[value.toUpperCase()]?.colorIndex) : "#ffffff");
         
     // Update player list to reflect new bet counts
     updatePlayerList();
@@ -1971,6 +1972,8 @@ function resetGame() {
                                 return row !== col;
                             })
                             .text('');
+						document.getElementById('leftScore').textContent = '0';  // Update score display
+                        document.getElementById('rightScore').textContent = '0'; // Update score display
                         document.getElementById('teamLeft').value = '';
                         document.getElementById('teamRight').value = '';
                         updateTeamColors();

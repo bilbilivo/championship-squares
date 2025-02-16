@@ -13,10 +13,10 @@ class GameState:
     def __init__(self):
         grid_size = config.config['grid_size']
         self.squares = [['' for _ in range(grid_size)] for _ in range(grid_size)]
-        self.players = {}  # Format: {'A': {'name': 'Alice', 'color': '#FF5733'}}
+        self.players = {}  # Format: {'A': {'name': 'Alice', 'colorIndex': 0}}
         self.next_color_index = 0
-        self.teams = {}  # Store team code (e.g., 'KC', 'SF')
-        self.scores = {'left': 0, 'right': 0}  # Add scores storage
+        self.teams = {}
+        self.scores = {'left': 0, 'right': 0}
         
     def save_state(self):
         """Save game state to file"""
@@ -136,15 +136,22 @@ def add_player():
 
         if len(game_state.players) >= config.config['max_players']:
             return jsonify({'error': 'Maximum number of players reached'}), 400
-
-        color = data.get('color', '#FFFFFF')  # Use provided color or default to white
+            
+        # Store only the color index
         game_state.players[initial] = {
             'name': name, 
-            'color': color,
-            'bets': 0  # Initialize bet counter
+            'colorIndex': game_state.next_color_index,
+            'bets': 0
         }
-        game_state.save_state()  # Save state after adding player
-        return jsonify({'success': True, 'color': color})
+        
+        # Increment color index
+        game_state.next_color_index += 1
+        game_state.save_state()
+        
+        return jsonify({
+            'success': True, 
+            'colorIndex': game_state.players[initial]['colorIndex']
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
