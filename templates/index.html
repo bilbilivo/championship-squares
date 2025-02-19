@@ -930,55 +930,23 @@ button:active {
 	<div class="container">
         <h1 class="title">Super Bowl Squares</h1>
         <div class="controls">
-            <div class="team-selector">
-                <div class="team-selection">
-                    <img id="leftHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Left Team">
+			<div class="team-selector">
+				<div class="team-selection">
+					<img id="leftHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Away Team">
 					<select id="teamLeft" onchange="updateTeamColors()">
-						<option value="">SELECT AFC TEAM</option>
-						<option value="BAL" data-colors="#241773,#9E7C0C">BALTIMORE RAVENS</option>
-						<option value="BUF" data-colors="#00338D,#C60C30">BUFFALO BILLS</option>
-						<option value="CIN" data-colors="#FB4F14,#000000">CINCINNATI BENGALS</option>
-						<option value="CLE" data-colors="#311D00,#FF3C00">CLEVELAND BROWNS</option>
-						<option value="DEN" data-colors="#FB4F14,#002244">DENVER BRONCOS</option>
-						<option value="HOU" data-colors="#03202F,#A71930">HOUSTON TEXANS</option>
-						<option value="IND" data-colors="#002C5F,#A2AAAD">INDIANAPOLIS COLTS</option>
-						<option value="JAX" data-colors="#006778,#9F792C">JACKSONVILLE JAGUARS</option>
-						<option value="KC" data-colors="#E31837,#FFB81C">KANSAS CITY CHIEFS</option>
-						<option value="LAC" data-colors="#0080C6,#FFC20E">LOS ANGELES CHARGERS</option>
-						<option value="LV" data-colors="#000000,#A5ACAF">LAS VEGAS RAIDERS</option>
-						<option value="MIA" data-colors="#008E97,#FC4C02">MIAMI DOLPHINS</option>
-						<option value="NE" data-colors="#002244,#C60C30">NEW ENGLAND PATRIOTS</option>
-						<option value="NYJ" data-colors="#125740,#FFFFFF">NEW YORK JETS</option>
-						<option value="PIT" data-colors="#FFB612,#101820">PITTSBURGH STEELERS</option>
-						<option value="TEN" data-colors="#0C2340,#4B92DB">TENNESSEE TITANS</option>
+						<option value="">SELECT AWAY TEAM</option>
 					</select>
-					</div>
-					<span id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</span>
-					<div class="team-vs">VS</div>
-					<span id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</span>
-					<div class="team-selection">
+				</div>
+				<span id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</span>
+				<div class="team-vs">VS</div>
+				<span id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</span>
+				<div class="team-selection">
 					<select id="teamRight" onchange="updateTeamColors()">
-						<option value="">SELECT NFC TEAM</option>
-						<option value="ARI" data-colors="#97233F,#FFFFFF">ARIZONA CARDINALS</option>
-						<option value="ATL" data-colors="#A71930,#000000">ATLANTA FALCONS</option>
-						<option value="CAR" data-colors="#0085CA,#B2B4BB">CAROLINA PANTHERS</option>
-						<option value="CHI" data-colors="#C83803,#0B162A">CHICAGO BEARS</option>
-						<option value="DAL" data-colors="#003594,#869397">DALLAS COWBOYS</option>
-						<option value="DET" data-colors="#0076B6,#B0B7BC">DETROIT LIONS</option>
-						<option value="GB" data-colors="#203731,#FFB612">GREEN BAY PACKERS</option>
-						<option value="LAR" data-colors="#003594,#FFA300">LOS ANGELES RAMS</option>
-						<option value="MIN" data-colors="#4F2683,#FFC62F">MINNESOTA VIKINGS</option>
-						<option value="NO" data-colors="#D3BC8D,#101820">NEW ORLEANS SAINTS</option>
-						<option value="NYG" data-colors="#0B2265,#A71930">NEW YORK GIANTS</option>
-						<option value="PHI" data-colors="#004C54,#A5ACAF">PHILADELPHIA EAGLES</option>
-						<option value="SEA" data-colors="#002244,#69BE28">SEATTLE SEAHAWKS</option>
-						<option value="SF" data-colors="#AA0000,#B3995D">SAN FRANCISCO 49ERS</option>
-						<option value="TB" data-colors="#D50A0A,#34302B">TAMPA BAY BUCCANEERS</option>
-						<option value="WAS" data-colors="#773141,#FFB612">WASHINGTON COMMANDERS</option>
+						<option value="">SELECT HOME TEAM</option>
 					</select>
-                    <img id="rightHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Right Team">
-                </div>
-            </div>
+					<img id="rightHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Home Team">
+				</div>
+			</div>
         </div>
         <div class="main-content">
 			<div class="grid-container" id="grid">
@@ -1051,7 +1019,6 @@ function setSportTheme(sport) {
 }
 
 setSportTheme(currentSport);  // For NHL theme
-
 
 // Generate 8-bit helmet SVG with both team colors
 function generateHelmetSVG(primaryColor, secondaryColor) {
@@ -1135,27 +1102,6 @@ const zoom = d3.zoom()
     });
 svg.call(zoom);
 
-<!-- // Update text sizes based on zoom level -->
-<!-- function updateTextSizes(k) { -->
-    <!-- // Update all text elements consistently -->
-    <!-- d3.selectAll(".square-text, .header-text, .tie-text") -->
-        <!-- .style("font-size", `${14 / k}px`); -->
-<!-- } -->
-
-<!-- // Update text sizes based on zoom level -->
-<!-- function updateTextSizes(k) { -->
-    <!-- // Get square size adjusted for zoom -->
-    <!-- const adjustedSize = currentSize / k; -->
-    
-    <!-- // Calculate font size as a proportion of square size -->
-    <!-- // Using 40% of square size for optimal visibility -->
-    <!-- const fontSize = Math.min(adjustedSize * 0.8, 24); -->
-    
-    <!-- // Update all text elements -->
-    <!-- d3.selectAll(".square-text, .header-text, .tie-text") -->
-        <!-- .style("font-size", `${fontSize}px`); -->
-<!-- } -->
-
 let currentLeftScore = 0;
 let currentRightScore = 0;
 
@@ -1221,6 +1167,37 @@ function updateScore(team) {
                 showAlert('Failed to save scores');
             });
         }
+    });
+}
+
+// Function to populate team select options
+function populateTeamSelects() {
+    const leftSelect = document.getElementById('teamLeft');
+    const rightSelect = document.getElementById('teamRight');
+    
+    // Clear existing options
+    leftSelect.innerHTML = '<option value="">SELECT AWAY TEAM</option>';
+    rightSelect.innerHTML = '<option value="">SELECT HOME TEAM</option>';
+    
+    // Get all teams and sort alphabetically
+    const allTeams = Object.entries(NFL_TEAMS)
+        .sort((a, b) => a[1].name.localeCompare(b[1].name));
+    
+    // Add all teams to both selects
+    allTeams.forEach(([code, team]) => {
+        // Add to away team select
+        const awayOption = document.createElement('option');
+        awayOption.value = code;
+        awayOption.textContent = team.name;
+        awayOption.setAttribute('data-colors', `${team.colors[0]},${team.colors[1]}`);
+        leftSelect.appendChild(awayOption);
+        
+        // Add to home team select
+        const homeOption = document.createElement('option');
+        homeOption.value = code;
+        homeOption.textContent = team.name;
+        homeOption.setAttribute('data-colors', `${team.colors[0]},${team.colors[1]}`);
+        rightSelect.appendChild(homeOption);
     });
 }
 
@@ -2095,7 +2072,7 @@ function resetGame(isNewGame = false) {
                         }
                         
                         // Show success message
-                        showAlert(isNewGame ? 'Game started successfully' : 'Game reset complete');
+                        showAlert(isNewGame ? 'Game started' : 'reset completed');
                     } else {
                         showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game: ${data.error || 'Unknown error'}`);
                     }
@@ -2124,7 +2101,11 @@ window.addEventListener('resize', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    const newGameBtn = document.getElementById('newGameBtn');
+    
+    // Then populate the team selects
+    populateTeamSelects();
+	
+	const newGameBtn = document.getElementById('newGameBtn');
     const loadGameBtn = document.getElementById('loadGameBtn');
     const landingOverlay = document.getElementById('landing-overlay');
 
