@@ -1016,9 +1016,10 @@ function setSportTheme(sport) {
     root.style.setProperty('--retro-bg', `var(--${sport}-bg)`);
     root.style.setProperty('--retro-logo-primary', `var(--${sport}-logo-primary)`);
     root.style.setProperty('--retro-logo-secondary', `var(--${sport}-logo-secondary)`);
+	
+	// Update team selections when sport changes
+    populateTeamSelects();
 }
-
-setSportTheme(currentSport);  // For NHL theme
 
 // Generate 8-bit helmet SVG with both team colors
 function generateHelmetSVG(primaryColor, secondaryColor) {
@@ -1109,7 +1110,7 @@ function updateScore(team) {
     // Get team name based on selection
     const teamSelect = document.getElementById(team === 'left' ? 'teamLeft' : 'teamRight');
     const teamCode = teamSelect.value;
-    const teamName = teamCode ? NFL_TEAMS[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
+    const teamName = teamCode ? getCurrentTeams()[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
 
     showGenericPrompt({
         title: 'Update Score',
@@ -1170,6 +1171,19 @@ function updateScore(team) {
     });
 }
 
+function getCurrentTeams() {
+    switch(currentSport) {
+        case 'nhl':
+            return NHL_TEAMS;
+        case 'nba':
+            return NBA_TEAMS;
+        case 'mlb':
+            return MLB_TEAMS;
+        default:
+            return NFL_TEAMS;
+    }
+}
+
 // Function to populate team select options
 function populateTeamSelects() {
     const leftSelect = document.getElementById('teamLeft');
@@ -1179,8 +1193,8 @@ function populateTeamSelects() {
     leftSelect.innerHTML = '<option value="">SELECT AWAY TEAM</option>';
     rightSelect.innerHTML = '<option value="">SELECT HOME TEAM</option>';
     
-    // Get all teams and sort alphabetically
-    const allTeams = Object.entries(NFL_TEAMS)
+	// Get all teams and sort alphabetically
+    const allTeams = Object.entries(getCurrentTeams())
         .sort((a, b) => a[1].name.localeCompare(b[1].name));
     
     // Add all teams to both selects
@@ -1352,7 +1366,113 @@ const NFL_TEAMS = {
     "SF": { name: "SAN FRANCISCO 49ERS", colors: ["#AA0000", "#B3995D"] },
     "TB": { name: "TAMPA BAY BUCCANEERS", colors: ["#D50A0A", "#34302B"] },
     "TEN": { name: "TENNESSEE TITANS", colors: ["#0C2340", "#4B92DB"] },
-    "WAS": { name: "WASHINGTON COMMANDERS", colors: ["#773141", "#FFB612"] }
+    "WAS": { name: "WASHINGTON REDSKINS", colors: ["#773141", "#FFB612"] }
+};
+
+// NHL Teams with primary and secondary colors
+const NHL_TEAMS = {
+    "ANA": { name: "ANAHEIM DUCKS", colors: ["#00675A", "#4F324C"] },
+    "ARI": { name: "ARIZONA COYOTES", colors: ["#8C2633", "#E2D6B5"] },
+    "BOS": { name: "BOSTON BRUINS", colors: ["#FFC600", "#000000"] }, // Same
+    "BUF": { name: "BUFFALO SABRES", colors: ["#000084", "#FDB827"] }, // Same
+    "CAR": { name: "CAROLINA HURRICANES", colors: ["#CC0000", "#FFFFFF"] },
+    "CBJ": { name: "COLUMBUS BLUE JACKETS", colors: ["#002654", "#CE1126"] },
+    "CGY": { name: "CALGARY FLAMES", colors: ["#C62100", "#FFC600"] }, // Slightly different red
+    "CHI": { name: "CHICAGO BLACKHAWKS", colors: ["#BD2108", "#F0AE00"] }, // Different red
+    "COL": { name: "COLORADO AVALANCHE", colors: ["#822433", "#165788"] },
+    "DAL": { name: "DALLAS STARS", colors: ["#005837", "#B6A953"] },
+    "DET": { name: "DETROIT RED WINGS", colors: ["#CE1126", "#FFFFFF"] }, // Same
+    "EDM": { name: "EDMONTON OILERS", colors: ["#002B7F", "#FF4C00"] }, // Different blue
+    "FLA": { name: "FLORIDA PANTHERS", colors: ["#011E41", "#BC955C"] },
+    "LAK": { name: "LOS ANGELES KINGS", colors: ["#FDB515", "#582C83"] }, // Purple and gold era
+    "MIN": { name: "MINNESOTA WILD", colors: ["#A6192E", "#154734"] },
+	"MNS": { name: "MINNESOTA NORTH STARS", colors: ["#FFC600", "#007934"] }, // North Stars' classic gold and green
+    "MTL": { name: "CANADIENS DE MONTREAL ", colors: ["#C60000", "#000084"] }, // Same
+    "NJD": { name: "NEW JERSEY DEVILS", colors: ["#CE1126", "#006A36"] }, // Same
+    "NSH": { name: "NASHVILLE PREDATORS", colors: ["#FFB81C", "#041E42"] },
+    "NYI": { name: "NEW YORK ISLANDERS", colors: ["#000084", "#F84822"] }, // Same
+    "NYR": { name: "NEW YORK RANGERS", colors: ["#0031AD", "#C62100"] }, // Same
+    "OTT": { name: "OTTAWA SENATORS", colors: ["#C60C30", "#D59F0D"] },
+    "PHI": { name: "PHILADELPHIA FLYERS", colors: ["#F9461C", "#FFFFFF"] }, // Same
+    "PIT": { name: "PITTSBURGH PENGUINS", colors: ["#FFBD00", "#000000"] }, // Gold was primary
+    "SEA": { name: "SEATTLE KRAKEN", colors: ["#99D9D9", "#001628"] },
+    "SJS": { name: "SAN JOSE SHARKS", colors: ["#007C92", "#A5ACAF"] },
+    "STL": { name: "ST. LOUIS BLUES", colors: ["#002F87", "#FCB514"] }, // Same
+    "TBL": { name: "TAMPA BAY LIGHTNING", colors: ["#0046AD", "#A2A9AE"] },
+    "TOR": { name: "TORONTO MAPLE LEAFS", colors: ["#000084", "#FFFFFF"] }, // Slightly different blue
+    "VAN": { name: "VANCOUVER CANUCKS", colors: ["#FF2100", "#FFC600"] }, // Yellow and orange era
+    "VGK": { name: "VEGAS GOLDEN KNIGHTS", colors: ["#B4975A", "#333F42"] },
+    "WPG": { name: "WINNIPEG JETS", colors: ["#002776", "#C60C30"] }, // Original Jets' blue and red
+    "WSH": { name: "WASHINGTON CAPITALS", colors: ["#BD0000", "#FFFFFF"] }, // Same basic scheme
+};
+
+// NBA Teams with primary and secondary colors
+const NBA_TEAMS = {
+    "ATL": { name: "ATLANTA HAWKS", colors: ["#E03A3E", "#C1D32F"] },
+    "BOS": { name: "BOSTON CELTICS", colors: ["#008348", "#FFFFFF"] },
+    "BKN": { name: "BROOKLYN NETS", colors: ["#000000", "#FFFFFF"] },
+    "CHA": { name: "CHARLOTTE HORNETS", colors: ["#1D1160", "#00788C"] },
+    "CHI": { name: "CHICAGO BULLS", colors: ["#CE1141", "#000000"] },
+    "CLE": { name: "CLEVELAND CAVALIERS", colors: ["#860038", "#041E42"] },
+    "DAL": { name: "DALLAS MAVERICKS", colors: ["#00538C", "#002B5E"] },
+    "DEN": { name: "DENVER NUGGETS", colors: ["#0E2240", "#FEC524"] },
+    "DET": { name: "DETROIT PISTONS", colors: ["#C8102E", "#1D42BA"] },
+    "GSW": { name: "GOLDEN STATE WARRIORS", colors: ["#1D428A", "#FFC72C"] },
+    "HOU": { name: "HOUSTON ROCKETS", colors: ["#CE1141", "#000000"] },
+    "IND": { name: "INDIANA PACERS", colors: ["#002D62", "#FDBB30"] },
+    "LAC": { name: "LA CLIPPERS", colors: ["#C8102E", "#1D428A"] },
+    "LAL": { name: "LOS ANGELES LAKERS", colors: ["#552583", "#FDB927"] },
+    "MEM": { name: "MEMPHIS GRIZZLIES", colors: ["#5D76A9", "#12173F"] },
+    "MIA": { name: "MIAMI HEAT", colors: ["#98002E", "#F9A01B"] },
+    "MIL": { name: "MILWAUKEE BUCKS", colors: ["#00471B", "#EEE1C6"] },
+    "MIN": { name: "MINNESOTA TIMBERWOLVES", colors: ["#0C2340", "#236192"] },
+    "NOP": { name: "NEW ORLEANS PELICANS", colors: ["#0C2340", "#C8102E"] },
+    "NYK": { name: "NEW YORK KNICKS", colors: ["#006BB6", "#F58426"] },
+    "OKC": { name: "OKLAHOMA CITY THUNDER", colors: ["#007AC1", "#EF3B24"] },
+    "ORL": { name: "ORLANDO MAGIC", colors: ["#0077C0", "#C4CED4"] },
+    "PHI": { name: "PHILADELPHIA 76ERS", colors: ["#006BB6", "#ED174C"] },
+    "PHX": { name: "PHOENIX SUNS", colors: ["#1D1160", "#E56020"] },
+    "POR": { name: "PORTLAND TRAIL BLAZERS", colors: ["#E03A3E", "#000000"] },
+    "SAC": { name: "SACRAMENTO KINGS", colors: ["#5A2D81", "#63727A"] },
+    "SAS": { name: "SAN ANTONIO SPURS", colors: ["#C4CED4", "#000000"] },
+    "TOR": { name: "TORONTO RAPTORS", colors: ["#B90B2F", "#753BBD"] },
+    "UTA": { name: "UTAH JAZZ", colors: ["#3D2971", "#FAD424"] },
+    "WAS": { name: "WASHINGTON WIZARDS", colors: ["#002B5C", "#E31837"] }
+};
+
+// MLB Teams with primary and secondary colors
+const MLB_TEAMS = {
+    "ARI": { name: "ARIZONA DIAMONDBACKS", colors: ["#A71930", "#E3D4AD"] },
+    "ATL": { name: "ATLANTA BRAVES", colors: ["#CE1141", "#13274F"] },
+    "BAL": { name: "BALTIMORE ORIOLES", colors: ["#DF4601", "#000000"] },
+    "BOS": { name: "BOSTON RED SOX", colors: ["#BD3039", "#0C2340"] },
+    "CHC": { name: "CHICAGO CUBS", colors: ["#0E3386", "#CC3433"] },
+    "CWS": { name: "CHICAGO WHITE SOX", colors: ["#27251F", "#C4CED4"] },
+    "CIN": { name: "CINCINNATI REDS", colors: ["#C6011F", "#000000"] },
+    "CLE": { name: "CLEVELAND INDIANS", colors: ["#E31937", "#003366"] },
+    "COL": { name: "COLORADO ROCKIES", colors: ["#333366", "#C4CED4"] },
+    "DET": { name: "DETROIT TIGERS", colors: ["#0C2340", "#FA4616"] },
+    "MIA": { name: "FLORIDA MARLINS", colors: ["#009CA6", "#8A8D8F"] },
+    "HOU": { name: "HOUSTON ASTROS", colors: ["#002D62", "#EB6E1F"] },
+    "KC": { name: "KANSAS CITY ROYALS", colors: ["#004687", "#BD9B60"] },
+    "LAA": { name: "LOS ANGELES ANGELS", colors: ["#BA0021", "#003263"] },
+    "LAD": { name: "LOS ANGELES DODGERS", colors: ["#005A9C", "#FFFFFF"] },
+    "MIL": { name: "MILWAUKEE BREWERS", colors: ["#0046AE", "#FFD451"] },
+    "MIN": { name: "MINNESOTA TWINS", colors: ["#002B5C", "#D31145"] },
+	"MTL": { name: "MONTREAL EXPOS",  colors: ["#003087", "#E4002B"] },
+    "NYM": { name: "NEW YORK METS", colors: ["#002D72", "#FF5910"] },
+    "NYY": { name: "NEW YORK YANKEES", colors: ["#003087", "#C4CED4"] },
+    "OAK": { name: "OAKLAND ATHLETICS", colors: ["#003831", "#EFB21E"] },
+    "PHI": { name: "PHILADELPHIA PHILLIES", colors: ["#6F263D", "#6BACE4"] },
+    "PIT": { name: "PITTSBURGH PIRATES", colors: ["#FDB827", "#000000"] },
+    "SD": { name: "SAN DIEGO PADRES", colors: ["#2F241D", "#FFC425"] },
+    "SF": { name: "SAN FRANCISCO GIANTS", colors: ["#FD5A1E", "#27251F"] },
+    "SEA": { name: "SEATTLE MARINERS", colors: ["#0C2C56", "#005C5C"] },
+    "STL": { name: "ST. LOUIS CARDINALS", colors: ["#C41E3A", "#FEDB00"] },
+    "TB": { name: "TAMPA BAY RAYS", colors: ["#092C5C", "#8FBCE6"] },
+    "TEX": { name: "TEXAS RANGERS", colors: ["#003278", "#C0111F"] },
+    "TOR": { name: "TORONTO BLUE JAYS", colors: ["#006BA6", "#DA291C"] },
+    "WSH": { name: "WASHINGTON NATIONALS", colors: ["#AB0003", "#14225A"] }
 };
 
 function addPlayer() {
@@ -1492,6 +1612,68 @@ function saveTeams() {
     });
 }
 
+// Add sport selection function
+function selectSport(isNewGame = false) {
+    showGenericPrompt({
+        title: 'Select Sport',
+        message: 'Choose your sport:\n1: NFL\n2: NHL\n3: NBA\n4: MLB',
+        maxLength: 1,
+        validateInput: (value) => {
+            if (!value.match(/^[1-4]$/)) {
+                return { isValid: false, message: 'Enter number 1-4' };
+            }
+            return { isValid: true };
+        },
+        onConfirm: (value) => {
+            let sport;
+            switch (value) {
+                case '1': sport = 'nfl'; break;
+                case '2': sport = 'nhl'; break;
+                case '3': sport = 'nba'; break;
+                case '4': sport = 'mlb'; break;
+            }
+            
+            // Show loading state
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'alert-overlay';
+            loadingOverlay.style.display = 'flex';
+            loadingOverlay.innerHTML = `
+                <div class="alert-content">
+                    <h2 class="alert-title">SETTING UP ${sport.toUpperCase()}</h2>
+                    <div class="loading-spinner"></div>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+
+            // Update sport via API
+            fetch('/api/sport', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sport })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    setSportTheme(sport);
+                    if (isNewGame) {
+                        resetGame(true);
+                    }
+                } else {
+                    showAlert('Failed to update sport');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating sport:', error);
+                showAlert('Failed to update sport');
+            })
+            .finally(() => {
+                document.body.removeChild(loadingOverlay);
+            });
+        }
+    });
+}
+
+
 // Update team colors and visuals with new helmet colors
 function updateTeamColors() {
     const leftSelect = document.getElementById('teamLeft');
@@ -1507,10 +1689,10 @@ function updateTeamColors() {
 
 
     // Update team helmet icons in selection area
-    if (leftTeam && NFL_TEAMS[leftTeam]) {
+    if (leftTeam && getCurrentTeams()[leftTeam]) {
         const leftHelmetIcon = generateHelmetSVG(
-            NFL_TEAMS[leftTeam].colors[0], 
-            NFL_TEAMS[leftTeam].colors[1]
+            getCurrentTeams()[leftTeam].colors[0], 
+            getCurrentTeams()[leftTeam].colors[1]
         );
         document.getElementById('leftHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(leftHelmetIcon);
     } else {
@@ -1519,10 +1701,10 @@ function updateTeamColors() {
         document.getElementById('leftHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(defaultHelmet);
     }
 
-    if (rightTeam && NFL_TEAMS[rightTeam]) {
+    if (rightTeam && getCurrentTeams()[rightTeam]) {
         const rightHelmetIcon = generateHelmetSVG(
-            NFL_TEAMS[rightTeam].colors[0], 
-            NFL_TEAMS[rightTeam].colors[1]
+            getCurrentTeams()[rightTeam].colors[0], 
+            getCurrentTeams()[rightTeam].colors[1]
         );
         document.getElementById('rightHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(rightHelmetIcon);
     } else {
@@ -1535,9 +1717,9 @@ function updateTeamColors() {
     const leftNameDisplay = document.querySelector('.team-name-left');
     const topNameDisplay = document.querySelector('.team-name-top');
 
-    if (leftTeam && NFL_TEAMS[leftTeam]) {
-        leftNameDisplay.textContent = NFL_TEAMS[leftTeam].name;
-        const leftColors = NFL_TEAMS[leftTeam].colors;
+    if (leftTeam && getCurrentTeams()[leftTeam]) {
+        leftNameDisplay.textContent = getCurrentTeams()[leftTeam].name;
+        const leftColors = getCurrentTeams()[leftTeam].colors;
         // Determine which color is brighter for text
         const leftTextColor = getContrastRatio(leftColors[0], '#000000') > 
             getContrastRatio(leftColors[1], '#000000') ? leftColors[0] : leftColors[1];
@@ -1552,9 +1734,9 @@ function updateTeamColors() {
         leftNameDisplay.style.display = 'none';
     }
 
-    if (rightTeam && NFL_TEAMS[rightTeam]) {
-        topNameDisplay.textContent = NFL_TEAMS[rightTeam].name;
-        const rightColors = NFL_TEAMS[rightTeam].colors;
+    if (rightTeam && getCurrentTeams()[rightTeam]) {
+        topNameDisplay.textContent = getCurrentTeams()[rightTeam].name;
+        const rightColors = getCurrentTeams()[rightTeam].colors;
         // Determine which color is brighter for text
         const rightTextColor = getContrastRatio(rightColors[0], '#000000') > 
             getContrastRatio(rightColors[1], '#000000') ? rightColors[0] : rightColors[1];
@@ -1580,14 +1762,14 @@ function updateTeamBackgrounds(leftTeam, rightTeam) {
     const leftBg = document.querySelector('.team-background.left');
     const rightBg = document.querySelector('.team-background.right');
     
-    if (leftTeam && NFL_TEAMS[leftTeam]) {
-        leftBg.style.setProperty('--team-color', NFL_TEAMS[leftTeam].colors[0]);
+    if (leftTeam && getCurrentTeams()[leftTeam]) {
+        leftBg.style.setProperty('--team-color', getCurrentTeams()[leftTeam].colors[0]);
     } else {
         leftBg.style.setProperty('--team-color', 'transparent');
     }
     
-    if (rightTeam && NFL_TEAMS[rightTeam]) {
-        rightBg.style.setProperty('--team-color', NFL_TEAMS[rightTeam].colors[0]);
+    if (rightTeam && getCurrentTeams()[rightTeam]) {
+        rightBg.style.setProperty('--team-color', getCurrentTeams()[rightTeam].colors[0]);
     } else {
         rightBg.style.setProperty('--team-color', 'transparent');
     }
@@ -2023,7 +2205,11 @@ function resetGame(isNewGame = false) {
         true,
         (confirmed) => {
             if (confirmed) {
-                // Show loading state
+                if (!isNewGame) {
+                    // If resetting existing game, prompt for sport selection first
+                    selectSport(false);
+                }
+				// Show loading state
                 const loadingOverlay = document.createElement('div');
                 loadingOverlay.className = 'alert-overlay';
                 loadingOverlay.style.display = 'flex';
@@ -2109,7 +2295,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadGameBtn = document.getElementById('loadGameBtn');
     const landingOverlay = document.getElementById('landing-overlay');
 
-	newGameBtn.addEventListener('click', () => resetGame(true));
+	newGameBtn.addEventListener('click', () => {
+		selectSport(true);
+	});
 
 	// Modified loadGameBtn click handler
 	loadGameBtn.addEventListener('click', () => {
@@ -2118,8 +2306,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		})
 		.then(response => response.json())
 		.then(data => {
-			if (data.squares && data.players && data.teams && data.scores) {
-				// Load players
+			if (data.squares && data.players && data.teams && data.scores && data.sport) {
+				setSportTheme(data.sport);
 				players = data.players;
 				updatePlayerList();
 				
