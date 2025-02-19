@@ -6,19 +6,58 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
 /* Root Variables */
+/* Sport-Specific Color Schemes */
 :root {
-    --retro-green: #00ff00;
-    --retro-dark: #002200;
-    --retro-light: #88ff88;
-    --pixel-border: 2px solid var(--retro-green);
-    --grid-bg: #001100;
+    /* NFL Theme (Blue) */
+    --nfl-primary: #007FFF;  /* Main NFL blue */
+    --nfl-dark: #051333;     /* Darker shade for backgrounds */
+    --nfl-light: #2B5BBA;    /* Lighter blue for highlights */
+    --nfl-bg: #030A1F;       /* Very dark blue for background */
+    --nfl-logo-primary: #003087;    /* Dark Royal Blue */
+    --nfl-logo-secondary: #DB1F26;  /* Bright Red */
+
+    /* NHL Theme (Orange) */
+    --nhl-primary: #F78F1E;  /* Main NHL orange */
+    --nhl-dark: #331C04;     /* Darker shade for backgrounds */
+    --nhl-light: #FFB05C;    /* Lighter orange for highlights */
+    --nhl-bg: #1F1103;       /* Very dark orange-tinted for background */
+	--nhl-logo-primary: #FF4C00;    /* Orange */
+    --nhl-logo-secondary: #FFFFFF;  /* White */
+
+    /* NBA Theme (Red) */
+    --nba-primary: #ff0000;
+    --nba-dark: #220000;
+    --nba-light: #ff8888;
+    --nba-bg: #110000;
+    --nba-logo-primary: #EC003D;    /* Bright Red */
+    --nba-logo-secondary: #1D428A;  /* Royal Blue */
+	
+    /* MLB Theme (Green) */
+    --mlb-primary: #00ff00;
+    --mlb-dark: #002200;
+    --mlb-light: #88ff88;
+    --mlb-bg: #001100;
+    --mlb-logo-primary: #002D72;    /* Navy Blue */
+    --mlb-logo-secondary: #D50032;  /* Red */
+
+    /* Active Theme (set programmatically based on sport) */
+    --retro-primary: var(--nfl-primary);
+    --retro-dark: var(--nfl-dark);
+    --retro-light: var(--nfl-light);
+    --retro-bg: var(--nfl-bg);
+    --retro-logo-primary: var(--nfl-logo-primary);
+    --retro-logo-secondary: var(--nfl-logo-secondary);
+
+
+	--pixel-border: 2px solid var(--retro-primary);
 }
+
 
 /* Base Styles */
 body {
     font-family: 'Press Start 2P', monospace;
     background: var(--retro-dark);
-    color: var(--retro-green);
+    color: var(--retro-primary);
     margin: 0;
     padding: 0;
     height: 100vh;
@@ -41,7 +80,7 @@ body {
 
 .title {
     text-align: center;
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 2em;
     margin: 0;
     text-transform: uppercase;
@@ -53,7 +92,7 @@ body {
     text-align: center;
     border: var(--pixel-border);
     padding: 10px;
-    background: var(--grid-bg);
+    background: var(--retro-bg);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -71,23 +110,23 @@ body {
 .grid-container {
     height: 100%;
     min-height: 600px;
-    background: var(--grid-bg);
+    background: var(--retro-bg);
     border: var(--pixel-border);
     padding: 20px;
     position: relative;
     overflow: hidden;
-    box-shadow: 4px 4px 0 var(--retro-green);
+    box-shadow: 4px 4px 0 var(--retro-primary);
     flex-grow: 1;
 }
 
 /* Legend Container */
 .legend-container {
     height: 100%;
-    background: var(--grid-bg);
+    background: var(--retro-bg);
     border: var(--pixel-border);
     padding: 20px;
     overflow-y: auto;
-    box-shadow: 4px 4px 0 var(--retro-green);
+    box-shadow: 4px 4px 0 var(--retro-primary);
 }
 
 /* Team Selection Styles */
@@ -98,12 +137,12 @@ body {
     gap: 20px;
     padding: 15px;
     border: var(--pixel-border);
-    background: var(--grid-bg);
+    background: var(--retro-bg);
     margin: 0;
 }
 
 .team-vs {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 1.2em;
 }
 
@@ -123,7 +162,7 @@ body {
 /* Select Dropdowns */
 select {
     background: var(--retro-dark);
-    color: var(--retro-green);
+    color: var(--retro-primary);
     border: var(--pixel-border);
     padding: 6px;
     font-family: 'Press Start 2P', monospace;
@@ -134,14 +173,14 @@ select {
 
 select option {
     background: var(--retro-dark);
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 20px;
     padding: 6px;
 }
 
 /* Button Styles */
 button {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     color: var(--retro-dark);
     border: 2px solid var(--retro-light);
     padding: 10px 20px;
@@ -176,7 +215,7 @@ button:active {
     left: 0;
     right: 0;
     height: 2px;
-    background: var(--retro-green);
+    background: var(--retro-primary);
     opacity: 0.1;
     animation: scanline 8s linear infinite;
     pointer-events: none;
@@ -189,9 +228,9 @@ button:active {
 
 /* Grid Elements */
 .square {
-    stroke: var(--retro-green);
+    stroke: var(--retro-primary);
     stroke-width: 2;
-    fill: var(--grid-bg);
+    fill: var(--retro-bg);
     transition: fill 0.3s ease;
 }
 
@@ -201,23 +240,23 @@ button:active {
 }
 
 .square.tie-square {
-    fill: var(--grid-bg) !important;
+    fill: var(--retro-bg) !important;
     cursor: not-allowed !important;
 }
 
 .square.tie-square:hover {
-    fill: var(--grid-bg) !important;
+    fill: var(--retro-bg) !important;
 }
 
 /* Axis Styles */
 .axis line,
 .axis path {
-    stroke: var(--retro-green);
+    stroke: var(--retro-primary);
     stroke-width: 1;
 }
 
 .axis text {
-    fill: var(--retro-green);
+    fill: var(--retro-primary);
     font-family: 'Press Start 2P', monospace;
     font-size: 12px !important;
 }
@@ -227,7 +266,7 @@ button:active {
 .square-text {
     font-family: 'Press Start 2P', monospace;
     font-size: 18px !important;
-    fill: var(--retro-green);
+    fill: var(--retro-primary);
     text-anchor: middle;
     dominant-baseline: middle;
     pointer-events: none;
@@ -237,16 +276,16 @@ button:active {
 .tooltip {
     position: absolute;
     background: var(--retro-dark);
-    border: 2px solid var(--retro-green);
+    border: 2px solid var(--retro-primary);
     padding: 8px;
     font-family: 'Press Start 2P', monospace;
     font-size: 10px;
-    color: var(--retro-green);
+    color: var(--retro-primary);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 1000;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    box-shadow: 0 0 10px rgba(var(--retro-primary), 0.2);
 }
 
 /* Player Management */
@@ -257,14 +296,14 @@ button:active {
     gap: 10px;
     border: var(--pixel-border);
     padding: 10px;
-    background: var(--grid-bg);
+    background: var(--retro-bg);
 }
 
 .player-form input {
     background: var(--retro-dark);
     border: var(--pixel-border);
     padding: 8px;
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
 }
@@ -285,7 +324,7 @@ button:active {
     padding: 4px !important;
     margin: 0 !important;
     background: var(--retro-dark) !important;
-    border: 2px solid var(--retro-green) !important;
+    border: 2px solid var(--retro-primary) !important;
     height: 28px !important;
 }
 
@@ -303,7 +342,7 @@ button:active {
 .color-dot {
     width: 14px !important;
     height: 14px !important;
-    border: 2px solid var(--retro-green) !important;
+    border: 2px solid var(--retro-primary) !important;
     flex-shrink: 0 !important;
     margin: 0 3px !important;
 }
@@ -331,7 +370,7 @@ button:active {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     border: 2px solid var(--retro-dark);
 }
 
@@ -385,7 +424,7 @@ button:active {
 .axis-label {
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
-    fill: var(--retro-green);
+    fill: var(--retro-primary);
 }
 
 .axis-label.left {
@@ -457,13 +496,13 @@ button:active {
 }
 
 .reset-game-btn {
-	background-color: #8B0000;
-	color: var(--retro-green);
+	background-color: var(--retro-dark);
+	color: var(--retro-primary);
 	border-color: var(--retro-light);
 }
 
 .reset-game-btn:hover {
-	background-color: #A00000;
+	background-color: var(--retro-dark);
 }
 .legend-controls {
     display: flex;
@@ -489,13 +528,13 @@ button:active {
     text-align: center;
     padding: 40px;
     border: var(--pixel-border);
-    background: var(--grid-bg);
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
     animation: glow 2s infinite alternate;
 }
 
 .landing-title {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 3em;
     margin-bottom: 40px;
     text-transform: uppercase;
@@ -512,7 +551,7 @@ button:active {
 
 .landing-btn {
     background: var(--retro-dark);
-    color: var(--retro-green);
+    color: var(--retro-primary);
     border: var(--pixel-border);
     padding: 15px 30px;
     font-family: 'Press Start 2P', monospace;
@@ -523,7 +562,7 @@ button:active {
 }
 
 .landing-btn:hover {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     color: var(--retro-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 0 var(--retro-dark);
@@ -536,10 +575,10 @@ button:active {
 
 @keyframes glow {
     from {
-        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        box-shadow: 0 0 10px rgba(var(--retro-primary), 0.2);
     }
     to {
-        box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        box-shadow: 0 0 20px rgba(var(--retro-primary), 0.4);
     }
 }
 
@@ -548,7 +587,7 @@ button:active {
     width: 50px;
     height: 50px;
     border: 4px solid var(--retro-dark);
-    border-top: 4px solid var(--retro-green);
+    border-top: 4px solid var(--retro-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 20px auto;
@@ -573,16 +612,16 @@ button:active {
   position: relative;
   letter-spacing: 2px;
   text-shadow: 
-    0 0 4px rgba(170, 255, 0, 0.4),
-    0 0 8px rgba(170, 255, 0, 0.2);
+    0 0 4px rgba(var(--retro-light), 0.4),
+    0 0 8px rgba(var(--retro-light), 0.2);
   image-rendering: pixelated;
 }
 
 .score:hover {
   color: #E5D820;
   text-shadow: 
-    0 0 6px rgba(170, 255, 0, 0.6),
-    0 0 12px rgba(170, 255, 0, 0.3);
+    0 0 6px rgba(var(--retro-light), 0.6),
+    0 0 12px rgba(var(--retro-light), 0.3);
 }
 
 /* Remove any existing borders or box shadows */
@@ -612,14 +651,14 @@ button:active {
     text-align: center;
     padding: 40px;
     border: var(--pixel-border);
-    background: var(--grid-bg);
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
     animation: glow 2s infinite alternate;
 }
 
 /* Alert Title */
 .alert-title {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 2em;
     margin-bottom: 20px;
     text-transform: uppercase;
@@ -629,7 +668,7 @@ button:active {
 
 /* Alert Message */
 .alert-message {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 1.2em;
     margin-bottom: 30px;
 }
@@ -643,7 +682,7 @@ button:active {
 
 .alert-btn {
     background: var(--retro-dark);
-    color: var(--retro-green);
+    color: var(--retro-primary);
     border: var(--pixel-border);
     padding: 15px 30px;
     font-family: 'Press Start 2P', monospace;
@@ -653,7 +692,7 @@ button:active {
 }
 
 .alert-btn:hover {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     color: var(--retro-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 0 var(--retro-dark);
@@ -667,7 +706,7 @@ button:active {
     background: var(--retro-dark);
     border: var(--pixel-border);
     padding: 8px;
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
     margin: 20px 0;
@@ -702,7 +741,8 @@ button:active {
     display: none;  /* Hidden by default */
     align-items: center;
     justify-content: center;
-    background: rgba(0, 34, 0, 0.9);  /* Slightly transparent background */
+    background: rgba(var(--retro-dark), 0.9);  /* Slightly transparent background */
+    <!-- background: rgba(0, 34, 0, 0.9);  /* Slightly transparent background */ -->
 }
 
 /* Landing overlay - lowest layer */
@@ -721,16 +761,17 @@ button:active {
 .alert-overlay {
     composes: base-overlay;
     z-index: 3000;
-    background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */
+    background: rgba(var(--retro-dark), 0.95);  /* Slightly more opaque */
+    <!-- background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */ -->
 }
 
 /* Content containers */
 .overlay-content {
     text-align: center;
     padding: 40px;
-    border: 2px solid var(--retro-green);
-    background: var(--grid-bg);
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    border: 2px solid var(--retro-primary);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
     animation: glow 2s infinite alternate;
     max-width: 90%;
     max-height: 90vh;
@@ -739,7 +780,7 @@ button:active {
 
 /* Title styles */
 .overlay-title {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 2em;
     margin-bottom: 20px;
     text-transform: uppercase;
@@ -749,7 +790,7 @@ button:active {
 
 /* Message styles */
 .overlay-message {
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-size: 1.2em;
     margin: 20px 0;
     line-height: 1.5;
@@ -767,8 +808,8 @@ button:active {
 /* Button styles */
 .overlay-btn {
     background: var(--retro-dark);
-    color: var(--retro-green);
-    border: 2px solid var(--retro-green);
+    color: var(--retro-primary);
+    border: 2px solid var(--retro-primary);
     padding: 15px 30px;
     font-family: 'Press Start 2P', monospace;
     font-size: 1.2em;
@@ -777,7 +818,7 @@ button:active {
 }
 
 .overlay-btn:hover {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     color: var(--retro-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 0 var(--retro-dark);
@@ -791,9 +832,9 @@ button:active {
 /* Input field styles */
 .overlay-input {
     background: var(--retro-dark);
-    border: 2px solid var(--retro-green);
+    border: 2px solid var(--retro-primary);
     padding: 8px;
-    color: var(--retro-green);
+    color: var(--retro-primary);
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
     margin: 20px 0;
@@ -808,7 +849,7 @@ button:active {
     overflow-y: auto;
     margin: 10px 0;
     padding: 10px;
-    border: 2px solid var(--retro-green);
+    border: 2px solid var(--retro-primary);
     background: var(--retro-dark);
     text-align: left;
     font-size: 0.8em;
@@ -824,7 +865,7 @@ button:active {
 }
 
 .overlay-content::-webkit-scrollbar-thumb {
-    background: var(--retro-green);
+    background: var(--retro-primary);
     border: 1px solid var(--retro-dark);
 }
 
@@ -841,7 +882,7 @@ button:active {
     width: 50px;
     height: 50px;
     border: 4px solid var(--retro-dark);
-    border-top: 4px solid var(--retro-green);
+    border-top: 4px solid var(--retro-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 20px auto;
@@ -982,6 +1023,7 @@ const baseSize = 40;
 let currentSize = baseSize;
 const maxScore = 60;
 let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0}
+let currentSport = 'nhl';  // Default sport
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
@@ -995,13 +1037,25 @@ const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
 
+// Update setSportTheme to include logo colors and return the theme info
+function setSportTheme(sport) {
+    const root = document.documentElement;
+    currentSport = sport.toLowerCase();  // Keep track of current sport
+    
+    root.style.setProperty('--retro-primary', `var(--${sport}-primary)`);
+    root.style.setProperty('--retro-dark', `var(--${sport}-dark)`);
+    root.style.setProperty('--retro-light', `var(--${sport}-light)`);
+    root.style.setProperty('--retro-bg', `var(--${sport}-bg)`);
+    root.style.setProperty('--retro-logo-primary', `var(--${sport}-logo-primary)`);
+    root.style.setProperty('--retro-logo-secondary', `var(--${sport}-logo-secondary)`);
+}
+
+setSportTheme(currentSport);  // For NHL theme
+
+
 // Generate 8-bit helmet SVG with both team colors
 function generateHelmetSVG(primaryColor, secondaryColor) {
-    // If no colors provided, use NFL colors
-    primaryColor = primaryColor || '#013369';  // NFL Blue
-    secondaryColor = secondaryColor || '#D50A0A';  // NFL Red
-
-    return `
+	return `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
             <!-- Main helmet shell -->
             <path d="M4 16 L8 8 L24 8 L28 16 L24 24 L8 24 Z" fill="${primaryColor}"/>
@@ -1207,15 +1261,15 @@ function createGrid() {
       .attr("y", -currentSize) // Position above main grid
       .attr("width", currentSize)
       .attr("height", currentSize)
-      .attr("fill", "var(--grid-bg)")
-      .attr("stroke", "var(--retro-green)");
+      .attr("fill", "var(--retro-bg)")
+      .attr("stroke", "var(--retro-primary)");
     squaresGroup.append("text")
       .attr("class", "square-text header-text")
       .attr("x", i * currentSize + currentSize / 2)
       .attr("y", -currentSize / 2)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
-      .style("fill", "var(--retro-green)")
+      .style("fill", "var(--retro-primary)")
       .style("font-size", "12px")
       .text(i);
   }
@@ -1228,15 +1282,15 @@ function createGrid() {
       .attr("y", i * currentSize)
       .attr("width", currentSize)
       .attr("height", currentSize)
-      .attr("fill", "var(--grid-bg)")
-      .attr("stroke", "var(--retro-green)");
+      .attr("fill", "var(--retro-bg)")
+      .attr("stroke", "var(--retro-primary)");
     squaresGroup.append("text")
       .attr("class", "square-text header-text")
       .attr("x", -currentSize / 2)
       .attr("y", i * currentSize + currentSize / 2)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
-      .style("fill", "var(--retro-green)")
+      .style("fill", "var(--retro-primary)")
       .style("font-size", "12px")
       .text(i);
   }
@@ -1431,7 +1485,7 @@ function getBestContrastColor(teamColors, backgroundColor = '#001100') {
     
     // If contrast is still poor, default to a high-contrast color
     if (bestContrast < 4.5) {  // WCAG AA standard for large text
-        return '#00ff00';  // Default to retro green for maximum visibility
+        return `var(--retro-primary)`;  // Default to retro default for maximum visibility
     }
     
     return bestColor;
@@ -1468,6 +1522,13 @@ function updateTeamColors() {
     const leftTeam = leftSelect.value;
     const rightTeam = rightSelect.value;
 
+    // Get computed theme logo colors for defaults
+    const defaultPrimary = getComputedStyle(document.documentElement)
+        .getPropertyValue('--retro-logo-primary').trim();
+    const defaultSecondary = getComputedStyle(document.documentElement)
+        .getPropertyValue('--retro-logo-secondary').trim();
+
+
     // Update team helmet icons in selection area
     if (leftTeam && NFL_TEAMS[leftTeam]) {
         const leftHelmetIcon = generateHelmetSVG(
@@ -1477,7 +1538,7 @@ function updateTeamColors() {
         document.getElementById('leftHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(leftHelmetIcon);
     } else {
         // Default NFL helmet for left side
-        const defaultHelmet = generateHelmetSVG();
+        const defaultHelmet = generateHelmetSVG(defaultPrimary, defaultSecondary);
         document.getElementById('leftHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(defaultHelmet);
     }
 
@@ -1489,7 +1550,7 @@ function updateTeamColors() {
         document.getElementById('rightHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(rightHelmetIcon);
     } else {
         // Default NFL helmet for right side
-        const defaultHelmet = generateHelmetSVG();
+        const defaultHelmet = generateHelmetSVG(defaultPrimary, defaultSecondary);
         document.getElementById('rightHelmet').src = 'data:image/svg+xml,' + encodeURIComponent(defaultHelmet);
     }
 
@@ -1644,9 +1705,9 @@ function deletePlayer(initial) {
 const style = document.createElement('style');
 style.textContent = `
     .square {
-        stroke: var(--retro-green);
+        stroke: var(--retro-primary);
         stroke-width: 2;
-        fill: var(--grid-bg);
+        fill: var(--retro-bg);
         transition: fill 0.3s ease;
     }
 
@@ -1665,17 +1726,17 @@ style.textContent = `
 
 	/* Keep existing tie-square styles but remove the !important from the fill */
 	.tie-square {
-		fill: var(--grid-bg);
+		fill: var(--retro-bg);
 		cursor: not-allowed;
 	}
 
 	.tie-square:hover {
-		fill: var(--grid-bg);
+		fill: var(--retro-bg);
 	}
 
     .square-text, .header-text, .tie-text {
         font-family: 'Press Start 2P', monospace;
-        fill: var(--retro-green);
+        fill: var(--retro-primary);
         text-anchor: middle;
         dominant-baseline: middle;
         pointer-events: none;
@@ -1956,7 +2017,7 @@ function updateSquare(row, col, value) {
     if (displayValue && players[displayValue]) {
         text.style("fill", playerColorScale(players[displayValue].playerIndex));
     } else {
-        text.style("fill", "var(--retro-green)");
+        text.style("fill", "var(--retro-primary)");
     }
         
     // Update player list to reflect new bet counts
@@ -2026,7 +2087,6 @@ function resetGame(isNewGame = false) {
                         
                         // Recreate grid and update visuals
                         createGrid();
-                        updateTeamColors();
                         highlightCurrentScore();
                         
                         // Hide landing overlay if this is a new game
@@ -2109,9 +2169,6 @@ document.addEventListener('DOMContentLoaded', () => {
 						}
 					}
 				}
-				
-				// Update team colors and visuals
-				updateTeamColors();
 				// Highlight current score square
 				highlightCurrentScore();
 				// Hide landing overlay
