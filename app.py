@@ -20,6 +20,7 @@ class GameState:
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
         self.available_indices = list(range(max_players))
+        self.sport = 'nfl'  # Add default sport
 
     def save_state(self):
         """Save current game state to file"""
@@ -28,7 +29,8 @@ class GameState:
             'players': self.players,
             'teams': self.teams,
             'scores': self.scores,
-            'available_indices': self.available_indices
+            'available_indices': self.available_indices,
+            'sport': self.sport  # Add sport to saved state
         }
         try:
             with open(config.base_dir / 'game_state.json', 'w') as f:
@@ -49,6 +51,7 @@ class GameState:
                     self.players = state.get('players', self.players)
                     self.teams = state.get('teams', {'left': '', 'right': ''})
                     self.scores = state.get('scores', {'left': 0, 'right': 0})
+                    self.sport = state.get('sport', 'nfl')  # Load sport from state
                     
                     # Handle available indices safely
                     max_players = config.config['max_players']
@@ -136,7 +139,8 @@ def get_state():
             'squares': game_state.squares,
             'players': game_state.players,
             'teams': game_state.teams,
-            'scores': game_state.scores  # Include scores in state response
+            'scores': game_state.scores,
+            'sport': game_state.sport  # Include sport in state response
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -246,6 +250,25 @@ def update_teams():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Add new route for updating sport
+@app.route('/api/sport', methods=['POST'])
+def update_sport():
+    try:
+        data = request.json
+        sport = data.get('sport', '').lower()
+        
+        # Validate sport
+        valid_sports = ['nfl', 'nhl', 'nba', 'mlb']
+        if sport not in valid_sports:
+            return jsonify({'error': 'Invalid sport selection'}), 400
+            
+        # Update sport state
+        game_state.sport = sport
+        game_state.save_state()
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def open_browser():
     """Open the browser to the application URL"""
