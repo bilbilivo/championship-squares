@@ -892,15 +892,55 @@ button:active {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+.sport-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sport-box {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.5em;
+    line-height: 1.5;
+    color: var(--retro-primary);
+}
+
+.sport-box:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.sport-box:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
     </style>
 </head>
 <body>
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
 			<h1 class="landing-title">Super Bowl Squares</h1>
-			<div class="landing-buttons">
+			<div class="landing-buttons" id="mainButtons">
 				<button id="newGameBtn" class="landing-btn">New Game</button>
 				<button id="loadGameBtn" class="landing-btn">Load Game</button>
+			</div>
+			<div class="sport-selection" style="display: none;">
+				<div class="sport-grid">
+					<div class="sport-box" data-sport="nfl">NFL</div>
+					<div class="sport-box" data-sport="nhl">NHL</div>
+					<div class="sport-box" data-sport="nba">NBA</div>
+					<div class="sport-box" data-sport="mlb">MLB</div>
+				</div>
+				<button id="backToMainBtn" class="landing-btn">Back</button>
 			</div>
 		</div>
 	</div>
@@ -2194,82 +2234,90 @@ function resetZoom() {
 }
 
 
-// Modify the resetGame function
 function resetGame(isNewGame = false) {
-    const message = 'All data will be erased. Continue?';
-    const title = isNewGame ? 'New Game' : 'Reset Game';
-    
     showAlert(
-        message,
-        title,
+        'All data will be erased. Continue?',
+        isNewGame ? 'New Game' : 'Reset Game',
         true,
         (confirmed) => {
             if (confirmed) {
-                if (!isNewGame) {
-                    // If resetting existing game, prompt for sport selection first
-                    selectSport(false);
-                }
-				// Show loading state
-                const loadingOverlay = document.createElement('div');
-                loadingOverlay.className = 'alert-overlay';
-                loadingOverlay.style.display = 'flex';
-                loadingOverlay.innerHTML = `
+                // Show sport selection overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'alert-overlay';
+                overlay.style.display = 'flex';
+                overlay.innerHTML = `
                     <div class="alert-content">
-                        <h2 class="alert-title">${isNewGame ? 'STARTING NEW GAME' : 'RESETTING GAME'}</h2>
-                        <div class="loading-spinner"></div>
+                        <h2 class="alert-title">SELECT SPORT</h2>
+                        <div class="sport-grid">
+                            <div class="sport-box" data-sport="nfl">NFL</div>
+                            <div class="sport-box" data-sport="nhl">NHL</div>
+                            <div class="sport-box" data-sport="nba">NBA</div>
+                            <div class="sport-box" data-sport="mlb">MLB</div>
+                        </div>
                     </div>
                 `;
-                document.body.appendChild(loadingOverlay);
+                document.body.appendChild(overlay);
 
-                fetch('/api/reset', {
-                    method: 'POST'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Reset all local game data
-                        players = {};
-                        updatePlayerList();
+                // Add event listeners for sport selection
+                overlay.querySelectorAll('.sport-box').forEach(box => {
+                    box.addEventListener('click', () => {
+                        const sport = box.dataset.sport;
+                        document.body.removeChild(overlay);
                         
-                        // Reset all squares
-                        d3.selectAll('.square-text')
-                            .filter(function() {
-                                const row = d3.select(this).attr('data-row');
-                                const col = d3.select(this).attr('data-col');
-                                return row !== col;  // Skip tie squares
-                            })
-                            .text('');
-                        
-                        // Reset scores
-                        document.getElementById('leftScore').textContent = '0';
-                        document.getElementById('rightScore').textContent = '0';
-                        
-                        // Reset team selections
-                        document.getElementById('teamLeft').value = '';
-                        document.getElementById('teamRight').value = '';
-                        
-                        // Recreate grid and update visuals
-                        createGrid();
-                        highlightCurrentScore();
-                        
-                        // Hide landing overlay if this is a new game
-                        if (isNewGame) {
-                            document.getElementById('landing-overlay').style.display = 'none';
-                        }
-                        
-                        // Show success message
-                        showAlert(isNewGame ? 'Game started' : 'reset completed');
-                    } else {
-                        showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game: ${data.error || 'Unknown error'}`);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Error ${isNewGame ? 'starting' : 'resetting'} game:`, error);
-                    showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game`);
-                })
-                .finally(() => {
-                    // Remove loading overlay
-                    document.body.removeChild(loadingOverlay);
+                        // Show loading state
+                        const loadingOverlay = document.createElement('div');
+                        loadingOverlay.className = 'alert-overlay';
+                        loadingOverlay.style.display = 'flex';
+                        loadingOverlay.innerHTML = `
+                            <div class="alert-content">
+                                <h2 class="alert-title">${isNewGame ? 'STARTING NEW GAME' : 'RESETTING GAME'}</h2>
+                                <div class="loading-spinner"></div>
+                            </div>
+                        `;
+                        document.body.appendChild(loadingOverlay);
+
+                        // Set sport theme and reset game
+                        setSportTheme(sport);
+                        fetch('/api/reset', {
+                            method: 'POST'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Reset all local game data
+                                players = {};
+                                updatePlayerList();
+                                
+                                // Reset scores
+                                document.getElementById('leftScore').textContent = '0';
+                                document.getElementById('rightScore').textContent = '0';
+                                
+                                // Reset team selections
+                                document.getElementById('teamLeft').value = '';
+                                document.getElementById('teamRight').value = '';
+                                
+                                // Recreate grid and update visuals
+                                createGrid();
+                                highlightCurrentScore();
+                                
+                                // Hide landing overlay if this is a new game
+                                if (isNewGame) {
+                                    document.getElementById('landing-overlay').style.display = 'none';
+                                }
+                                
+                                showAlert(isNewGame ? 'Game started' : 'Reset completed');
+                            } else {
+                                showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game: ${data.error || 'Unknown error'}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error(`Error ${isNewGame ? 'starting' : 'resetting'} game:`, error);
+                            showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game`);
+                        })
+                        .finally(() => {
+                            document.body.removeChild(loadingOverlay);
+                        });
+                    });
                 });
             }
         }
@@ -2287,70 +2335,87 @@ window.addEventListener('resize', () => {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Then populate the team selects
-    populateTeamSelects();
-	
-	const newGameBtn = document.getElementById('newGameBtn');
+    // Get references to elements
+    const newGameBtn = document.getElementById('newGameBtn');
     const loadGameBtn = document.getElementById('loadGameBtn');
     const landingOverlay = document.getElementById('landing-overlay');
+    const sportSelection = document.querySelector('.sport-selection');
+    const mainButtons = document.getElementById('mainButtons');
+    const backToMainBtn = document.getElementById('backToMainBtn');
 
-	newGameBtn.addEventListener('click', () => {
-		selectSport(true);
-	});
+    // New Game button click
+	newGameBtn.addEventListener('click', () => resetGame(true));
 
-	// Modified loadGameBtn click handler
-	loadGameBtn.addEventListener('click', () => {
-		fetch('/api/state', {
-			method: 'GET'
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.squares && data.players && data.teams && data.scores && data.sport) {
-				setSportTheme(data.sport);
-				players = data.players;
-				updatePlayerList();
-				
-				// Set team dropdown values
-				const teamLeft = document.getElementById('teamLeft');
-				const teamRight = document.getElementById('teamRight');
-				
-				if (teamLeft && teamRight) {
-					teamLeft.value = data.teams.left || '';
-					teamRight.value = data.teams.right || '';
-				}
-				
-				// Load scores
-				currentLeftScore = data.scores.left;
-				currentRightScore = data.scores.right;
-				document.getElementById('leftScore').textContent = currentLeftScore;
-				document.getElementById('rightScore').textContent = currentRightScore;
-				
-				// Create the grid
-				createGrid();
-				
-				// Load squares with proper color assignment
-				for (let row = 0; row < data.squares.length; row++) {
-					for (let col = 0; col < data.squares[row].length; col++) {
-						const value = data.squares[row][col];
-						if (row !== col) { // Skip tie squares
-							updateSquare(row, col, value);
-						}
-					}
-				}
-				// Highlight current score square
-				highlightCurrentScore();
-				// Hide landing overlay
-				landingOverlay.style.display = 'none';
-			} else {
-				showAlert('Failed to load game state');
-			}
-		})
-		.catch(error => {
-			console.error('Error loading game state:', error);
-			showAlert('Failed to load game state');
-		});
-	});
+    // Back button click
+    backToMainBtn.addEventListener('click', () => {
+        sportSelection.style.display = 'none';
+        mainButtons.style.display = 'flex';
+    });
+
+    // Add click handlers for sport boxes in the landing page
+    document.querySelectorAll('.sport-box').forEach(box => {
+        box.addEventListener('click', () => {
+            const sport = box.dataset.sport;
+            setSportTheme(sport);
+            proceedWithReset(true);
+        });
+    });
+
+    // Load Game button click
+    loadGameBtn.addEventListener('click', () => {
+        fetch('/api/state', {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.squares && data.players && data.teams && data.scores && data.sport) {
+                setSportTheme(data.sport);
+                players = data.players;
+                updatePlayerList();
+                
+                // Set team dropdown values
+                const teamLeft = document.getElementById('teamLeft');
+                const teamRight = document.getElementById('teamRight');
+                
+                if (teamLeft && teamRight) {
+                    teamLeft.value = data.teams.left || '';
+                    teamRight.value = data.teams.right || '';
+                }
+                
+                // Load scores
+                currentLeftScore = data.scores.left;
+                currentRightScore = data.scores.right;
+                document.getElementById('leftScore').textContent = currentLeftScore;
+                document.getElementById('rightScore').textContent = currentRightScore;
+                
+                // Create the grid
+                createGrid();
+                
+                // Load squares with proper color assignment
+                for (let row = 0; row < data.squares.length; row++) {
+                    for (let col = 0; col < data.squares[row].length; col++) {
+                        const value = data.squares[row][col];
+                        if (row !== col) { // Skip tie squares
+                            updateSquare(row, col, value);
+                        }
+                    }
+                }
+                // Highlight current score square
+                highlightCurrentScore();
+                // Hide landing overlay
+                landingOverlay.style.display = 'none';
+            } else {
+                showAlert('Failed to load game state');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading game state:', error);
+            showAlert('Failed to load game state');
+        });
+    });
+
+    // Then populate the team selects
+    populateTeamSelects();
 });
 
 
