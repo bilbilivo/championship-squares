@@ -16,13 +16,22 @@ class Config:
         self.template_dir.mkdir(parents=True, exist_ok=True)
         self.static_dir.mkdir(parents=True, exist_ok=True)
         
+        # Sport-specific max scores
+        self.max_scores = {
+            'nfl': 60,  # NFL games rarely exceed 60 points
+            'nhl': 15,  # NHL games rarely exceed 15 goals
+            'nba': 150, # NBA games can reach 150+ points
+            'mlb': 30   # MLB games rarely exceed 30 runs
+        }
+        
         # Default configuration
         self.config = {
             'host': '0.0.0.0',  # Listen on all interfaces
             'port': 5000,
             'debug': False,
             'max_players': 10,
-            'grid_size': 61
+            'current_sport': 'nfl',  # Default sport
+            'max_score': self.max_scores['nfl']  # Default max score
         }
         
         # Load environment-specific configuration
@@ -85,6 +94,14 @@ class Config:
     def get_config(self):
         """Get the current configuration"""
         return self.config
-
+   
+    def update_sport(self, sport):
+        """Update max score based on selected sport"""
+        if sport in self.max_scores:
+            self.config['current_sport'] = sport
+            self.config['max_score'] = self.max_scores[sport]
+            return True
+        return False
+        
 # Create global configuration instance
 config = Config()

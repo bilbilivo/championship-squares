@@ -13,9 +13,9 @@ class GameState:
 
     def reset_state(self):
         """Reset all game state to initial values"""
-        grid_size = config.config['grid_size']
+        max_score = config.config['max_score']
         max_players = config.config['max_players']
-        self.squares = [['' for _ in range(grid_size)] for _ in range(grid_size)]
+        self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
         self.players = {}
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
@@ -30,7 +30,7 @@ class GameState:
             'teams': self.teams,
             'scores': self.scores,
             'available_indices': self.available_indices,
-            'sport': self.sport  # Add sport to saved state
+            'sport': self.sport
         }
         try:
             with open(config.base_dir / 'game_state.json', 'w') as f:
@@ -47,11 +47,29 @@ class GameState:
             if state_file.exists():
                 with open(state_file, 'r') as f:
                     state = json.load(f)
-                    self.squares = state.get('squares', self.squares)
+                    
+                    # Update sport first to ensure correct max_score
+                    self.sport = state.get('sport', 'nfl')
+                    config.update_sport(self.sport)  # This updates max_score in config
+                    
+                    # Create fresh squares array with current max_score
+                    max_score = config.config['max_score']
+                    self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
+                    
+                    # Copy saved squares data, but only up to current max_score
+                    saved_squares = state.get('squares', [])
+                    for i in range(min(len(saved_squares), max_score + 1)):
+                        row = saved_squares[i]
+                        for j in range(min(len(row), max_score + 1)):
+                            self.squares[i][j] = row[j]
+                    
                     self.players = state.get('players', self.players)
                     self.teams = state.get('teams', {'left': '', 'right': ''})
                     self.scores = state.get('scores', {'left': 0, 'right': 0})
-                    self.sport = state.get('sport', 'nfl')  # Load sport from state
+                    
+                    # Ensure scores don't exceed current max_score
+                    self.scores['left'] = min(self.scores['left'], max_score)
+                    self.scores['right'] = min(self.scores['right'], max_score)
                     
                     # Handle available indices safely
                     max_players = config.config['max_players']
@@ -131,7 +149,7 @@ def update_scores():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Update the state endpoint to include scores
+# Update the state endpoint to include max_score
 @app.route('/api/state', methods=['GET'])
 def get_state():
     try:
@@ -140,7 +158,8 @@ def get_state():
             'players': game_state.players,
             'teams': game_state.teams,
             'scores': game_state.scores,
-            'sport': game_state.sport  # Include sport in state response
+            'sport': game_state.sport,
+            'max_score': config.config['max_score']
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -250,7 +269,7 @@ def update_teams():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Add new route for updating sport
+# Update sport selection endpoint to include max score
 @app.route('/api/sport', methods=['POST'])
 def update_sport():
     try:
@@ -262,11 +281,20 @@ def update_sport():
         if sport not in valid_sports:
             return jsonify({'error': 'Invalid sport selection'}), 400
             
-        # Update sport state
-        game_state.sport = sport
-        game_state.save_state()
-        
-        return jsonify({'success': True})
+        # Update sport and max score in config
+        if config.update_sport(sport):
+            # Update game state
+            game_state.sport = sport
+            game_state.save_state()
+            
+            # Return success with new max score
+            return jsonify({
+                'success': True,
+                'max_score': config.config['max_score']
+            })
+        else:
+            return jsonify({'error': 'Failed to update sport configuration'}), 500
+            
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
