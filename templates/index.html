@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Super Bowl Squares</title>
+    <title>CHAMPIONSHIP SQUARES</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
@@ -607,7 +607,7 @@ button:active {
   min-width: 70px;
   text-align: center;
   margin: 0 20px;
-  background: #000000;
+  background: var(--retro-bg);
   border: none;
   position: relative;
   letter-spacing: 2px;
@@ -928,7 +928,7 @@ button:active {
 <body>
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
-			<h1 class="landing-title" id="gameTitleLanding">Super Bowl Squares</h1>
+			<h1 class="landing-title" id="gameTitleLanding">CHAMPIONSHIP SQUARES</h1>
 			<div class="landing-buttons" id="mainButtons">
 				<button id="newGameBtn" class="landing-btn">New Game</button>
 				<button id="loadGameBtn" class="landing-btn">Load Game</button>
@@ -968,7 +968,7 @@ button:active {
 		</div>
 	</div>
 	<div class="container">
-        <h1 class="title" id="gameTitle">Super Bowl Squares</h1>
+        <h1 class="title" id="gameTitle">CHAMPIONSHIP SQUARES</h1>
         <div class="controls">
 			<div class="team-selector">
 				<div class="team-selection">
@@ -1096,13 +1096,13 @@ function generateHelmetSVG(primaryColor, secondaryColor) {
 // Function to update title based on selected sport
 function updateGameTitle(sport) {
     const titles = {
-        'nfl': 'Super Bowl Squares',
-        'nhl': 'Slap Shot Squares',
-        'nba': 'Slam Dunk Squares',
-        'mlb': 'Grand Slam Squares'
+        'nfl': 'SUPER BOWL SQUARES',
+        'nhl': 'SLAP SHOT SQUARES',
+        'nba': 'SLAM DUNK SQUARES',
+        'mlb': 'GRAND SLAM SQUARES'
     };
 
-    const title = titles[sport] || 'Super Bowl Squares'; // Default to Super Bowl Squares
+    const title = titles[sport] || 'CHAMPIONSHIP SQUARES'; // Default to Super Bowl Squares
     document.getElementById('gameTitle').textContent = title;
     document.getElementById('gameTitleLanding').textContent = title;
     document.title = title;
@@ -1265,9 +1265,13 @@ function populateTeamSelects() {
     rightSelect.innerHTML = '<option value="">SELECT HOME TEAM</option>';
     
 	// Get all teams and sort alphabetically
-    const allTeams = Object.entries(getCurrentTeams())
-        .sort((a, b) => a[1].name.localeCompare(b[1].name));
+    <!-- const allTeams = Object.entries(getCurrentTeams()) -->
+        <!-- .sort((a, b) => a[1].name.localeCompare(b[1].name)); -->
     
+	const allTeams = Object.entries(getCurrentTeams())
+    .sort((a, b) => a[0] - b[0]); // Sort by numeric team ID
+
+	
     // Add all teams to both selects
     allTeams.forEach(([code, team]) => {
         // Add to away team select
@@ -1458,7 +1462,7 @@ const NHL_TEAMS = {
     "LAK": { name: "LOS ANGELES KINGS", colors: ["#FDB515", "#582C83"] }, // Purple and gold era
     "MIN": { name: "MINNESOTA WILD", colors: ["#A6192E", "#154734"] },
 	"MNS": { name: "MINNESOTA NORTH STARS", colors: ["#FFC600", "#007934"] }, // North Stars' classic gold and green
-    "MTL": { name: "CANADIENS DE MONTREAL ", colors: ["#C60000", "#000084"] }, // Same
+    "MTL": { name: "CANADIENS DE MONTRÉAL ", colors: ["#C60000", "#000084"] }, // Same
     "NJD": { name: "NEW JERSEY DEVILS", colors: ["#CE1126", "#006A36"] }, // Same
     "NSH": { name: "NASHVILLE PREDATORS", colors: ["#FFB81C", "#041E42"] },
     "NYI": { name: "NEW YORK ISLANDERS", colors: ["#000084", "#F84822"] }, // Same
@@ -1466,6 +1470,7 @@ const NHL_TEAMS = {
     "OTT": { name: "OTTAWA SENATORS", colors: ["#C60C30", "#D59F0D"] },
     "PHI": { name: "PHILADELPHIA FLYERS", colors: ["#F9461C", "#FFFFFF"] }, // Same
     "PIT": { name: "PITTSBURGH PENGUINS", colors: ["#FFBD00", "#000000"] }, // Gold was primary
+    "QUE": { name: "NORDIQUES DE QUÉBEC", colors: ["#007BBB", "#FFFFFF"] },	
     "SEA": { name: "SEATTLE KRAKEN", colors: ["#99D9D9", "#001628"] },
     "SJS": { name: "SAN JOSE SHARKS", colors: ["#007C92", "#A5ACAF"] },
     "STL": { name: "ST. LOUIS BLUES", colors: ["#002F87", "#FCB514"] }, // Same
@@ -1683,66 +1688,6 @@ function saveTeams() {
     });
 }
 
-// Add sport selection function
-function selectSport(isNewGame = false) {
-    showGenericPrompt({
-        title: 'Select Sport',
-        message: 'Choose your sport:\n1: NFL\n2: NHL\n3: NBA\n4: MLB',
-        maxLength: 1,
-        validateInput: (value) => {
-            if (!value.match(/^[1-4]$/)) {
-                return { isValid: false, message: 'Enter number 1-4' };
-            }
-            return { isValid: true };
-        },
-        onConfirm: (value) => {
-            let sport;
-            switch (value) {
-                case '1': sport = 'nfl'; break;
-                case '2': sport = 'nhl'; break;
-                case '3': sport = 'nba'; break;
-                case '4': sport = 'mlb'; break;
-            }
-            
-            // Show loading state
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = 'alert-overlay';
-            loadingOverlay.style.display = 'flex';
-            loadingOverlay.innerHTML = `
-                <div class="alert-content">
-                    <h2 class="alert-title">SETTING UP ${sport.toUpperCase()}</h2>
-                    <div class="loading-spinner"></div>
-                </div>
-            `;
-            document.body.appendChild(loadingOverlay);
-
-            // Update sport via API
-            fetch('/api/sport', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sport })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    setSportTheme(sport);
-                    if (isNewGame) {
-                        resetGame(true);
-                    }
-                } else {
-                    showAlert('Failed to update sport');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating sport:', error);
-                showAlert('Failed to update sport');
-            })
-            .finally(() => {
-                document.body.removeChild(loadingOverlay);
-            });
-        }
-    });
-}
 
 
 // Update team colors and visuals with new helmet colors
