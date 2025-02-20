@@ -928,7 +928,7 @@ button:active {
 <body>
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
-			<h1 class="landing-title">Super Bowl Squares</h1>
+			<h1 class="landing-title" id="gameTitleLanding">Super Bowl Squares</h1>
 			<div class="landing-buttons" id="mainButtons">
 				<button id="newGameBtn" class="landing-btn">New Game</button>
 				<button id="loadGameBtn" class="landing-btn">Load Game</button>
@@ -968,7 +968,7 @@ button:active {
 		</div>
 	</div>
 	<div class="container">
-        <h1 class="title">Super Bowl Squares</h1>
+        <h1 class="title" id="gameTitle">Super Bowl Squares</h1>
         <div class="controls">
 			<div class="team-selector">
 				<div class="team-selection">
@@ -1029,7 +1029,8 @@ button:active {
 let zoomLevel = 1;
 const baseSize = 40;
 let currentSize = baseSize;
-const maxScore = 60;
+// Update maxScore variable to be dynamic
+let maxScore = 60; // Default NFL score, will be updated based on sport
 let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0}
 let currentSport = 'nfl';  // Default sport
 
@@ -1045,19 +1046,37 @@ const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
 
-// Update setSportTheme to include logo colors and return the theme info
+// Update the setSportTheme function to handle max score updates
 function setSportTheme(sport) {
     const root = document.documentElement;
-    currentSport = sport.toLowerCase();  // Keep track of current sport
+    currentSport = sport.toLowerCase();
     
+	// Update game title
+	updateGameTitle(currentSport);
+	
     root.style.setProperty('--retro-primary', `var(--${sport}-primary)`);
     root.style.setProperty('--retro-dark', `var(--${sport}-dark)`);
     root.style.setProperty('--retro-light', `var(--${sport}-light)`);
     root.style.setProperty('--retro-bg', `var(--${sport}-bg)`);
     root.style.setProperty('--retro-logo-primary', `var(--${sport}-logo-primary)`);
     root.style.setProperty('--retro-logo-secondary', `var(--${sport}-logo-secondary)`);
-	
-	// Update team selections when sport changes
+
+    // Update max score from server
+    fetch('/api/sport', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sport: currentSport })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            maxScore = data.max_score;
+            createGrid(); // Recreate grid with new max score
+        }
+    })
+    .catch(error => console.error('Error updating sport:', error));
+    
+    // Update team selections
     populateTeamSelects();
 }
 
@@ -1072,6 +1091,21 @@ function generateHelmetSVG(primaryColor, secondaryColor) {
             <!-- Facemask -->
             <path d="M12 14 L20 14 L21 16 L20 18 L12 18 L11 16 Z" fill="${primaryColor}"/>
         </svg>`;
+}
+
+// Function to update title based on selected sport
+function updateGameTitle(sport) {
+    const titles = {
+        'nfl': 'Super Bowl Squares',
+        'nhl': 'Slap Shot Squares',
+        'nba': 'Slam Dunk Squares',
+        'mlb': 'Grand Slam Squares'
+    };
+
+    const title = titles[sport] || 'Super Bowl Squares'; // Default to Super Bowl Squares
+    document.getElementById('gameTitle').textContent = title;
+    document.getElementById('gameTitleLanding').textContent = title;
+    document.title = title;
 }
 
 // Create main SVG element
@@ -1146,8 +1180,8 @@ svg.call(zoom);
 let currentLeftScore = 0;
 let currentRightScore = 0;
 
+// Update score validation to use dynamic maxScore
 function updateScore(team) {
-    // Get team name based on selection
     const teamSelect = document.getElementById(team === 'left' ? 'teamLeft' : 'teamRight');
     const teamCode = teamSelect.value;
     const teamName = teamCode ? getCurrentTeams()[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
@@ -1156,7 +1190,7 @@ function updateScore(team) {
         title: 'Update Score',
         message: `Enter new score for ${teamCode}`,
         inputType: 'number',
-        maxLength: 2,
+        maxLength: String(maxScore).length,
         minValue: 0,
         maxValue: maxScore,
         validateInput: (value) => {
@@ -1177,8 +1211,6 @@ function updateScore(team) {
         },
         onConfirm: (value) => {
             const score = parseInt(value);
-            
-            // Update score
             if (team === 'left') {
                 currentLeftScore = score;
                 document.getElementById('leftScore').textContent = currentLeftScore;
@@ -1187,7 +1219,6 @@ function updateScore(team) {
                 document.getElementById('rightScore').textContent = currentRightScore;
             }
 
-            // Save scores to backend
             fetch('/api/scores', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2361,58 +2392,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Load Game button click
-    loadGameBtn.addEventListener('click', () => {
-        fetch('/api/state', {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.squares && data.players && data.teams && data.scores && data.sport) {
-                setSportTheme(data.sport);
-                players = data.players;
-                updatePlayerList();
-                
-                // Set team dropdown values
-                const teamLeft = document.getElementById('teamLeft');
-                const teamRight = document.getElementById('teamRight');
-                
-                if (teamLeft && teamRight) {
-                    teamLeft.value = data.teams.left || '';
-                    teamRight.value = data.teams.right || '';
-                }
-                
-                // Load scores
-                currentLeftScore = data.scores.left;
-                currentRightScore = data.scores.right;
-                document.getElementById('leftScore').textContent = currentLeftScore;
-                document.getElementById('rightScore').textContent = currentRightScore;
-                
-                // Create the grid
-                createGrid();
-                
-                // Load squares with proper color assignment
-                for (let row = 0; row < data.squares.length; row++) {
-                    for (let col = 0; col < data.squares[row].length; col++) {
-                        const value = data.squares[row][col];
-                        if (row !== col) { // Skip tie squares
-                            updateSquare(row, col, value);
-                        }
-                    }
-                }
-                // Highlight current score square
-                highlightCurrentScore();
-                // Hide landing overlay
-                landingOverlay.style.display = 'none';
-            } else {
-                showAlert('Failed to load game state');
-            }
-        })
-        .catch(error => {
-            console.error('Error loading game state:', error);
-            showAlert('Failed to load game state');
-        });
-    });
+	// Update loadGameBtn click handler to handle max score
+	loadGameBtn.addEventListener('click', () => {
+		fetch('/api/state', {
+			method: 'GET'
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.squares && data.players && data.teams && data.scores && data.sport && data.max_score) {
+				maxScore = data.max_score; // Update maxScore from server
+				setSportTheme(data.sport);
+				players = data.players;
+				updatePlayerList();
+				
+				const teamLeft = document.getElementById('teamLeft');
+				const teamRight = document.getElementById('teamRight');
+				
+				if (teamLeft && teamRight) {
+					teamLeft.value = data.teams.left || '';
+					teamRight.value = data.teams.right || '';
+				}
+				
+				currentLeftScore = data.scores.left;
+				currentRightScore = data.scores.right;
+				document.getElementById('leftScore').textContent = currentLeftScore;
+				document.getElementById('rightScore').textContent = currentRightScore;
+				
+				createGrid();
+				
+				for (let row = 0; row < data.squares.length; row++) {
+					for (let col = 0; col < data.squares[row].length; col++) {
+						const value = data.squares[row][col];
+						if (row !== col) {
+							updateSquare(row, col, value);
+						}
+					}
+				}
+				highlightCurrentScore();
+				document.getElementById('landing-overlay').style.display = 'none';
+			} else {
+				showAlert('Failed to load game state');
+			}
+		})
+		.catch(error => {
+			console.error('Error loading game state:', error);
+			showAlert('Failed to load game state');
+		});
+	});
 
     // Then populate the team selects
     populateTeamSelects();
