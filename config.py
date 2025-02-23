@@ -18,10 +18,10 @@ class Config:
         
         # Sport-specific max scores
         self.max_scores = {
-            'nfl': 60,  # NFL games rarely exceed 60 points
-            'nhl': 15,  # NHL games rarely exceed 15 goals
-            'nba': 150, # NBA games can reach 150+ points
-            'mlb': 30   # MLB games rarely exceed 30 runs
+            'nfl': 60,
+            'nhl': 10,
+            'nba': 120,
+            'mlb': 20
         }
         
         # Default configuration
