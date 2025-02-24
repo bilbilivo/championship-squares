@@ -1300,7 +1300,7 @@ function highlightCurrentScore() {
     
     // Add highlight to current score square
     // This will work for both regular squares and tie squares
-    d3.select(`rect[data-row='${currentLeftScore}'][data-col='${currentRightScore}']`)
+    d3.select(`rect[data-row="${currentLeftScore}"][data-col="${currentRightScore}"]`)
         .classed('highlight', true);
 }
 
@@ -1410,6 +1410,8 @@ function createGrid() {
   // Update team names with adjusted positioning
   const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
   resetZoom();
+  // Add this line at the end of the function
+  setTimeout(highlightCurrentScore, 100); // Small delay to ensure DOM is updated
 }
 
 const NFL_TEAMS = {
@@ -1645,26 +1647,6 @@ function getContrastRatio(color1, color2) {
     const darker = Math.min(l1, l2);
     
     return (lighter + 0.05) / (darker + 0.05);
-}
-
-function getBestContrastColor(teamColors, backgroundColor = '#001100') {
-    let bestColor = teamColors[0];
-    let bestContrast = getContrastRatio(backgroundColor, teamColors[0]);
-    
-    for (let i = 1; i < teamColors.length; i++) {
-        const contrast = getContrastRatio(backgroundColor, teamColors[i]);
-        if (contrast > bestContrast) {
-            bestContrast = contrast;
-            bestColor = teamColors[i];
-        }
-    }
-    
-    // If contrast is still poor, default to a high-contrast color
-    if (bestContrast < 4.5) {  // WCAG AA standard for large text
-        return `var(--retro-primary)`;  // Default to retro default for maximum visibility
-    }
-    
-    return bestColor;
 }
 
 // Add function to save team selections
@@ -2205,7 +2187,7 @@ function updateSquare(row, col, value) {
 
 function resetZoom() {
     svg.transition()
-        .duration(750)
+        .duration(250)
         .call(zoom.transform, d3.zoomIdentity);
 
     zoomLevel = 1;  // Reset zoom level
@@ -2282,6 +2264,8 @@ function resetGame(isNewGame = false) {
                             updatePlayerList();
                             document.getElementById('leftScore').textContent = '0';
                             document.getElementById('rightScore').textContent = '0';
+							currentLeftScore = 0;  // Explicitly reset these variables
+							currentRightScore = 0;
                             document.getElementById('teamLeft').value = '';
                             document.getElementById('teamRight').value = '';
                             createGrid();
@@ -2338,7 +2322,6 @@ document.addEventListener('DOMContentLoaded', () => {
         box.addEventListener('click', () => {
             const sport = box.dataset.sport;
             setSportTheme(sport);
-            proceedWithReset(true);
         });
     });
 
@@ -2430,19 +2413,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Then populate the team selects
     populateTeamSelects();
 });
-
-// Helper function to validate game state data
-function validateGameState(data) {
-    // Add basic validation for game state data
-    if (!data) return false;
-    if (!Array.isArray(data.squares)) return false;
-    if (typeof data.players !== 'object') return false;
-    if (!data.teams || typeof data.teams !== 'object') return false;
-    if (!data.scores || typeof data.scores !== 'object') return false;
-    if (!data.sport || typeof data.sport !== 'string') return false;
-    if (!data.max_score || typeof data.max_score !== 'number') return false;
-    return true;
-}
 
 
     </script>
