@@ -1046,14 +1046,14 @@ const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
 <!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
 
-// Update the setSportTheme function to handle max score updates
-function setSportTheme(sport) {
+// Modify the setSportTheme function to have an option to skip the API call
+function setSportTheme(sport, skipAPICall = false) {
     const root = document.documentElement;
     currentSport = sport.toLowerCase();
     
-	// Update game title
-	updateGameTitle(currentSport);
-	
+    // Update game title
+    updateGameTitle(currentSport);
+    
     root.style.setProperty('--retro-primary', `var(--${sport}-primary)`);
     root.style.setProperty('--retro-dark', `var(--${sport}-dark)`);
     root.style.setProperty('--retro-light', `var(--${sport}-light)`);
@@ -1061,24 +1061,27 @@ function setSportTheme(sport) {
     root.style.setProperty('--retro-logo-primary', `var(--${sport}-logo-primary)`);
     root.style.setProperty('--retro-logo-secondary', `var(--${sport}-logo-secondary)`);
 
-    // Update max score from server
-    fetch('/api/sport', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sport: currentSport })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            maxScore = data.max_score;
-            createGrid(); // Recreate grid with new max score
-        }
-    })
-    .catch(error => console.error('Error updating sport:', error));
+    // Only make the API call if not skipped
+    if (!skipAPICall) {
+        fetch('/api/sport', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sport: currentSport })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                maxScore = data.max_score;
+                createGrid(); // Recreate grid with new max score
+            }
+        })
+        .catch(error => console.error('Error updating sport:', error));
+    }
     
     // Update team selections
     populateTeamSelects();
 }
+
 
 // Generate 8-bit helmet SVG with both team colors
 function generateHelmetSVG(primaryColor, secondaryColor) {
@@ -2236,7 +2239,7 @@ function resetGame(isNewGame = false) {
 
                 // Add event listeners for sport selection
                 overlay.querySelectorAll('.sport-box').forEach(box => {
-                    box.addEventListener('click', () => {
+                    box.addEventListener('click', async () => {  // Make this async
                         const sport = box.dataset.sport;
                         document.body.removeChild(overlay);
                         
@@ -2252,47 +2255,49 @@ function resetGame(isNewGame = false) {
                         `;
                         document.body.appendChild(loadingOverlay);
 
-                        // Set sport theme and reset game
-                        setSportTheme(sport);
-                        fetch('/api/reset', {
-                            method: 'POST'
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                // Reset all local game data
-                                players = {};
-                                updatePlayerList();
-                                
-                                // Reset scores
-                                document.getElementById('leftScore').textContent = '0';
-                                document.getElementById('rightScore').textContent = '0';
-                                
-                                // Reset team selections
-                                document.getElementById('teamLeft').value = '';
-                                document.getElementById('teamRight').value = '';
-                                
-                                // Recreate grid and update visuals
-                                createGrid();
-                                highlightCurrentScore();
-                                
-                                // Hide landing overlay if this is a new game
-                                if (isNewGame) {
-                                    document.getElementById('landing-overlay').style.display = 'none';
-                                }
-                                
-                                showAlert(isNewGame ? 'Game started' : 'Reset completed');
-                            } else {
-                                showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game: ${data.error || 'Unknown error'}`);
+                        try {
+                            // First update the sport
+                            const sportResponse = await fetch('/api/sport', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ sport: sport })
+                            });
+                            const sportData = await sportResponse.json();
+                            if (!sportData.success) {
+                                throw new Error('Failed to update sport');
                             }
-                        })
-                        .catch(error => {
+
+                            // Then reset the game
+                            const resetResponse = await fetch('/api/reset', {
+                                method: 'POST'
+                            });
+                            const resetData = await resetResponse.json();
+                            if (!resetData.success) {
+                                throw new Error('Failed to reset game');
+                            }
+
+                            // Update UI after both operations complete successfully
+                            setSportTheme(sport);
+                            players = {};
+                            updatePlayerList();
+                            document.getElementById('leftScore').textContent = '0';
+                            document.getElementById('rightScore').textContent = '0';
+                            document.getElementById('teamLeft').value = '';
+                            document.getElementById('teamRight').value = '';
+                            createGrid();
+                            highlightCurrentScore();
+
+                            if (isNewGame) {
+                                document.getElementById('landing-overlay').style.display = 'none';
+                            }
+                            
+                            showAlert(isNewGame ? 'Game started' : 'Reset completed');
+                        } catch (error) {
                             console.error(`Error ${isNewGame ? 'starting' : 'resetting'} game:`, error);
                             showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game`);
-                        })
-                        .finally(() => {
+                        } finally {
                             document.body.removeChild(loadingOverlay);
-                        });
+                        }
                     });
                 });
             }
@@ -2339,49 +2344,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Update loadGameBtn click handler to handle max score
 	loadGameBtn.addEventListener('click', () => {
+		// Show loading indicator
+		const loadingOverlay = document.createElement('div');
+		loadingOverlay.className = 'alert-overlay';
+		loadingOverlay.style.display = 'flex';
+		loadingOverlay.innerHTML = `
+			<div class="alert-content">
+				<h2 class="alert-title">LOADING GAME</h2>
+				<div class="loading-spinner"></div>
+			</div>
+		`;
+		document.body.appendChild(loadingOverlay);
+
 		fetch('/api/state', {
 			method: 'GET'
 		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.squares && data.players && data.teams && data.scores && data.sport && data.max_score) {
-				maxScore = data.max_score; // Update maxScore from server
-				setSportTheme(data.sport);
-				players = data.players;
-				updatePlayerList();
-				
-				const teamLeft = document.getElementById('teamLeft');
-				const teamRight = document.getElementById('teamRight');
-				
-				if (teamLeft && teamRight) {
-					teamLeft.value = data.teams.left || '';
-					teamRight.value = data.teams.right || '';
-				}
-				
-				currentLeftScore = data.scores.left;
-				currentRightScore = data.scores.right;
-				document.getElementById('leftScore').textContent = currentLeftScore;
-				document.getElementById('rightScore').textContent = currentRightScore;
-				
-				createGrid();
-				
-				for (let row = 0; row < data.squares.length; row++) {
-					for (let col = 0; col < data.squares[row].length; col++) {
-						const value = data.squares[row][col];
-						if (row !== col) {
-							updateSquare(row, col, value);
-						}
-					}
-				}
-				highlightCurrentScore();
-				document.getElementById('landing-overlay').style.display = 'none';
-			} else {
-				showAlert('Failed to load game state');
+		.then(response => {
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
 			}
+			return response.json();
+		})
+		.then(data => {
+			// Validate required data
+			if (!data || !data.squares || !data.players || 
+				!data.teams || !data.scores || !data.sport || 
+				!data.max_score) {
+				throw new Error('Invalid or incomplete game state');
+			}
+
+			// Set sport theme first but skip the API call
+			setSportTheme(data.sport, true);
+			maxScore = data.max_score;
+
+			// Load players
+			players = data.players;
+			updatePlayerList();
+
+			// Load teams
+			const teamLeft = document.getElementById('teamLeft');
+			const teamRight = document.getElementById('teamRight');
+			
+			if (teamLeft && teamRight) {
+				teamLeft.value = data.teams.left || '';
+				teamRight.value = data.teams.right || '';
+				updateTeamColors(); // Update team visuals
+			}
+
+			// Load scores
+			currentLeftScore = Math.min(data.scores.left, maxScore);
+			currentRightScore = Math.min(data.scores.right, maxScore);
+			document.getElementById('leftScore').textContent = currentLeftScore;
+			document.getElementById('rightScore').textContent = currentRightScore;
+
+			// Recreate grid with new maxScore
+			createGrid();
+
+			// Update squares data
+			for (let row = 0; row <= maxScore; row++) {
+				for (let col = 0; col <= maxScore; col++) {
+					if (row === col) continue; // Skip tie squares
+					const value = data.squares[row] && data.squares[row][col] ? 
+						data.squares[row][col] : '';
+					updateSquare(row, col, value);
+				}
+			}
+
+			// Update visual states
+			highlightCurrentScore();
+			
+			// Hide overlays
+			document.getElementById('landing-overlay').style.display = 'none';
+			document.body.removeChild(loadingOverlay);
+
+			// Show success message
+			showAlert('Game loaded successfully');
 		})
 		.catch(error => {
 			console.error('Error loading game state:', error);
-			showAlert('Failed to load game state');
+			showAlert('Failed to load game state: ' + error.message);
+			document.body.removeChild(loadingOverlay);
 		});
 	});
 
@@ -2389,6 +2431,18 @@ document.addEventListener('DOMContentLoaded', () => {
     populateTeamSelects();
 });
 
+// Helper function to validate game state data
+function validateGameState(data) {
+    // Add basic validation for game state data
+    if (!data) return false;
+    if (!Array.isArray(data.squares)) return false;
+    if (typeof data.players !== 'object') return false;
+    if (!data.teams || typeof data.teams !== 'object') return false;
+    if (!data.scores || typeof data.scores !== 'object') return false;
+    if (!data.sport || typeof data.sport !== 'string') return false;
+    if (!data.max_score || typeof data.max_score !== 'number') return false;
+    return true;
+}
 
 
     </script>

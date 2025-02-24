@@ -172,7 +172,7 @@ def update_square():
         col = data.get('col')
         value = data.get('value')
         
-        if not (0 <= row < config.config['grid_size'] and 0 <= col < config.config['grid_size']):
+        if not (0 <= row <= config.config['max_score'] and 0 <= col <= config.config['max_score']):
             return jsonify({'error': 'Invalid input'}), 400
             
         # Get current value before update

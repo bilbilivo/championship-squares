@@ -30,7 +30,6 @@ class Config:
             'port': 5000,
             'debug': False,
             'max_players': 10,
-            'current_sport': 'nfl',  # Default sport
             'max_score': self.max_scores['nfl']  # Default max score
         }
         
@@ -98,7 +97,6 @@ class Config:
     def update_sport(self, sport):
         """Update max score based on selected sport"""
         if sport in self.max_scores:
-            self.config['current_sport'] = sport
             self.config['max_score'] = self.max_scores[sport]
             return True
         return False
