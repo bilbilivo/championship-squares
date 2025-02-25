@@ -923,6 +923,64 @@ button:active {
     transform: translateY(2px);
     box-shadow: none;
 }
+
+.square {
+	stroke: var(--retro-primary);
+	stroke-width: 2;
+	fill: var(--retro-bg);
+	transition: fill 0.3s ease;
+}
+
+.square:hover {
+	fill: var(--retro-light);
+	cursor: pointer;
+}
+
+.header-square {
+	cursor: default;
+}
+
+.tie-square.highlight {
+	fill: var(--retro-light) !important;
+}
+
+/* Keep existing tie-square styles but remove the !important from the fill */
+.tie-square {
+	fill: var(--retro-bg);
+	cursor: not-allowed;
+}
+
+.tie-square:hover {
+	fill: var(--retro-bg);
+}
+
+.square-text, .header-text, .tie-text {
+	font-family: 'Press Start 2P', monospace;
+	fill: var(--retro-primary);
+	text-anchor: middle;
+	dominant-baseline: middle;
+	pointer-events: none;
+	transition: font-size 0.3s ease;
+}
+
+.player-item {
+	font-family: 'Press Start 2P', monospace;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px;
+}
+
+.delete-btn {
+	margin-left: auto;
+	min-width: 24px;
+	height: 24px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
     </style>
 </head>
 <body>
@@ -1861,68 +1919,6 @@ function deletePlayer(initial) {
     );
 }
 
-// Add or update CSS styles
-const style = document.createElement('style');
-style.textContent = `
-    .square {
-        stroke: var(--retro-primary);
-        stroke-width: 2;
-        fill: var(--retro-bg);
-        transition: fill 0.3s ease;
-    }
-
-    .square:hover {
-        fill: var(--retro-light);
-        cursor: pointer;
-    }
-
-    .header-square {
-        cursor: default;
-    }
-
-	.tie-square.highlight {
-		fill: var(--retro-light) !important;
-	}
-
-	/* Keep existing tie-square styles but remove the !important from the fill */
-	.tie-square {
-		fill: var(--retro-bg);
-		cursor: not-allowed;
-	}
-
-	.tie-square:hover {
-		fill: var(--retro-bg);
-	}
-
-    .square-text, .header-text, .tie-text {
-        font-family: 'Press Start 2P', monospace;
-        fill: var(--retro-primary);
-        text-anchor: middle;
-        dominant-baseline: middle;
-        pointer-events: none;
-        transition: font-size 0.3s ease;
-    }
-
-    .player-item {
-        font-family: 'Press Start 2P', monospace;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px;
-    }
-
-    .delete-btn {
-        margin-left: auto;
-        min-width: 24px;
-        height: 24px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-`;
-document.head.appendChild(style);
 
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
