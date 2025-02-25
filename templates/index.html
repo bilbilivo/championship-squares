@@ -326,7 +326,10 @@ button:active {
     background: var(--retro-dark) !important;
     border: 2px solid var(--retro-primary) !important;
     height: 28px !important;
+	font-family: 'Press Start 2P', monospace;
+	margin-bottom: 8px;
 }
+
 
 .player-info {
     font-size: 12px !important;
@@ -358,6 +361,8 @@ button:active {
     justify-content: center !important;
     margin-right: 2px !important;
 }
+
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 12px;
@@ -485,15 +490,6 @@ button:active {
     text-align: center;
 }
 
-.delete-btn {
-	margin-left: auto;
-	min-width: 24px;
-	height: 24px;
-	padding: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
 
 .reset-game-btn {
 	background-color: var(--retro-dark);
@@ -743,6 +739,7 @@ button:active {
     justify-content: center;
     background: rgba(var(--retro-dark), 0.9);  /* Slightly transparent background */
     <!-- background: rgba(0, 34, 0, 0.9);  /* Slightly transparent background */ -->
+	animation: overlayFadeIn 0.3s ease-out;
 }
 
 /* Landing overlay - lowest layer */
@@ -875,9 +872,7 @@ button:active {
     to { opacity: 1; }
 }
 
-.base-overlay {
-    animation: overlayFadeIn 0.3s ease-out;
-}
+
 .loading-spinner {
     width: 50px;
     height: 50px;
@@ -963,24 +958,7 @@ button:active {
 	transition: font-size 0.3s ease;
 }
 
-.player-item {
-	font-family: 'Press Start 2P', monospace;
-	margin-bottom: 8px;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 6px;
-}
 
-.delete-btn {
-	margin-left: auto;
-	min-width: 24px;
-	height: 24px;
-	padding: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
     </style>
 </head>
 <body>
