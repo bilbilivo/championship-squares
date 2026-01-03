@@ -14,3 +14,4 @@ input/unwanted_files_(overrides_the_override_above)*TEST*xlsx
 *test*.py
 server.pid
 server.log
+championship-squares.desktop
