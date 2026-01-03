@@ -4,7 +4,6 @@ Small web app to run a Championship Squares game. Works on Linux, macOS, Windows
 
 **Quick overview**
 - Start the server from a Python virtual environment or use the provided `start_server.sh` launcher.
-- Default Raspberry Pi port: 8080 (see `config.json`).
 
 **Requirements**
 - Python 3.7+
@@ -59,8 +58,7 @@ python app.py
 ```
 
 Open a browser to:
-- `http://localhost:5000` (default)
-- On Raspberry Pi, if `config.json` uses port 8080: `http://<raspberry-ip>:8080`
+- `http://localhost:8080` (default)
 
 Notes for Raspberry Pi
 ----------------------

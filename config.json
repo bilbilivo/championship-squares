@@ -1,15 +1,15 @@
 {
     "windows": {
         "host": "localhost",
-        "port": 5000
+        "port": 8080
     },
     "linux": {
         "host": "0.0.0.0",
-        "port": 5000
+        "port": 8080
     },
     "darwin": {
         "host": "localhost",
-        "port": 5000
+        "port": 8080
     },
     "raspberry_pi": {
         "host": "0.0.0.0",

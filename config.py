@@ -27,7 +27,7 @@ class Config:
         # Default configuration
         self.config = {
             'host': '0.0.0.0',  # Listen on all interfaces
-            'port': 5000,
+            'port': 8080,
             'debug': False,
             'max_players': 10,
             'max_score': self.max_scores['nfl']  # Default max score
@@ -53,19 +53,19 @@ class Config:
             env_config = {
                 'windows': {
                     'host': 'localhost',
-                    'port': 5000
+                    'port': 8080
                 },
                 'linux': {
                     'host': '0.0.0.0',
-                    'port': 5000
+                    'port': 8080
                 },
                 'darwin': {  # macOS
                     'host': 'localhost',
-                    'port': 5000
+                    'port': 8080
                 },
                 'raspberry_pi': {
                     'host': '0.0.0.0',
-                    'port': 8080  # Different port for Raspberry Pi
+                    'port': 8080
                 }
             }
             
