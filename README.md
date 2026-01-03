@@ -1,127 +1,83 @@
-# Super Bowl Squares
+# Championship Squares
 
-A cross-platform web application for managing Super Bowl squares, compatible with Unix, Windows, and Raspberry Pi.
+Small web app to run a Championship Squares game. Works on Linux, macOS, Windows and Raspberry Pi (3+).
 
-## Requirements
+**Quick overview**
+- Start the server from a Python virtual environment or use the provided `start_server.sh` launcher.
+- Default Raspberry Pi port: 8080 (see `config.json`).
 
+**Requirements**
 - Python 3.7+
-- Flask
+- Flask (installed via `requirements.txt`)
 - Web browser with JavaScript enabled
 
-## Installation
-
+Installation
+------------
 1. Clone the repository:
+
 ```bash
-git clone <repository-url>
-cd super-bowl-squares
+git clone https://github.com/bilbilivo/championship-squares.git
+cd championship-squares
 ```
 
-2. Create a virtual environment (recommended):
+2. Create and activate a virtual environment (recommended):
 
-### Windows
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
+Unix / macOS / Raspberry Pi:
 
-### Unix/macOS/Raspberry Pi
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-3. Install required packages:
+Windows (PowerShell):
+
+```powershell
+python -m venv venv
+venv\Scripts\Activate.ps1
+```
+
+3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## Configuration
+Running the app
+---------------
+Preferred: use the launcher which activates the `venv` and manages the process:
 
-The application automatically creates a `config.json` file with platform-specific settings. You can modify these settings:
-
-```json
-{
-    "windows": {
-        "host": "localhost",
-        "port": 5000
-    },
-    "linux": {
-        "host": "0.0.0.0",
-        "port": 5000
-    },
-    "darwin": {
-        "host": "localhost",
-        "port": 5000
-    },
-    "raspberry_pi": {
-        "host": "0.0.0.0",
-        "port": 8080
-    }
-}
+```bash
+./start_server.sh start
+./start_server.sh status
+./start_server.sh stop
 ```
 
-## Running the Application
+Or run directly inside an activated venv:
 
-1. Start the server:
-
-### Windows
 ```bash
 python app.py
 ```
 
-### Unix/macOS/Raspberry Pi
-```bash
-python3 app.py
-```
+Open a browser to:
+- `http://localhost:5000` (default)
+- On Raspberry Pi, if `config.json` uses port 8080: `http://<raspberry-ip>:8080`
 
-2. Open a web browser and navigate to:
-- Windows/macOS: `http://localhost:5000`
-- Linux/Raspberry Pi: `http://<your-ip-address>:5000` (or port 8080 for Raspberry Pi)
+Notes for Raspberry Pi
+----------------------
+- `config.py` writes a `config.json` with a Raspberry Pi-specific entry (port 8080). Adjust it if needed.
+- The app tries to open a browser when started; on headless devices this will fail harmlessly — the server still runs.
 
-## Features
+Files of interest
+-----------------
+- `app.py` — main application
+- `config.py` — platform-aware configuration
+- `start_server.sh` — launcher that activates `venv` and manages the process
+- `requirements.txt` — Python dependencies
 
-- Cross-platform compatibility
-- Automatic configuration based on platform
-- Persistent game state
-- Error handling for robustness
-- Responsive web interface
-- Support for multiple players
-- Color-coded player squares
-- Automatic team color management
+License
+-------
+MIT
 
-## Directory Structure
-
-```
-super-bowl-squares/
-├── app.py              # Main application file
-├── config.py           # Configuration management
-├── requirements.txt    # Python dependencies
-├── templates/          # HTML templates
-│   └── index.html     # Main interface template
-├── static/            # Static files (if any)
-└── game_state.json    # Persistent game state
-```
-
-## Troubleshooting
-
-1. Port in Use:
-   - Windows: Change port in config.json or close competing application
-   - Unix/Linux: `sudo lsof -i :5000` to find and kill competing process
-   - Raspberry Pi: Change port in config.json (default 8080)
-
-2. Permission Issues:
-   - Unix/Linux/Raspberry Pi: Ensure proper file permissions with `chmod`
-   - Windows: Run as administrator if needed
-
-3. Template Not Found:
-   - Ensure index.html is in the templates directory
-   - Check file permissions
-   - Verify path separators are correct for your OS
-
-## License
-
-MIT license
-
-## Contributing
-
-[Contributing Guidelines Here]
+Contributing
+------------
+Contributions welcome. Please open issues or submit pull requests.
