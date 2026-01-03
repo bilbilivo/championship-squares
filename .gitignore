@@ -4,6 +4,7 @@ log/*
 input/*
 output/*
 venv/*
+vscode/*
 config.json
 game_state.json
 !input/*_inputList.txt
