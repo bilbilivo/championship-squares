@@ -43,16 +43,19 @@ pip install -r requirements.txt
 
 Running the app
 ---------------
-Preferred: use the launcher which activates the `venv` and manages the process:
 
+Unix / macOS / Raspberry Pi:
+
+Preferred: use the launcher which activates the `venv` and manages the process:
 ```bash
 ./start_server.sh start
 ./start_server.sh status
 ./start_server.sh stop
 ```
 
-Or run directly inside an activated venv:
+Windows (PowerShell):
 
+run directly inside an activated venv:
 ```bash
 python app.py
 ```
