@@ -146,6 +146,68 @@ body {
     font-size: 1.2em;
 }
 
+.multiplier-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.multiplier-label {
+    color: var(--retro-primary);
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.multiplier-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.multiplier-btn {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: 2px solid var(--retro-primary);
+    padding: 6px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 50px;
+}
+
+.multiplier-btn:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+}
+
+.multiplier-btn.active {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    box-shadow: 0 0 10px var(--retro-primary);
+}
+
+.multiplier-value {
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+.multiplier-hint {
+    font-size: 0.7em;
+    opacity: 0.8;
+    line-height: 1;
+}
+
+.tokens-display {
+    color: var(--retro-primary);
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
 .team-selection {
     display: flex;
     align-items: center;
@@ -1013,7 +1075,12 @@ button:active {
 					</select>
 				</div>
 				<span id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</span>
-				<div class="team-vs">VS</div>
+				<div class="multiplier-selector">
+					<div class="multiplier-label">MULTIPLIER</div>
+					<div class="multiplier-buttons" id="multiplierButtons">
+						<!-- Buttons will be dynamically generated based on sport -->
+					</div>
+				</div>
 				<span id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</span>
 				<div class="team-selection">
 					<select id="teamRight" onchange="updateTeamColors()">
@@ -1066,8 +1133,12 @@ const baseSize = 40;
 let currentSize = baseSize;
 // Update maxScore variable to be dynamic
 let maxScore = 60; // Default NFL score, will be updated based on sport
-let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0}
+let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0, 'tokens': 40}
 let currentSport = 'nfl';  // Default sport
+let currentMultiplier = 1;  // Current betting multiplier
+let availableMultipliers = [1, 2, 4, 8];  // Available multipliers for current sport
+let multiplierLabels = ['<Q1', '<Q2', '<Q3', '<Q4'];  // Labels for when to use each multiplier
+let tokensPerPlayer = 40;  // Tokens each player gets for current sport
 
 // Create SVG with modified margins for team names
 const margin = { top: 60, right: 140, bottom: 60, left: 140 };
@@ -1107,6 +1178,11 @@ function setSportTheme(sport, skipAPICall = false) {
         .then(data => {
             if (data.success) {
                 maxScore = data.max_score;
+                availableMultipliers = data.available_multipliers || [1];
+                multiplierLabels = data.multiplier_labels || [];
+                tokensPerPlayer = data.tokens_per_player || 40;
+                currentMultiplier = 1;
+                updateMultiplierButtons();
                 createGrid(); // Recreate grid with new max score
             }
         })
@@ -1145,6 +1221,66 @@ function updateGameTitle(sport) {
     document.getElementById('gameTitleLanding').textContent = title;
     document.title = title;
 }
+
+// Function to update multiplier buttons based on available multipliers
+function updateMultiplierButtons() {
+    const container = document.getElementById('multiplierButtons');
+    container.innerHTML = '';
+
+    availableMultipliers.forEach((multiplier, index) => {
+        const button = document.createElement('button');
+        button.className = 'multiplier-btn';
+
+        // Create button content with multiplier and label
+        const multiplierText = document.createElement('div');
+        multiplierText.className = 'multiplier-value';
+        multiplierText.textContent = `${multiplier}x`;
+
+        const labelText = document.createElement('div');
+        labelText.className = 'multiplier-hint';
+        labelText.textContent = multiplierLabels[index] || '';
+
+        button.appendChild(multiplierText);
+        button.appendChild(labelText);
+        button.onclick = () => selectMultiplier(multiplier);
+
+        if (multiplier === currentMultiplier) {
+            button.classList.add('active');
+        }
+
+        container.appendChild(button);
+    });
+}
+
+// Function to select a multiplier
+function selectMultiplier(multiplier) {
+    currentMultiplier = multiplier;
+
+    // Update button states - remove active from all, then add to the selected one
+    const buttons = document.querySelectorAll('.multiplier-btn');
+    buttons.forEach((btn, index) => {
+        btn.classList.remove('active');
+        // Add active class to the button with the matching multiplier
+        if (availableMultipliers[index] === multiplier) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Save multiplier to backend
+    fetch('/api/multiplier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ multiplier: multiplier })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Failed to update multiplier:', data.error);
+        }
+    })
+    .catch(error => console.error('Error updating multiplier:', error));
+}
+
 
 // Create main SVG element
 const svg = d3.select("#grid")
@@ -1633,7 +1769,8 @@ function addPlayer() {
             players[initial] = {
                 name: name,
                 playerIndex: data.playerIndex,  // Changed from colorIndex
-                bets: 0
+                bets: 0,
+                tokens: tokensPerPlayer  // Initialize with tokens for current sport
             };
             updatePlayerList();
             initialInput.value = '';
@@ -1836,7 +1973,7 @@ function updatePlayerList() {
         playerInfo.style.overflow = 'hidden';
         playerInfo.style.textOverflow = 'ellipsis';
         playerInfo.style.maxWidth = '200px';
-        playerInfo.textContent = `${initial}-${info.name}-${info.bets || 0}`;
+        playerInfo.textContent = `${initial}-${info.name}-${info.tokens || 0}`;
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
@@ -1941,8 +2078,18 @@ function handleSquareClick(row, col) {
             .then(data => {
                 if (data.success) {
                     updateSquare(row, col, initial);
+                    // Update player tokens for all affected players
+                    if (data.updated_players) {
+                        for (const [playerInitial, tokens] of Object.entries(data.updated_players)) {
+                            if (players[playerInitial]) {
+                                players[playerInitial].tokens = tokens;
+                            }
+                        }
+                    }
+                    // Update player list to show new token counts
+                    updatePlayerList();
                 } else {
-                    showAlert('Failed to update square');
+                    showAlert(data.error || 'Failed to update square');
                 }
             })
             .catch(error => {
@@ -2108,8 +2255,18 @@ function handleSquareDelete(row, col) {
                 .then(data => {
                     if (data.success) {
                         updateSquare(row, col, '');
+                        // Update player tokens for all affected players
+                        if (data.updated_players) {
+                            for (const [playerInitial, tokens] of Object.entries(data.updated_players)) {
+                                if (players[playerInitial]) {
+                                    players[playerInitial].tokens = tokens;
+                                }
+                            }
+                        }
+                        // Update player list to show new token counts
+                        updatePlayerList();
                     } else {
-                        showAlert("Failed to delete square");
+                        showAlert(data.error || "Failed to delete square");
                     }
                 })
                 .catch(error => {
@@ -2323,8 +2480,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		})
 		.then(data => {
 			// Validate required data
-			if (!data || !data.squares || !data.players || 
-				!data.teams || !data.scores || !data.sport || 
+			if (!data || !data.squares || !data.players ||
+				!data.teams || !data.scores || !data.sport ||
 				!data.max_score) {
 				throw new Error('Invalid or incomplete game state');
 			}
@@ -2332,6 +2489,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Set sport theme first but skip the API call
 			setSportTheme(data.sport, true);
 			maxScore = data.max_score;
+
+			// Load multiplier data
+			currentMultiplier = data.current_multiplier || 1;
+			availableMultipliers = data.available_multipliers || [1];
+			multiplierLabels = data.multiplier_labels || [];
+			tokensPerPlayer = data.tokens_per_player || 40;
+			updateMultiplierButtons();
 
 			// Load players
 			players = data.players;
@@ -2385,6 +2549,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Then populate the team selects
     populateTeamSelects();
+
+    // Initialize multiplier buttons
+    updateMultiplierButtons();
 });
 
 

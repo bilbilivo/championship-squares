@@ -23,6 +23,30 @@ class Config:
             'nba': 180,
             'mlb': 30
         }
+
+        # Sport-specific multiplier configurations
+        self.multipliers = {
+            'nfl': [1, 2, 4, 8],
+            'nhl': [1, 2, 4],
+            'nba': [1, 2, 4, 8],
+            'mlb': [1, 2, 4, 8]
+        }
+
+        # Sport-specific multiplier labels (when to use each multiplier)
+        self.multiplier_labels = {
+            'nfl': ['<Q1', '<Q2', '<Q3', '<Q4'],
+            'nhl': ['<P1', '<P2', '<P3'],
+            'nba': ['<Q1', '<Q2', '<Q3', '<Q4'],
+            'mlb': ['<I3', '<I6', '<I8', '<I9']
+        }
+
+        # Sport-specific total tokens available for betting
+        self.total_tokens = {
+            'nfl': 40,
+            'nhl': 12,
+            'nba': 48,
+            'mlb': 16
+        }
         
         # Default configuration
         self.config = {

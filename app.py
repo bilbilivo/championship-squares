@@ -16,21 +16,28 @@ class GameState:
         max_score = config.config['max_score']
         max_players = config.config['max_players']
         self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
+        self.square_multipliers = {}  # Track multiplier used for each square {(row,col): multiplier}
         self.players = {}
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
         self.available_indices = list(range(max_players))
         self.sport = 'nfl'  # Add default sport
+        self.current_multiplier = 1  # Default multiplier
 
     def save_state(self):
         """Save current game state to file"""
+        # Convert tuple keys to string for JSON serialization
+        square_multipliers_json = {f"{k[0]},{k[1]}": v for k, v in self.square_multipliers.items()}
+
         state = {
             'squares': self.squares,
+            'square_multipliers': square_multipliers_json,
             'players': self.players,
             'teams': self.teams,
             'scores': self.scores,
             'available_indices': self.available_indices,
-            'sport': self.sport
+            'sport': self.sport,
+            'current_multiplier': self.current_multiplier
         }
         try:
             with open(config.base_dir / 'game_state.json', 'w') as f:
@@ -51,6 +58,13 @@ class GameState:
                     # Update sport first to ensure correct max_score
                     self.sport = state.get('sport', 'nfl')
                     config.update_sport(self.sport)  # This updates max_score in config
+
+                    # Load multiplier state
+                    self.current_multiplier = state.get('current_multiplier', 1)
+
+                    # Load square multipliers (convert string keys back to tuples)
+                    square_multipliers_json = state.get('square_multipliers', {})
+                    self.square_multipliers = {tuple(map(int, k.split(','))): v for k, v in square_multipliers_json.items()}
                     
                     # Create fresh squares array with current max_score
                     max_score = config.config['max_score']
@@ -64,6 +78,15 @@ class GameState:
                             self.squares[i][j] = row[j]
                     
                     self.players = state.get('players', self.players)
+
+                    # Migrate old players to add tokens field if missing
+                    tokens_per_player = config.total_tokens.get(self.sport, 40)
+                    for player_initial in self.players:
+                        if 'tokens' not in self.players[player_initial]:
+                            # Calculate tokens based on current bets
+                            bets = self.players[player_initial].get('bets', 0)
+                            self.players[player_initial]['tokens'] = max(0, tokens_per_player - bets)
+
                     self.teams = state.get('teams', {'left': '', 'right': ''})
                     self.scores = state.get('scores', {'left': 0, 'right': 0})
                     
@@ -159,7 +182,11 @@ def get_state():
             'teams': game_state.teams,
             'scores': game_state.scores,
             'sport': game_state.sport,
-            'max_score': config.config['max_score']
+            'max_score': config.config['max_score'],
+            'current_multiplier': game_state.current_multiplier,
+            'available_multipliers': config.multipliers.get(game_state.sport, [1]),
+            'multiplier_labels': config.multiplier_labels.get(game_state.sport, []),
+            'tokens_per_player': config.total_tokens.get(game_state.sport, 40)
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -171,25 +198,52 @@ def update_square():
         row = data.get('row')
         col = data.get('col')
         value = data.get('value')
-        
+
         if not (0 <= row <= config.config['max_score'] and 0 <= col <= config.config['max_score']):
             return jsonify({'error': 'Invalid input'}), 400
-            
+
         # Get current value before update
         current_value = game_state.squares[row][col]
-        
-        # Update bet counts
+        square_key = (row, col)
+
+        # Calculate token cost with current multiplier
+        token_cost = game_state.current_multiplier
+
+        # Track updated players
+        updated_players = {}
+
+        # Update bet counts and tokens
         if current_value and current_value in game_state.players:
-            game_state.players[current_value]['bets'] = max(0, game_state.players[current_value].get('bets', 0) - 1)
-            
+            # Return tokens when removing a bet - use stored multiplier for this square
+            old_multiplier = game_state.square_multipliers.get(square_key, 1)
+            game_state.players[current_value]['bets'] = max(0, game_state.players[current_value].get('bets', 0) - old_multiplier)
+            game_state.players[current_value]['tokens'] = game_state.players[current_value].get('tokens', 0) + old_multiplier
+            updated_players[current_value] = game_state.players[current_value]['tokens']
+            # Remove the multiplier entry for this square
+            if square_key in game_state.square_multipliers:
+                del game_state.square_multipliers[square_key]
+
         new_value = value.upper() if value else ''
         if new_value and new_value in game_state.players:
-            game_state.players[new_value]['bets'] = game_state.players[new_value].get('bets', 0) + 1
-        
+            # Check if player has enough tokens
+            player_tokens = game_state.players[new_value].get('tokens', 0)
+            if player_tokens < token_cost:
+                return jsonify({'error': f'Player {new_value} does not have enough tokens remaining'}), 400
+
+            # Deduct tokens and update bet count
+            game_state.players[new_value]['bets'] = game_state.players[new_value].get('bets', 0) + token_cost
+            game_state.players[new_value]['tokens'] = player_tokens - token_cost
+            updated_players[new_value] = game_state.players[new_value]['tokens']
+            # Store the multiplier used for this square
+            game_state.square_multipliers[square_key] = token_cost
+
         # Update square
         game_state.squares[row][col] = new_value
         game_state.save_state()  # Save state after update
-        return jsonify({'success': True})
+        return jsonify({
+            'success': True,
+            'updated_players': updated_players  # Return all players whose tokens changed
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -214,10 +268,14 @@ def add_player():
         except Exception as e:
             return jsonify({'error': 'No more player slots available'}), 400
 
+        # Get tokens per player for current sport
+        tokens_per_player = config.total_tokens.get(game_state.sport, 40)
+
         game_state.players[initial] = {
-            'name': name, 
+            'name': name,
             'playerIndex': player_index,
-            'bets': 0
+            'bets': 0,
+            'tokens': tokens_per_player  # Each player starts with full token allocation
         }
         
         game_state.save_state()
@@ -243,6 +301,10 @@ def delete_player(initial):
                 for j in range(len(game_state.squares[i])):
                     if game_state.squares[i][j] == initial:
                         game_state.squares[i][j] = ''
+                        # Remove multiplier entry for this square
+                        square_key = (i, j)
+                        if square_key in game_state.square_multipliers:
+                            del game_state.square_multipliers[square_key]
             
             # Remove player from players dict
             del game_state.players[initial]
@@ -275,26 +337,62 @@ def update_sport():
     try:
         data = request.json
         sport = data.get('sport', '').lower()
-        
+
         # Validate sport
         valid_sports = ['nfl', 'nhl', 'nba', 'mlb']
         if sport not in valid_sports:
             return jsonify({'error': 'Invalid sport selection'}), 400
-            
+
         # Update sport and max score in config
         if config.update_sport(sport):
             # Update game state
             game_state.sport = sport
+            # Reset multiplier to 1x
+            game_state.current_multiplier = 1
+
+            # Update all existing players to have the new sport's token total
+            tokens_per_player = config.total_tokens.get(sport, 40)
+            for player_initial in game_state.players:
+                # Reset each player's tokens to the sport total minus their current bets
+                current_bets = game_state.players[player_initial].get('bets', 0)
+                game_state.players[player_initial]['tokens'] = tokens_per_player - current_bets
+
             game_state.save_state()
-            
-            # Return success with new max score
+
+            # Return success with new max score and multiplier info
             return jsonify({
                 'success': True,
-                'max_score': config.config['max_score']
+                'max_score': config.config['max_score'],
+                'available_multipliers': config.multipliers.get(sport, [1]),
+                'multiplier_labels': config.multiplier_labels.get(sport, []),
+                'tokens_per_player': tokens_per_player
             })
         else:
             return jsonify({'error': 'Failed to update sport configuration'}), 500
-            
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Add new endpoint for updating multiplier
+@app.route('/api/multiplier', methods=['POST'])
+def update_multiplier():
+    try:
+        data = request.json
+        multiplier = data.get('multiplier')
+
+        # Validate multiplier
+        available_multipliers = config.multipliers.get(game_state.sport, [1])
+        if multiplier not in available_multipliers:
+            return jsonify({'error': 'Invalid multiplier for current sport'}), 400
+
+        # Update current multiplier
+        game_state.current_multiplier = multiplier
+        game_state.save_state()
+
+        return jsonify({
+            'success': True,
+            'current_multiplier': multiplier
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
