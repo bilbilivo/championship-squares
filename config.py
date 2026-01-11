@@ -18,10 +18,10 @@ class Config:
         
         # Sport-specific max scores
         self.max_scores = {
-            'nfl': 60,
-            'nhl': 10,
-            'nba': 120,
-            'mlb': 20
+            'nfl': 70,
+            'nhl': 12,
+            'nba': 180,
+            'mlb': 30
         }
         
         # Default configuration
