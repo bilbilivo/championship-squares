@@ -201,55 +201,70 @@ def calculate_winner():
         target_col = winner_info['square']['col']
 
         # Build path (excluding both the score square and the winning square)
-        # Avoid crossing the diagonal (tie squares where row == col)
+        # Strategy: Move away from diagonal first, then toward it
+        # This ensures we never cross or touch the diagonal
 
         temp_row = current_row
         temp_col = current_col
 
-        # Determine which direction to move first to avoid diagonal
-        # If we need to move in a direction that crosses diagonal, move the other way first
-        move_row_first = True
+        # Determine which axis moves us away from diagonal first
+        # Diagonal is where row == col
+        # Distance from diagonal = abs(row - col)
 
-        # Check if moving row first would cross diagonal
-        if temp_row != target_row:
-            next_row = temp_row + (1 if target_row > temp_row else -1)
-            if next_row == temp_col:  # Would hit diagonal
-                move_row_first = False
+        # Calculate which move increases distance from diagonal
+        row_direction = 1 if target_row > current_row else -1 if target_row < current_row else 0
+        col_direction = 1 if target_col > current_col else -1 if target_col < current_col else 0
+
+        current_diag_distance = abs(current_row - current_col)
+
+        # Check if moving row increases diagonal distance
+        row_increases_dist = False
+        if row_direction != 0:
+            next_row_dist = abs((current_row + row_direction) - current_col)
+            row_increases_dist = next_row_dist > current_diag_distance
+
+        # Check if moving col increases diagonal distance
+        col_increases_dist = False
+        if col_direction != 0:
+            next_col_dist = abs(current_row - (current_col + col_direction))
+            col_increases_dist = next_col_dist > current_diag_distance
+
+        # Prioritize the move that increases distance from diagonal
+        if row_increases_dist and not col_increases_dist:
+            move_row_first = True
+        elif col_increases_dist and not row_increases_dist:
+            move_row_first = False
+        elif row_increases_dist and col_increases_dist:
+            # Both increase distance - choose based on which has more to move
+            move_row_first = abs(target_row - current_row) >= abs(target_col - current_col)
+        else:
+            # Neither increases distance (both bring us toward diagonal)
+            # Choose the axis with LESS distance to move first (finish it quickly)
+            # This keeps us away from diagonal longer
+            move_row_first = abs(target_row - current_row) <= abs(target_col - current_col)
 
         if move_row_first:
             # First, move along the row (horizontal) toward target row
             while temp_row != target_row:
                 temp_row += 1 if target_row > temp_row else -1
-                # Skip if this is the diagonal (tie square) or the final destination
-                if temp_row == temp_col:
-                    continue  # Skip diagonal squares
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
             # Then, move along the column (vertical) toward target column
             while temp_col != target_col:
                 temp_col += 1 if target_col > temp_col else -1
-                # Skip if this is the diagonal (tie square) or the final destination
-                if temp_row == temp_col:
-                    continue  # Skip diagonal squares
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
         else:
-            # Move column first to avoid diagonal
+            # Move column first (away from diagonal)
             while temp_col != target_col:
                 temp_col += 1 if target_col > temp_col else -1
-                # Skip if this is the diagonal (tie square) or the final destination
-                if temp_row == temp_col:
-                    continue  # Skip diagonal squares
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # Then move row
+            # Then move row (toward diagonal)
             while temp_row != target_row:
                 temp_row += 1 if target_row > temp_row else -1
-                # Skip if this is the diagonal (tie square) or the final destination
-                if temp_row == temp_col:
-                    continue  # Skip diagonal squares
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
