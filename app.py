@@ -132,8 +132,9 @@ game_state.load_state()  # Load previous state if exists
 
 def calculate_winner():
     """
-    Calculate the current winner based on the score.
-    Returns the winning player, their square location, distance, and path.
+    Calculate the current winner(s) based on the score.
+    Returns list of winning players, their square locations, distances, and paths.
+    Multiple players can be winners if they have the same minimum distance.
     """
     left_score = game_state.scores['left']
     right_score = game_state.scores['right']
@@ -145,9 +146,9 @@ def calculate_winner():
 
     winning_team = 'left' if left_score > right_score else 'right'
 
-    # Find all occupied squares
+    # Find all occupied squares and track ALL squares at minimum distance
     min_distance = float('inf')
-    winner_info = None
+    winners = []  # Can have multiple winners
 
     for row in range(len(game_state.squares)):
         for col in range(len(game_state.squares[0])):
@@ -170,20 +171,29 @@ def calculate_winner():
             # Calculate Manhattan distance from current score to this square
             distance = abs(row - left_score) + abs(col - right_score)
 
-            # Update winner if this is closer
+            # Update winners list
             if distance < min_distance:
+                # Found a closer square - replace all previous winners
                 min_distance = distance
-                winner_info = {
+                winners = [{
                     'player': square_value,
                     'player_name': game_state.players.get(square_value, {}).get('name', square_value),
                     'square': {'row': row, 'col': col},
                     'distance': distance,
                     'winning_team': winning_team
-                }
+                }]
+            elif distance == min_distance:
+                # Found another square at same distance - add to winners
+                winners.append({
+                    'player': square_value,
+                    'player_name': game_state.players.get(square_value, {}).get('name', square_value),
+                    'square': {'row': row, 'col': col},
+                    'distance': distance,
+                    'winning_team': winning_team
+                })
 
-    if winner_info:
-        # Calculate path from score to winning square using Manhattan distance
-        # Move along the winning team's axis first, then along the other axis
+    # Calculate paths for each winner
+    for winner_info in winners:
         path = []
         current_row = left_score
         current_col = right_score
@@ -191,30 +201,61 @@ def calculate_winner():
         target_col = winner_info['square']['col']
 
         # Build path (excluding both the score square and the winning square)
-        # Move along both axes to create the shortest path
-        # Path should include all intermediate squares
+        # Avoid crossing the diagonal (tie squares where row == col)
 
-        # Move row by row, then column by column (L-shaped path)
         temp_row = current_row
         temp_col = current_col
 
-        # First, move along the row (horizontal) toward target row
-        while temp_row != target_row:
-            temp_row += 1 if target_row > temp_row else -1
-            # Only add to path if we haven't reached the final destination yet
-            if temp_row != target_row or temp_col != target_col:
-                path.append({'row': temp_row, 'col': temp_col})
+        # Determine which direction to move first to avoid diagonal
+        # If we need to move in a direction that crosses diagonal, move the other way first
+        move_row_first = True
 
-        # Then, move along the column (vertical) toward target column
-        while temp_col != target_col:
-            temp_col += 1 if target_col > temp_col else -1
-            # Only add to path if we haven't reached the final destination yet
-            if temp_row != target_row or temp_col != target_col:
-                path.append({'row': temp_row, 'col': temp_col})
+        # Check if moving row first would cross diagonal
+        if temp_row != target_row:
+            next_row = temp_row + (1 if target_row > temp_row else -1)
+            if next_row == temp_col:  # Would hit diagonal
+                move_row_first = False
+
+        if move_row_first:
+            # First, move along the row (horizontal) toward target row
+            while temp_row != target_row:
+                temp_row += 1 if target_row > temp_row else -1
+                # Skip if this is the diagonal (tie square) or the final destination
+                if temp_row == temp_col:
+                    continue  # Skip diagonal squares
+                if temp_row != target_row or temp_col != target_col:
+                    path.append({'row': temp_row, 'col': temp_col})
+
+            # Then, move along the column (vertical) toward target column
+            while temp_col != target_col:
+                temp_col += 1 if target_col > temp_col else -1
+                # Skip if this is the diagonal (tie square) or the final destination
+                if temp_row == temp_col:
+                    continue  # Skip diagonal squares
+                if temp_row != target_row or temp_col != target_col:
+                    path.append({'row': temp_row, 'col': temp_col})
+        else:
+            # Move column first to avoid diagonal
+            while temp_col != target_col:
+                temp_col += 1 if target_col > temp_col else -1
+                # Skip if this is the diagonal (tie square) or the final destination
+                if temp_row == temp_col:
+                    continue  # Skip diagonal squares
+                if temp_row != target_row or temp_col != target_col:
+                    path.append({'row': temp_row, 'col': temp_col})
+
+            # Then move row
+            while temp_row != target_row:
+                temp_row += 1 if target_row > temp_row else -1
+                # Skip if this is the diagonal (tie square) or the final destination
+                if temp_row == temp_col:
+                    continue  # Skip diagonal squares
+                if temp_row != target_row or temp_col != target_col:
+                    path.append({'row': temp_row, 'col': temp_col})
 
         winner_info['path'] = path
 
-    return winner_info
+    return winners if winners else None
 
 @app.route('/')
 def index():
