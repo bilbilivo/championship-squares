@@ -130,6 +130,83 @@ class GameState:
 game_state = GameState()
 game_state.load_state()  # Load previous state if exists
 
+def calculate_winner():
+    """
+    Calculate the current winner based on the score.
+    Returns the winning player, their square location, distance, and path.
+    """
+    left_score = game_state.scores['left']
+    right_score = game_state.scores['right']
+
+    # Determine which team is winning/leading
+    if left_score == right_score:
+        # Tie - no winner yet
+        return None
+
+    winning_team = 'left' if left_score > right_score else 'right'
+
+    # Find all occupied squares
+    min_distance = float('inf')
+    winner_info = None
+
+    for row in range(len(game_state.squares)):
+        for col in range(len(game_state.squares[0])):
+            square_value = game_state.squares[row][col]
+
+            # Skip empty squares
+            if not square_value:
+                continue
+
+            # Check if this square matches the winning team's score
+            # Left team = row, Right team = col
+            if winning_team == 'left':
+                # For left team winning, we need the right score to match exactly
+                if col != right_score:
+                    continue
+                # Calculate horizontal distance to left score
+                distance = abs(row - left_score)
+            else:  # winning_team == 'right'
+                # For right team winning, we need the left score to match exactly
+                if row != left_score:
+                    continue
+                # Calculate vertical distance to right score
+                distance = abs(col - right_score)
+
+            # Update winner if this is closer
+            if distance < min_distance:
+                min_distance = distance
+                winner_info = {
+                    'player': square_value,
+                    'player_name': game_state.players.get(square_value, {}).get('name', square_value),
+                    'square': {'row': row, 'col': col},
+                    'distance': distance,
+                    'winning_team': winning_team
+                }
+
+    if winner_info:
+        # Calculate path from score to winning square
+        path = []
+        current_row = left_score
+        current_col = right_score
+        target_row = winner_info['square']['row']
+        target_col = winner_info['square']['col']
+
+        # Build path (excluding the score square itself)
+        if winning_team == 'left':
+            # Move horizontally along the row
+            step = 1 if target_row > current_row else -1
+            for r in range(current_row + step, target_row, step):
+                path.append({'row': r, 'col': current_col})
+        else:  # winning_team == 'right'
+            # Move vertically along the column
+            step = 1 if target_col > current_col else -1
+            for c in range(current_col + step, target_col, step):
+                path.append({'row': current_row, 'col': c})
+
+        winner_info['path'] = path
+
+    return winner_info
+
 @app.route('/')
 def index():
     try:
@@ -176,6 +253,7 @@ def update_scores():
 @app.route('/api/state', methods=['GET'])
 def get_state():
     try:
+        winner_info = calculate_winner()
         return jsonify({
             'squares': game_state.squares,
             'players': game_state.players,
@@ -186,7 +264,20 @@ def get_state():
             'current_multiplier': game_state.current_multiplier,
             'available_multipliers': config.multipliers.get(game_state.sport, [1]),
             'multiplier_labels': config.multiplier_labels.get(game_state.sport, []),
-            'tokens_per_player': config.total_tokens.get(game_state.sport, 40)
+            'tokens_per_player': config.total_tokens.get(game_state.sport, 40),
+            'winner': winner_info
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/winner', methods=['GET'])
+def get_winner():
+    """Get the current winner information"""
+    try:
+        winner_info = calculate_winner()
+        return jsonify({
+            'success': True,
+            'winner': winner_info
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
