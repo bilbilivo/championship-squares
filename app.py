@@ -209,55 +209,55 @@ def calculate_winner():
         temp_col = current_col
 
         if winning_team == 'left':
-            # Left team winning: prioritize horizontal movement (row axis)
-            # Order: left (row-), up (col-), down (col+), right (row+)
+            # Left team (Away) winning
+            # Order: LEFT → UP → DOWN → RIGHT
 
-            # 1. Move left if needed (decrease row)
+            # 1. Move LEFT if needed (decrease row - moving toward left side)
             while temp_row > target_row:
                 temp_row -= 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 2. Move up if needed (decrease col)
+            # 2. Move UP if needed (decrease col - moving toward top)
             while temp_col > target_col:
                 temp_col -= 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 3. Move down if needed (increase col)
+            # 3. Move DOWN if needed (increase col - moving toward bottom)
             while temp_col < target_col:
                 temp_col += 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 4. Move right if needed (increase row)
+            # 4. Move RIGHT if needed (increase row - moving toward right side)
             while temp_row < target_row:
                 temp_row += 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
         else:
-            # Right team winning: prioritize vertical movement (col axis)
-            # Order: up (col-), left (row-), right (row+), down (col+)
+            # Right team (Home) winning
+            # Order: UP → LEFT → RIGHT → DOWN
 
-            # 1. Move up if needed (decrease col)
+            # 1. Move UP if needed (decrease col - moving toward top)
             while temp_col > target_col:
                 temp_col -= 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 2. Move left if needed (decrease row)
+            # 2. Move LEFT if needed (decrease row - moving toward left side)
             while temp_row > target_row:
                 temp_row -= 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 3. Move right if needed (increase row)
+            # 3. Move RIGHT if needed (increase row - moving toward right side)
             while temp_row < target_row:
                 temp_row += 1
                 if temp_row != target_row or temp_col != target_col:
                     path.append({'row': temp_row, 'col': temp_col})
 
-            # 4. Move down if needed (increase col)
+            # 4. Move DOWN if needed (increase col - moving toward bottom)
             while temp_col < target_col:
                 temp_col += 1
                 if temp_row != target_row or temp_col != target_col:
