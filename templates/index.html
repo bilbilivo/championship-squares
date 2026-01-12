@@ -312,16 +312,16 @@ button:active {
 
 /* Winner Path Styles */
 .square.winner-path {
-    fill: rgba(255, 215, 0, 0.15) !important;
-    stroke: rgba(255, 215, 0, 0.3);
-    stroke-width: 2;
+    fill: rgba(255, 215, 0, 0.3) !important;
+    stroke: rgba(255, 215, 0, 0.6) !important;
+    stroke-width: 3 !important;
 }
 
 .square.winner-square {
-    fill: rgba(255, 215, 0, 0.2) !important;
-    stroke: gold;
-    stroke-width: 4;
-    filter: drop-shadow(0 0 8px gold);
+    fill: rgba(255, 215, 0, 0.4) !important;
+    stroke: gold !important;
+    stroke-width: 5 !important;
+    filter: drop-shadow(0 0 10px gold);
 }
 
 /* Axis Styles */
@@ -1497,21 +1497,27 @@ function highlightWinner(winnerData) {
     d3.selectAll('.square').classed('winner-square', false);
 
     if (!winnerData) {
+        console.log('No winner to highlight (tie or no bets)');
         return; // No winner to highlight
     }
 
+    console.log('Highlighting winner:', winnerData);
+
     // Highlight the path squares
     if (winnerData.path && winnerData.path.length > 0) {
+        console.log(`Highlighting ${winnerData.path.length} path squares`);
         winnerData.path.forEach(square => {
-            d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`)
-                .classed('winner-path', true);
+            const element = d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`);
+            console.log(`  Path square (${square.row},${square.col}):`, element.size(), 'elements found');
+            element.classed('winner-path', true);
         });
     }
 
     // Highlight the winning square with gold border
     if (winnerData.square) {
-        d3.select(`rect[data-row="${winnerData.square.row}"][data-col="${winnerData.square.col}"]`)
-            .classed('winner-square', true);
+        const element = d3.select(`rect[data-row="${winnerData.square.row}"][data-col="${winnerData.square.col}"]`);
+        console.log(`Winning square (${winnerData.square.row},${winnerData.square.col}):`, element.size(), 'elements found');
+        element.classed('winner-square', true);
     }
 }
 
