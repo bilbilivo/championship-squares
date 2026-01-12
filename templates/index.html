@@ -310,6 +310,20 @@ button:active {
     fill: var(--retro-bg) !important;
 }
 
+/* Winner Path Styles */
+.square.winner-path {
+    fill: rgba(255, 215, 0, 0.15) !important;
+    stroke: rgba(255, 215, 0, 0.3);
+    stroke-width: 2;
+}
+
+.square.winner-square {
+    fill: rgba(255, 215, 0, 0.2) !important;
+    stroke: gold;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 8px gold);
+}
+
 /* Axis Styles */
 .axis line,
 .axis path {
@@ -1407,6 +1421,7 @@ function updateScore(team) {
                     showAlert('Failed to save scores');
                 }
                 highlightCurrentScore();
+                updateWinnerDisplay();
             })
             .catch(error => {
                 console.error('Error saving scores:', error);
@@ -1468,11 +1483,52 @@ function populateTeamSelects() {
 function highlightCurrentScore() {
     // Remove highlight from all squares
     d3.selectAll('.square').classed('highlight', false);
-    
+
     // Add highlight to current score square
     // This will work for both regular squares and tie squares
     d3.select(`rect[data-row="${currentLeftScore}"][data-col="${currentRightScore}"]`)
         .classed('highlight', true);
+}
+
+// Function to highlight winner and path
+function highlightWinner(winnerData) {
+    // Remove all winner highlights
+    d3.selectAll('.square').classed('winner-path', false);
+    d3.selectAll('.square').classed('winner-square', false);
+
+    if (!winnerData) {
+        return; // No winner to highlight
+    }
+
+    // Highlight the path squares
+    if (winnerData.path && winnerData.path.length > 0) {
+        winnerData.path.forEach(square => {
+            d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`)
+                .classed('winner-path', true);
+        });
+    }
+
+    // Highlight the winning square with gold border
+    if (winnerData.square) {
+        d3.select(`rect[data-row="${winnerData.square.row}"][data-col="${winnerData.square.col}"]`)
+            .classed('winner-square', true);
+    }
+}
+
+// Function to update winner display
+function updateWinnerDisplay() {
+    fetch('/api/winner')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.winner) {
+                highlightWinner(data.winner);
+            } else {
+                highlightWinner(null);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching winner:', error);
+        });
 }
 
 // Update the createGrid function to add data attributes to the squares
@@ -2088,6 +2144,8 @@ function handleSquareClick(row, col) {
                     }
                     // Update player list to show new token counts
                     updatePlayerList();
+                    // Update winner display in case this bet affects the winner
+                    updateWinnerDisplay();
                 } else {
                     showAlert(data.error || 'Failed to update square');
                 }
@@ -2532,7 +2590,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Update visual states
 			highlightCurrentScore();
-			
+
+			// Update winner display if there's winner data
+			if (data.winner) {
+				highlightWinner(data.winner);
+			}
+
 			// Hide overlays
 			document.getElementById('landing-overlay').style.display = 'none';
 			document.body.removeChild(loadingOverlay);
