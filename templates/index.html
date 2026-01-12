@@ -1491,6 +1491,7 @@ function highlightCurrentScore() {
 }
 
 // Function to highlight winner and path
+// winnerData can be a single winner object or an array of winners
 function highlightWinner(winnerData) {
     // Remove all winner highlights
     d3.selectAll('.square').classed('winner-path', false);
@@ -1501,24 +1502,30 @@ function highlightWinner(winnerData) {
         return; // No winner to highlight
     }
 
-    console.log('Highlighting winner:', winnerData);
+    // Convert to array if single winner
+    const winners = Array.isArray(winnerData) ? winnerData : [winnerData];
 
-    // Highlight the path squares
-    if (winnerData.path && winnerData.path.length > 0) {
-        console.log(`Highlighting ${winnerData.path.length} path squares`);
-        winnerData.path.forEach(square => {
-            const element = d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`);
-            console.log(`  Path square (${square.row},${square.col}):`, element.size(), 'elements found');
-            element.classed('winner-path', true);
-        });
-    }
+    console.log(`Highlighting ${winners.length} winner(s)`);
 
-    // Highlight the winning square with gold border
-    if (winnerData.square) {
-        const element = d3.select(`rect[data-row="${winnerData.square.row}"][data-col="${winnerData.square.col}"]`);
-        console.log(`Winning square (${winnerData.square.row},${winnerData.square.col}):`, element.size(), 'elements found');
-        element.classed('winner-square', true);
-    }
+    // Process each winner
+    winners.forEach((winner, index) => {
+        console.log(`  Winner ${index + 1}: ${winner.player} at (${winner.square.row},${winner.square.col}), distance=${winner.distance}`);
+
+        // Highlight the path squares
+        if (winner.path && winner.path.length > 0) {
+            console.log(`    Highlighting ${winner.path.length} path squares`);
+            winner.path.forEach(square => {
+                const element = d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`);
+                element.classed('winner-path', true);
+            });
+        }
+
+        // Highlight the winning square with gold border
+        if (winner.square) {
+            const element = d3.select(`rect[data-row="${winner.square.row}"][data-col="${winner.square.col}"]`);
+            element.classed('winner-square', true);
+        }
+    });
 }
 
 // Function to update winner display
@@ -2329,6 +2336,8 @@ function handleSquareDelete(row, col) {
                         }
                         // Update player list to show new token counts
                         updatePlayerList();
+                        // Update winner display since removing a bet might change the winner
+                        updateWinnerDisplay();
                     } else {
                         showAlert(data.error || "Failed to delete square");
                     }
