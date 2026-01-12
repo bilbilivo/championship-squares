@@ -163,11 +163,19 @@ def calculate_winner():
                 # For left team winning, we need the right score to match exactly
                 if col != right_score:
                     continue
+                # Only consider squares where left score >= current left score
+                # (squares that predict the winning team will score more)
+                if row < left_score:
+                    continue
                 # Calculate horizontal distance to left score
                 distance = abs(row - left_score)
             else:  # winning_team == 'right'
                 # For right team winning, we need the left score to match exactly
                 if row != left_score:
+                    continue
+                # Only consider squares where right score >= current right score
+                # (squares that predict the winning team will score more)
+                if col < right_score:
                     continue
                 # Calculate vertical distance to right score
                 distance = abs(col - right_score)
