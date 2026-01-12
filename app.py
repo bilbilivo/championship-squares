@@ -157,28 +157,18 @@ def calculate_winner():
             if not square_value:
                 continue
 
-            # Check if this square matches the winning team's score
-            # Left team = row, Right team = col
-            if winning_team == 'left':
-                # For left team winning, we need the right score to match exactly
-                if col != right_score:
-                    continue
-                # Only consider squares where left score >= current left score
-                # (squares that predict the winning team will score more)
-                if row < left_score:
-                    continue
-                # Calculate horizontal distance to left score
-                distance = abs(row - left_score)
-            else:  # winning_team == 'right'
-                # For right team winning, we need the left score to match exactly
-                if row != left_score:
-                    continue
-                # Only consider squares where right score >= current right score
-                # (squares that predict the winning team will score more)
-                if col < right_score:
-                    continue
-                # Calculate vertical distance to right score
-                distance = abs(col - right_score)
+            # Only consider squares that predict the correct winning team
+            # A square predicts left wins if row > col, right wins if col > row
+            square_predicts_left_wins = row > col
+            square_predicts_right_wins = col > row
+
+            if winning_team == 'left' and not square_predicts_left_wins:
+                continue  # Square doesn't predict left team winning
+            if winning_team == 'right' and not square_predicts_right_wins:
+                continue  # Square doesn't predict right team winning
+
+            # Calculate Manhattan distance from current score to this square
+            distance = abs(row - left_score) + abs(col - right_score)
 
             # Update winner if this is closer
             if distance < min_distance:
@@ -192,24 +182,35 @@ def calculate_winner():
                 }
 
     if winner_info:
-        # Calculate path from score to winning square
+        # Calculate path from score to winning square using Manhattan distance
+        # Move along the winning team's axis first, then along the other axis
         path = []
         current_row = left_score
         current_col = right_score
         target_row = winner_info['square']['row']
         target_col = winner_info['square']['col']
 
-        # Build path (excluding the score square itself)
-        if winning_team == 'left':
-            # Move horizontally along the row
-            step = 1 if target_row > current_row else -1
-            for r in range(current_row + step, target_row, step):
-                path.append({'row': r, 'col': current_col})
-        else:  # winning_team == 'right'
-            # Move vertically along the column
-            step = 1 if target_col > current_col else -1
-            for c in range(current_col + step, target_col, step):
-                path.append({'row': current_row, 'col': c})
+        # Build path (excluding both the score square and the winning square)
+        # Move along both axes to create the shortest path
+        # Path should include all intermediate squares
+
+        # Move row by row, then column by column (L-shaped path)
+        temp_row = current_row
+        temp_col = current_col
+
+        # First, move along the row (horizontal) toward target row
+        while temp_row != target_row:
+            temp_row += 1 if target_row > temp_row else -1
+            # Only add to path if we haven't reached the final destination yet
+            if temp_row != target_row or temp_col != target_col:
+                path.append({'row': temp_row, 'col': temp_col})
+
+        # Then, move along the column (vertical) toward target column
+        while temp_col != target_col:
+            temp_col += 1 if target_col > temp_col else -1
+            # Only add to path if we haven't reached the final destination yet
+            if temp_row != target_row or temp_col != target_col:
+                path.append({'row': temp_row, 'col': temp_col})
 
         winner_info['path'] = path
 
