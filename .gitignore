@@ -15,3 +15,5 @@ input/unwanted_files_(overrides_the_override_above)*TEST*xlsx
 server.pid
 server.log
 championship-squares.desktop
+nofx-the_decline.mid
+check_winner.py
