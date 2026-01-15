@@ -1502,9 +1502,9 @@ const height = gridContainer.clientHeight;
 
 // Get color from index using d3's color scale
 const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeObservable10); -->
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10); -->
-<!-- const playerColorScale = d3.scaleOrdinal(d3.schemePaired); -->
+// const playerColorScale = d3.scaleOrdinal(d3.schemeObservable10);
+// const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10);
+// const playerColorScale = d3.scaleOrdinal(d3.schemePaired);
 
 // Modify the setSportTheme function to have an option to skip the API call
 function setSportTheme(sport, skipAPICall = false) {
@@ -1701,7 +1701,7 @@ const zoom = d3.zoom()
         zoomLevel = transform.k;
         
         // Update all text sizes
-        <!-- updateTextSizes(transform.k); -->
+        // updateTextSizes(transform.k);
     });
 svg.call(zoom);
 
@@ -1794,8 +1794,8 @@ function populateTeamSelects() {
     rightSelect.innerHTML = '<option value="">SELECT HOME TEAM</option>';
     
 	// Get all teams and sort alphabetically
-    <!-- const allTeams = Object.entries(getCurrentTeams()) -->
-        <!-- .sort((a, b) => a[1].name.localeCompare(b[1].name)); -->
+    // const allTeams = Object.entries(getCurrentTeams())
+    //     .sort((a, b) => a[1].name.localeCompare(b[1].name));
     
 	const allTeams = Object.entries(getCurrentTeams())
     .sort((a, b) => a[0] - b[0]); // Sort by numeric team ID
