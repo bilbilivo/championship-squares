@@ -346,52 +346,24 @@ button:active {
 }
 
 .celebration-trophy {
-    margin-bottom: 30px;
-    animation: trophyBounce 0.5s ease-in-out infinite alternate;
-    filter: drop-shadow(0 0 20px gold);
-    image-rendering: pixelated;
+    margin-bottom: 20px;
+    animation: trophyBounce 0.6s ease-in-out infinite alternate, trophyGlow 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
 }
 
-.pixel-trophy {
-    display: grid;
-    grid-template-columns: repeat(13, 8px);
-    grid-template-rows: repeat(15, 8px);
-    gap: 0px;
-}
-
-/* Gold main color */
-.pixel-trophy .g {
-    background: #FFD700;
-}
-
-/* Dark gold shadow */
-.pixel-trophy .d {
-    background: #B8860B;
-}
-
-/* Light gold highlight */
-.pixel-trophy .h {
-    background: #FFEC8B;
-}
-
-/* White shine */
-.pixel-trophy .w {
-    background: #FFFFFF;
-}
-
-/* Empty/transparent */
-.pixel-trophy .e {
-    background: transparent;
-}
-
-/* Dark outline */
-.pixel-trophy .o {
-    background: #8B6914;
+.celebration-trophy img {
+    height: 200px;
+    width: auto;
 }
 
 @keyframes trophyBounce {
     0% { transform: scale(1) translateY(0); }
-    100% { transform: scale(1.05) translateY(-10px); }
+    100% { transform: scale(1.08) translateY(-8px); }
+}
+
+@keyframes trophyGlow {
+    0%, 100% { filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); }
+    50% { filter: drop-shadow(0 0 25px rgba(220, 220, 220, 1)) drop-shadow(0 0 40px rgba(192, 192, 192, 0.6)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); }
 }
 
 .celebration-winner-banner {
@@ -581,7 +553,8 @@ button:active {
 }
 
 .celebration-btn.reset-btn:hover {
-    background: var(--retro-dark);
+    background: var(--retro-light);
+    color: var(--retro-dark);
     transform: translateY(-2px);
 }
 
@@ -706,19 +679,38 @@ button:active {
     margin-bottom: 20px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     border: var(--pixel-border);
     padding: 10px;
     background: var(--retro-bg);
 }
 
+.player-form .input-row {
+    display: flex;
+    gap: 4px;
+}
+
 .player-form input {
     background: var(--retro-dark);
     border: var(--pixel-border);
-    padding: 8px;
+    padding: 6px;
     color: var(--retro-primary);
     font-family: 'Press Start 2P', monospace;
     font-size: 12px;
+    box-sizing: border-box;
+}
+
+.player-form input#playerInitial {
+    width: 36px;
+    padding: 6px 2px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.player-form input#playerName {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 44px);
 }
 
 /* Player List Styles */
@@ -1462,21 +1454,23 @@ button:active {
                 </div>
                 <h2 style="text-align: center;">PLAYERS</h2>
                 <div class="player-form">
-					<input type="text" 
-						   id="playerInitial" 
-						   maxlength="1" 
-						   placeholder="INITIAL" 
-						   pattern="[A-Za-z]"
-						   style="text-transform: uppercase;"
-						   oninput="this.value = this.value.toUpperCase()"
-						   required />
-					<input type="text" 
-						   id="playerName" 
-						   maxlength="8" 
-						   placeholder="NAME" 
-						   style="text-transform: uppercase;"
-						   oninput="this.value = this.value.toUpperCase()"
-						   required />
+					<div class="input-row">
+						<input type="text"
+							   id="playerInitial"
+							   maxlength="2"
+							   placeholder="ID"
+							   pattern="[A-Za-z0-9]{1,2}"
+							   style="text-transform: uppercase;"
+							   oninput="this.value = this.value.toUpperCase()"
+							   required />
+						<input type="text"
+							   id="playerName"
+							   maxlength="8"
+							   placeholder="NAME"
+							   style="text-transform: uppercase;"
+							   oninput="this.value = this.value.toUpperCase()"
+							   required />
+					</div>
 					<button onclick="addPlayer()">Add Player</button>
 				</div>
                 <div class="player-list" id="playerList"></div>
@@ -2843,33 +2837,12 @@ function showCelebration(standings, winningTeam) {
         `;
     }).join('');
 
-    // RC Pro-Am style 8-bit pixel trophy (13x15 grid) with handles
-    const pixelTrophy = `
-        <div class="pixel-trophy">
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="o"></div><div class="o"></div><div class="h"></div><div class="w"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="o"></div><div class="e"></div>
-            <div class="o"></div><div class="h"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
-            <div class="o"></div><div class="g"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
-            <div class="o"></div><div class="g"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
-            <div class="o"></div><div class="d"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
-            <div class="e"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div>
-            <div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="d"></div><div class="o"></div><div class="e"></div>
-            <div class="e"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="e"></div>
-        </div>
-    `;
-
     // Create celebration overlay with winning team color gradient background
     const overlay = document.createElement('div');
     overlay.className = 'celebration-overlay';
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
     overlay.innerHTML = `
-        <div class="celebration-trophy">${pixelTrophy}</div>
+        <div class="celebration-trophy"><img src="/static/trophy.png" alt="Trophy"></div>
         <div class="celebration-winner-banner">
             <div class="winner-label">WINNER</div>
             <div class="winner-name">${winnerNames}</div>
