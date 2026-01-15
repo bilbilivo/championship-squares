@@ -71,8 +71,8 @@ body {
     height: 100vh;
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
-    gap: 10px;
-    padding: 10px;
+    gap: 5px;
+    padding: 5px 10px;
     box-sizing: border-box;
     image-rendering: pixelated;
     overflow: hidden;
@@ -83,6 +83,8 @@ body {
     color: var(--retro-primary);
     font-size: 2em;
     margin: 0;
+    padding: 0;
+    line-height: 1;
     text-transform: uppercase;
     letter-spacing: 2px;
     animation: blink 2s infinite;
@@ -91,11 +93,11 @@ body {
 .controls {
     text-align: center;
     border: var(--pixel-border);
-    padding: 10px;
+    padding: 5px 10px;
     background: var(--retro-bg);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 5px;
 }
 
 .main-content {
@@ -134,8 +136,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    padding: 15px;
+    gap: 15px;
+    padding: 8px 15px;
     border: var(--pixel-border);
     background: var(--retro-bg);
     margin: 0;
@@ -150,7 +152,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 }
 
 .multiplier-label {
@@ -1457,9 +1459,9 @@ button:active {
 					<div class="input-row">
 						<input type="text"
 							   id="playerInitial"
-							   maxlength="2"
+							   maxlength="1"
 							   placeholder="ID"
-							   pattern="[A-Za-z0-9]{1,2}"
+							   pattern="[A-Za-z]"
 							   style="text-transform: uppercase;"
 							   oninput="this.value = this.value.toUpperCase()"
 							   required />
