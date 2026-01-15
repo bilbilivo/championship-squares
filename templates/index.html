@@ -1156,22 +1156,22 @@ button:active {
 
 /* Landing overlay - lowest layer */
 .landing-overlay {
-    composes: base-overlay;
+    /*composes: base-overlay;*/
     z-index: 1000;
 }
 
 /* Prompt overlay - middle layer */
 .generic-prompt {
-    composes: base-overlay;
+    /*composes: base-overlay;*/
     z-index: 2000;
 }
 
 /* Alert overlay - top layer */
 .alert-overlay {
-    composes: base-overlay;
+    /*composes: base-overlay;*/
     z-index: 3000;
     background: rgba(var(--retro-dark), 0.95);  /* Slightly more opaque */
-    <!-- background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */ -->
+    /* background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */ 
 }
 
 /* Content containers */
@@ -2464,7 +2464,7 @@ function handleSquareClick(row, col) {
         message: 'Player initial',
         maxLength: 1,
         showPlayerList: true,
-        playerListContent: 'Available players:\n' + playerList,
+        playerListContent: 'AVAILABLE PLAYERS:\n' + playerList,
         validateInput: (value) => {
             const initial = value.trim().toUpperCase();
             if (initial.length !== 1) {
@@ -2844,7 +2844,7 @@ function showCelebration(standings, winningTeam) {
     overlay.className = 'celebration-overlay';
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
     overlay.innerHTML = `
-        <div class="celebration-trophy"><img src="/static/trophy.png" alt="Trophy"></div>
+        <div class="celebration-trophy"><img src="/static/trophy3.png" alt="Trophy"></div>
         <div class="celebration-winner-banner">
             <div class="winner-label">WINNER</div>
             <div class="winner-name">${winnerNames}</div>
