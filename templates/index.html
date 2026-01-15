@@ -394,13 +394,59 @@ button:active {
     100% { transform: scale(1.05) translateY(-10px); }
 }
 
-.celebration-title {
+.celebration-winner-banner {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.celebration-winner-banner .winner-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 36px;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+    margin-bottom: 10px;
+}
+
+.celebration-winner-banner .winner-name {
     font-family: 'Press Start 2P', monospace;
     font-size: 48px;
-    color: gold;
-    text-shadow: 4px 4px 0 #8B4513, -2px -2px 0 #FFD700;
+    color: #FFD700;
+    text-shadow: 4px 4px 0 #8B4513, 0 0 30px #FFD700;
+    animation: winnerGlow 1s ease-in-out infinite alternate;
+}
+
+.celebration-final-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-family: 'Press Start 2P', monospace;
     margin-bottom: 20px;
-    animation: titlePulse 1s ease-in-out infinite;
+}
+
+.final-score-team {
+    font-size: 18px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.final-score-value {
+    font-size: 32px;
+    color: #FFD700;
+    text-shadow: 2px 2px 0 #8B4513;
+}
+
+.final-score-separator {
+    font-size: 24px;
+    color: #fff;
+}
+
+.celebration-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 10px;
 }
 
 @keyframes titlePulse {
@@ -576,16 +622,21 @@ button:active {
 
 .firework {
     position: absolute;
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
 }
 
 .firework-particle {
     position: absolute;
-    width: 8px;
-    height: 8px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    animation: fireworkBurst 1.2s ease-out forwards;
+    animation: fireworkBurst 1.5s ease-out forwards;
+}
+
+.firework-particle.large {
+    width: 16px;
+    height: 16px;
 }
 
 @keyframes fireworkBurst {
@@ -594,7 +645,7 @@ button:active {
         opacity: 1;
     }
     100% {
-        transform: rotate(var(--angle)) translateX(80px) scale(0);
+        transform: rotate(var(--angle)) translateX(120px) scale(0);
         opacity: 0;
     }
 }
@@ -2752,19 +2803,25 @@ function showCelebration(standings, winningTeam) {
     // Find the minimum distance (winner distance)
     const winnerDistance = standings[0]?.distance || 0;
 
-    // Build podium HTML - top 10, group by distance, show rank
-    const top10 = standings.slice(0, 10);
+    // Get winners (all entries with minimum distance) - unique player names only, sorted
+    const winners = standings.filter(s => s.distance === winnerDistance);
+    const uniqueWinnerNames = [...new Set(winners.map(w => players[w.player]?.name || w.player_name || w.player))].sort();
+    const winnerNames = uniqueWinnerNames.join(', ');
+
+    // Build podium HTML - top 5, group by distance, show rank
+    const top5 = standings.slice(0, 5);
     let currentRank = 1;
     let lastDistance = -1;
 
     // Get team info for score display
     const leftTeamCode = document.getElementById('teamLeft').value;
     const rightTeamCode = document.getElementById('teamRight').value;
-    const teams = getCurrentTeams();
-    const leftTeamName = teams[leftTeamCode]?.name || leftTeamCode;
-    const rightTeamName = teams[rightTeamCode]?.name || rightTeamCode;
 
-    const podiumHtml = top10.map((entry, index) => {
+    // Get final game score
+    const finalLeftScore = currentLeftScore;
+    const finalRightScore = currentRightScore;
+
+    const podiumHtml = top5.map((entry, index) => {
         // Update rank when distance changes
         if (entry.distance !== lastDistance) {
             currentRank = index + 1;
@@ -2813,7 +2870,18 @@ function showCelebration(standings, winningTeam) {
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
     overlay.innerHTML = `
         <div class="celebration-trophy">${pixelTrophy}</div>
-        <div class="celebration-title">TOP 10 SQUARES</div>
+        <div class="celebration-winner-banner">
+            <div class="winner-label">WINNER</div>
+            <div class="winner-name">${winnerNames}</div>
+        </div>
+        <div class="celebration-final-score">
+            <span class="final-score-team">${leftTeamCode}</span>
+            <span class="final-score-value">${finalLeftScore}</span>
+            <span class="final-score-separator">-</span>
+            <span class="final-score-value">${finalRightScore}</span>
+            <span class="final-score-team">${rightTeamCode}</span>
+        </div>
+        <div class="celebration-title">TOP 5 SQUARES</div>
         <div class="celebration-podium">
             ${podiumHtml}
         </div>
@@ -2877,13 +2945,13 @@ function createFireworks(container, teamColors) {
         firework.className = 'firework';
 
         // Random position
-        const x = 5 + Math.random() * 90;
-        const y = 5 + Math.random() * 60;
+        const x = 10 + Math.random() * 80;
+        const y = 10 + Math.random() * 50;
         firework.style.left = x + '%';
         firework.style.top = y + '%';
 
-        // Create burst particles - more particles per firework
-        const particleCount = 16;
+        // Create burst particles
+        const particleCount = 12;
         for (let i = 0; i < particleCount; i++) {
             const particle = document.createElement('div');
             particle.className = 'firework-particle';
@@ -2891,7 +2959,7 @@ function createFireworks(container, teamColors) {
             const color = colors[Math.floor(Math.random() * colors.length)];
             particle.style.setProperty('--angle', angle + 'deg');
             particle.style.backgroundColor = color;
-            particle.style.boxShadow = `0 0 6px ${color}, 0 0 10px ${color}`;
+            particle.style.boxShadow = `0 0 6px ${color}, 0 0 12px ${color}`;
             firework.appendChild(particle);
         }
 
@@ -2905,17 +2973,9 @@ function createFireworks(container, teamColors) {
         }, 1500);
     }
 
-    // Launch multiple fireworks at once, more frequently
-    function launchBurst() {
-        const burstCount = 2 + Math.floor(Math.random() * 3); // 2-4 fireworks at once
-        for (let i = 0; i < burstCount; i++) {
-            setTimeout(launchFirework, i * 50);
-        }
-    }
-
-    // Launch fireworks more frequently
-    const fireworkInterval = setInterval(launchBurst, 200);
-    launchBurst(); // Initial burst
+    // Launch fireworks periodically
+    const fireworkInterval = setInterval(launchFirework, 400);
+    launchFirework(); // Initial firework
 
     // Stop after 10 seconds
     setTimeout(() => clearInterval(fireworkInterval), 10000);

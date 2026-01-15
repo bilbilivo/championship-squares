@@ -387,8 +387,8 @@ def get_standings():
                     'winning_team': winning_team
                 })
 
-        # Sort by distance
-        all_standings.sort(key=lambda x: x['distance'])
+        # Sort by distance, then by player name when equal
+        all_standings.sort(key=lambda x: (x['distance'], x['player_name']))
 
         return jsonify({
             'success': True,
