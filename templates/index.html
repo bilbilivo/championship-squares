@@ -324,6 +324,292 @@ button:active {
     filter: drop-shadow(0 0 10px gold);
 }
 
+/* Winner Celebration Overlay */
+.celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: celebrationFadeIn 0.5s ease-out;
+}
+
+@keyframes celebrationFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.celebration-trophy {
+    margin-bottom: 30px;
+    animation: trophyBounce 0.5s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 20px gold);
+    image-rendering: pixelated;
+}
+
+.pixel-trophy {
+    display: grid;
+    grid-template-columns: repeat(13, 8px);
+    grid-template-rows: repeat(15, 8px);
+    gap: 0px;
+}
+
+/* Gold main color */
+.pixel-trophy .g {
+    background: #FFD700;
+}
+
+/* Dark gold shadow */
+.pixel-trophy .d {
+    background: #B8860B;
+}
+
+/* Light gold highlight */
+.pixel-trophy .h {
+    background: #FFEC8B;
+}
+
+/* White shine */
+.pixel-trophy .w {
+    background: #FFFFFF;
+}
+
+/* Empty/transparent */
+.pixel-trophy .e {
+    background: transparent;
+}
+
+/* Dark outline */
+.pixel-trophy .o {
+    background: #8B6914;
+}
+
+@keyframes trophyBounce {
+    0% { transform: scale(1) translateY(0); }
+    100% { transform: scale(1.05) translateY(-10px); }
+}
+
+.celebration-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    color: gold;
+    text-shadow: 4px 4px 0 #8B4513, -2px -2px 0 #FFD700;
+    margin-bottom: 20px;
+    animation: titlePulse 1s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.celebration-winners {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 24px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 2;
+}
+
+.celebration-winner-name {
+    display: block;
+    color: #FFD700;
+    text-shadow: 2px 2px 0 #8B4513, 0 0 10px #FFD700, 0 0 20px #FFA500;
+    animation: winnerGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes winnerGlow {
+    from { text-shadow: 2px 2px 0 #8B4513, 0 0 10px #FFD700, 0 0 20px #FFA500; }
+    to { text-shadow: 2px 2px 0 #8B4513, 0 0 20px #FFD700, 0 0 40px #FFA500; }
+}
+
+/* Podium/Standings styles */
+.celebration-podium {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    width: 100%;
+    max-width: 500px;
+}
+
+.podium-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 16px;
+    margin: 4px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid;
+    border-radius: 4px;
+}
+
+.podium-entry.winner {
+    font-size: 18px;
+    padding: 12px 16px;
+    background: rgba(255, 215, 0, 0.3);
+    border-color: #FFD700;
+    animation: winnerPulse 1s ease-in-out infinite;
+}
+
+@keyframes winnerPulse {
+    0%, 100% { box-shadow: 0 0 10px #FFD700; }
+    50% { box-shadow: 0 0 25px #FFD700; }
+}
+
+.podium-entry.other {
+    border-color: rgba(255, 255, 255, 0.3);
+    opacity: 0.8;
+}
+
+.podium-rank {
+    color: #888;
+    min-width: 40px;
+}
+
+.podium-entry.winner .podium-rank {
+    color: #FFD700;
+}
+
+.podium-name {
+    flex: 1;
+    text-align: left;
+    margin-left: 10px;
+    color: #fff;
+}
+
+.podium-entry.winner .podium-name {
+    color: #FFD700;
+}
+
+.podium-score {
+    color: #ccc;
+    font-size: 10px;
+    margin-left: 10px;
+}
+
+.podium-entry.winner .podium-score {
+    color: #FFD700;
+}
+
+.podium-distance {
+    color: #aaa;
+    font-size: 12px;
+    min-width: 60px;
+    text-align: right;
+}
+
+.podium-entry.winner .podium-distance {
+    color: #FFD700;
+}
+
+/* Celebration action buttons */
+.celebration-actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.celebration-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    padding: 15px 30px;
+    cursor: pointer;
+    border: 3px solid;
+    transition: all 0.2s;
+}
+
+.celebration-btn.reset-btn {
+    background: var(--retro-primary);
+    color: var(--retro-bg);
+    border-color: var(--retro-primary);
+}
+
+.celebration-btn.reset-btn:hover {
+    background: var(--retro-dark);
+    transform: translateY(-2px);
+}
+
+.celebration-btn.cancel-btn {
+    background: transparent;
+    color: #fff;
+    border-color: #fff;
+}
+
+.celebration-btn.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.celebration-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Fireworks */
+.celebration-fireworks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.firework {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+}
+
+.firework-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: fireworkBurst 1.2s ease-out forwards;
+}
+
+@keyframes fireworkBurst {
+    0% {
+        transform: rotate(var(--angle)) translateX(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(var(--angle)) translateX(80px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* End Game Button */
+.end-game-btn {
+    background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+    border: 3px solid #8B4513;
+}
+
+.end-game-btn:hover {
+    background: linear-gradient(180deg, #FFA500 0%, #FF8C00 100%);
+}
+
 /* Axis Styles */
 .axis line,
 .axis path {
@@ -578,9 +864,15 @@ button:active {
 }
 .legend-controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
-    justify-content: space-between;
+    justify-content: center;
+}
+
+.legend-controls button {
+    flex: 1 1 auto;
+    min-width: fit-content;
 }
 
 .landing-overlay {
@@ -1115,6 +1407,7 @@ button:active {
 				<div class="legend-controls">
                     <button onclick="resetZoom()">Reset Zoom</button>
                     <button onclick="resetGame()" class="reset-game-btn">Reset Game</button>
+                    <button onclick="endGame()" class="end-game-btn">End Game</button>
                 </div>
                 <h2 style="text-align: center;">PLAYERS</h2>
                 <div class="player-form">
@@ -2398,6 +2691,235 @@ function resetZoom() {
     updateTeamColors();  // Ensure colors are correctly applied after reset
 }
 
+// End Game celebration function
+function endGame() {
+    showAlert(
+        'Are you sure?',
+        'End Game',
+        true,
+        (confirmed) => {
+            if (confirmed) {
+                // Fetch standings data
+                fetch('/api/standings')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.standings && data.standings.length > 0) {
+                            showCelebration(data.standings, data.winning_team);
+                        } else {
+                            showAlert('No winner found. Make sure there are bets on the board and scores are set.', 'No Winner');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching standings:', error);
+                        showAlert('Failed to get standings data', 'Error');
+                    });
+            }
+        }
+    );
+}
+
+// Get team colors for celebration based on winning team
+function getTeamColors(winningTeam) {
+    const leftTeamCode = document.getElementById('teamLeft').value;
+    const rightTeamCode = document.getElementById('teamRight').value;
+    const teams = getCurrentTeams();
+
+    const leftTeam = teams[leftTeamCode];
+    const rightTeam = teams[rightTeamCode];
+
+    // Get colors from each team
+    const leftColors = [
+        leftTeam?.colors?.[0] || '#FFD700',
+        leftTeam?.colors?.[1] || '#FFA500'
+    ];
+    const rightColors = [
+        rightTeam?.colors?.[0] || '#4ECDC4',
+        rightTeam?.colors?.[1] || '#45B7D1'
+    ];
+
+    // Return winning team colors first, then losing team colors
+    if (winningTeam === 'left') {
+        return { winner: leftColors, loser: rightColors };
+    } else {
+        return { winner: rightColors, loser: leftColors };
+    }
+}
+
+// Show celebration overlay with Excitebike-style podium
+function showCelebration(standings, winningTeam) {
+    const teamColors = getTeamColors(winningTeam);
+
+    // Find the minimum distance (winner distance)
+    const winnerDistance = standings[0]?.distance || 0;
+
+    // Build podium HTML - top 10, group by distance, show rank
+    const top10 = standings.slice(0, 10);
+    let currentRank = 1;
+    let lastDistance = -1;
+
+    // Get team info for score display
+    const leftTeamCode = document.getElementById('teamLeft').value;
+    const rightTeamCode = document.getElementById('teamRight').value;
+    const teams = getCurrentTeams();
+    const leftTeamName = teams[leftTeamCode]?.name || leftTeamCode;
+    const rightTeamName = teams[rightTeamCode]?.name || rightTeamCode;
+
+    const podiumHtml = top10.map((entry, index) => {
+        // Update rank when distance changes
+        if (entry.distance !== lastDistance) {
+            currentRank = index + 1;
+            lastDistance = entry.distance;
+        }
+
+        const isWinner = entry.distance === winnerDistance;
+        const playerName = players[entry.player]?.name || entry.player_name || entry.player;
+        const distanceText = entry.distance === 0 ? 'EXACT!' : `+${entry.distance}`;
+        const scoreText = `${leftTeamCode} ${entry.square.row} - ${rightTeamCode} ${entry.square.col}`;
+
+        return `
+            <div class="podium-entry ${isWinner ? 'winner' : 'other'}">
+                <span class="podium-rank">${currentRank}.</span>
+                <span class="podium-name">${playerName}</span>
+                <span class="podium-score">${scoreText}</span>
+                <span class="podium-distance">${distanceText}</span>
+            </div>
+        `;
+    }).join('');
+
+    // RC Pro-Am style 8-bit pixel trophy (13x15 grid) with handles
+    const pixelTrophy = `
+        <div class="pixel-trophy">
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="h"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="o"></div><div class="o"></div><div class="h"></div><div class="w"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="o"></div><div class="e"></div>
+            <div class="o"></div><div class="h"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
+            <div class="o"></div><div class="g"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
+            <div class="o"></div><div class="g"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
+            <div class="o"></div><div class="d"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="d"></div><div class="o"></div>
+            <div class="e"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="d"></div><div class="o"></div><div class="e"></div><div class="e"></div>
+            <div class="e"></div><div class="o"></div><div class="h"></div><div class="h"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="g"></div><div class="d"></div><div class="d"></div><div class="o"></div><div class="e"></div>
+            <div class="e"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="o"></div><div class="e"></div>
+        </div>
+    `;
+
+    // Create celebration overlay with winning team color gradient background
+    const overlay = document.createElement('div');
+    overlay.className = 'celebration-overlay';
+    overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
+    overlay.innerHTML = `
+        <div class="celebration-trophy">${pixelTrophy}</div>
+        <div class="celebration-title">TOP 10 SQUARES</div>
+        <div class="celebration-podium">
+            ${podiumHtml}
+        </div>
+        <div class="celebration-actions">
+            <button class="celebration-btn reset-btn" id="celebrationResetBtn">RESET</button>
+            <button class="celebration-btn cancel-btn" id="celebrationCancelBtn">CANCEL</button>
+        </div>
+        <div class="celebration-fireworks" id="fireworksContainer"></div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Add confetti and fireworks - only winning team colors
+    createConfetti(overlay, teamColors.winner);
+    createFireworks(overlay.querySelector('#fireworksContainer'), teamColors.winner);
+
+    // Add click handlers for buttons
+    overlay.querySelector('#celebrationResetBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.body.removeChild(overlay);
+        resetGame(true);
+    });
+
+    overlay.querySelector('#celebrationCancelBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.body.removeChild(overlay);
+    });
+}
+
+// Create confetti particles
+function createConfetti(container, teamColors = null) {
+    // Use team colors if provided, otherwise fall back to defaults
+    const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
+
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const confetti = document.createElement('div');
+            confetti.className = 'celebration-confetti';
+            confetti.style.left = Math.random() * 100 + '%';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            container.appendChild(confetti);
+
+            // Remove confetti after animation
+            setTimeout(() => {
+                if (confetti.parentNode) {
+                    confetti.parentNode.removeChild(confetti);
+                }
+            }, 5000);
+        }, i * 100);
+    }
+}
+
+// Create fireworks with team colors
+function createFireworks(container, teamColors) {
+    const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
+
+    function launchFirework() {
+        const firework = document.createElement('div');
+        firework.className = 'firework';
+
+        // Random position
+        const x = 5 + Math.random() * 90;
+        const y = 5 + Math.random() * 60;
+        firework.style.left = x + '%';
+        firework.style.top = y + '%';
+
+        // Create burst particles - more particles per firework
+        const particleCount = 16;
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'firework-particle';
+            const angle = (i / particleCount) * 360;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.setProperty('--angle', angle + 'deg');
+            particle.style.backgroundColor = color;
+            particle.style.boxShadow = `0 0 6px ${color}, 0 0 10px ${color}`;
+            firework.appendChild(particle);
+        }
+
+        container.appendChild(firework);
+
+        // Remove after animation
+        setTimeout(() => {
+            if (firework.parentNode) {
+                firework.parentNode.removeChild(firework);
+            }
+        }, 1500);
+    }
+
+    // Launch multiple fireworks at once, more frequently
+    function launchBurst() {
+        const burstCount = 2 + Math.floor(Math.random() * 3); // 2-4 fireworks at once
+        for (let i = 0; i < burstCount; i++) {
+            setTimeout(launchFirework, i * 50);
+        }
+    }
+
+    // Launch fireworks more frequently
+    const fireworkInterval = setInterval(launchBurst, 200);
+    launchBurst(); // Initial burst
+
+    // Stop after 10 seconds
+    setTimeout(() => clearInterval(fireworkInterval), 10000);
+}
 
 function resetGame(isNewGame = false) {
     showAlert(

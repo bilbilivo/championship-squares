@@ -342,6 +342,62 @@ def get_winner():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/standings', methods=['GET'])
+def get_standings():
+    """Get all players ranked by distance from current score"""
+    try:
+        left_score = game_state.scores['left']
+        right_score = game_state.scores['right']
+
+        # Determine which team is winning
+        if left_score == right_score:
+            return jsonify({
+                'success': False,
+                'error': 'Game is tied'
+            })
+
+        winning_team = 'left' if left_score > right_score else 'right'
+
+        # Collect all players with bets on the correct side
+        all_standings = []
+
+        for row in range(len(game_state.squares)):
+            for col in range(len(game_state.squares[0])):
+                square_value = game_state.squares[row][col]
+
+                if not square_value:
+                    continue
+
+                # Check if square predicts the correct winning team
+                square_predicts_left_wins = row > col
+                square_predicts_right_wins = col > row
+
+                if winning_team == 'left' and not square_predicts_left_wins:
+                    continue
+                if winning_team == 'right' and not square_predicts_right_wins:
+                    continue
+
+                distance = abs(row - left_score) + abs(col - right_score)
+
+                all_standings.append({
+                    'player': square_value,
+                    'player_name': game_state.players.get(square_value, {}).get('name', square_value),
+                    'square': {'row': row, 'col': col},
+                    'distance': distance,
+                    'winning_team': winning_team
+                })
+
+        # Sort by distance
+        all_standings.sort(key=lambda x: x['distance'])
+
+        return jsonify({
+            'success': True,
+            'standings': all_standings,
+            'winning_team': winning_team
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/squares', methods=['POST'])
 def update_square():
     try:
