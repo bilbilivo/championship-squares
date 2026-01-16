@@ -349,8 +349,7 @@ button:active {
 
 .celebration-trophy {
     margin-bottom: 20px;
-    animation: trophyBounce 0.6s ease-in-out infinite alternate, trophyGlow 1.5s ease-in-out infinite;
-    filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    animation: trophyBounceGlow 0.6s ease-in-out infinite alternate;
 }
 
 .celebration-trophy img {
@@ -358,14 +357,15 @@ button:active {
     width: auto;
 }
 
-@keyframes trophyBounce {
-    0% { transform: scale(1) translateY(0); }
-    100% { transform: scale(1.08) translateY(-8px); }
-}
-
-@keyframes trophyGlow {
-    0%, 100% { filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); }
-    50% { filter: drop-shadow(0 0 25px rgba(220, 220, 220, 1)) drop-shadow(0 0 40px rgba(192, 192, 192, 0.6)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)); }
+@keyframes trophyBounceGlow {
+    0% {
+        transform: scale(1) translateY(0);
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    }
+    100% {
+        transform: scale(1.08) translateY(-8px);
+        filter: drop-shadow(0 0 25px rgba(255, 223, 0, 1)) drop-shadow(0 0 40px rgba(255, 180, 0, 0.6)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    }
 }
 
 .celebration-winner-banner {
@@ -386,7 +386,7 @@ button:active {
     font-size: 48px;
     color: #FFD700;
     text-shadow: 4px 4px 0 #8B4513, 0 0 30px #FFD700;
-    animation: winnerGlow 1s ease-in-out infinite alternate;
+    animation: winnerGlow 0.6s ease-in-out infinite alternate;
 }
 
 .celebration-final-score {
@@ -441,7 +441,7 @@ button:active {
     display: block;
     color: #FFD700;
     text-shadow: 2px 2px 0 #8B4513, 0 0 10px #FFD700, 0 0 20px #FFA500;
-    animation: winnerGlow 1s ease-in-out infinite alternate;
+    animation: winnerGlow 0.6s ease-in-out infinite alternate;
 }
 
 @keyframes winnerGlow {
@@ -478,12 +478,12 @@ button:active {
     padding: 12px 16px;
     background: rgba(255, 215, 0, 0.3);
     border-color: #FFD700;
-    animation: winnerPulse 1s ease-in-out infinite;
+    animation: winnerPulse 0.6s ease-in-out infinite alternate;
 }
 
 @keyframes winnerPulse {
-    0%, 100% { box-shadow: 0 0 10px #FFD700; }
-    50% { box-shadow: 0 0 25px #FFD700; }
+    from { box-shadow: 0 0 10px #FFD700; }
+    to { box-shadow: 0 0 25px #FFD700; }
 }
 
 .podium-entry.other {
@@ -587,31 +587,45 @@ button:active {
 .celebration-fireworks {
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
+    width: 20%;
     height: 100%;
     pointer-events: none;
     z-index: 100;
     overflow: hidden;
 }
 
+.celebration-fireworks.fireworks-left {
+    left: 0;
+}
+
+.celebration-fireworks.fireworks-right {
+    right: 0;
+}
+
+.celebration-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 50;
+}
+
 .firework {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 .firework-particle {
     position: absolute;
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     animation: fireworkBurst 1.5s ease-out forwards;
 }
 
 .firework-particle.large {
-    width: 16px;
-    height: 16px;
+    width: 21px;
+    height: 21px;
 }
 
 @keyframes fireworkBurst {
@@ -620,7 +634,7 @@ button:active {
         opacity: 1;
     }
     100% {
-        transform: rotate(var(--angle)) translateX(120px) scale(0);
+        transform: rotate(var(--angle)) translateX(156px) scale(0);
         opacity: 0;
     }
 }
@@ -2844,34 +2858,38 @@ function showCelebration(standings, winningTeam) {
     overlay.className = 'celebration-overlay';
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
     overlay.innerHTML = `
-        <div class="celebration-trophy"><img src="/static/trophy3.png" alt="Trophy"></div>
-        <div class="celebration-winner-banner">
-            <div class="winner-label">WINNER</div>
-            <div class="winner-name">${winnerNames}</div>
+        <div class="celebration-fireworks fireworks-left" id="fireworksLeft"></div>
+        <div class="celebration-fireworks fireworks-right" id="fireworksRight"></div>
+        <div class="celebration-content">
+            <div class="celebration-trophy"><img src="/static/trophy3.png" alt="Trophy"></div>
+            <div class="celebration-winner-banner">
+                <div class="winner-label">WINNER</div>
+                <div class="winner-name">${winnerNames}</div>
+            </div>
+            <div class="celebration-final-score">
+                <span class="final-score-team">${leftTeamCode}</span>
+                <span class="final-score-value">${finalLeftScore}</span>
+                <span class="final-score-separator">-</span>
+                <span class="final-score-value">${finalRightScore}</span>
+                <span class="final-score-team">${rightTeamCode}</span>
+            </div>
+            <div class="celebration-title">TOP 5 SQUARES</div>
+            <div class="celebration-podium">
+                ${podiumHtml}
+            </div>
+            <div class="celebration-actions">
+                <button class="celebration-btn reset-btn" id="celebrationResetBtn">RESET</button>
+                <button class="celebration-btn cancel-btn" id="celebrationCancelBtn">CANCEL</button>
+            </div>
         </div>
-        <div class="celebration-final-score">
-            <span class="final-score-team">${leftTeamCode}</span>
-            <span class="final-score-value">${finalLeftScore}</span>
-            <span class="final-score-separator">-</span>
-            <span class="final-score-value">${finalRightScore}</span>
-            <span class="final-score-team">${rightTeamCode}</span>
-        </div>
-        <div class="celebration-title">TOP 5 SQUARES</div>
-        <div class="celebration-podium">
-            ${podiumHtml}
-        </div>
-        <div class="celebration-actions">
-            <button class="celebration-btn reset-btn" id="celebrationResetBtn">RESET</button>
-            <button class="celebration-btn cancel-btn" id="celebrationCancelBtn">CANCEL</button>
-        </div>
-        <div class="celebration-fireworks" id="fireworksContainer"></div>
     `;
 
     document.body.appendChild(overlay);
 
     // Add confetti and fireworks - only winning team colors
     createConfetti(overlay, teamColors.winner);
-    createFireworks(overlay.querySelector('#fireworksContainer'), teamColors.winner);
+    createFireworks(overlay.querySelector('#fireworksLeft'), teamColors.winner, 'left');
+    createFireworks(overlay.querySelector('#fireworksRight'), teamColors.winner, 'right');
 
     // Add click handlers for buttons
     overlay.querySelector('#celebrationResetBtn').addEventListener('click', (e) => {
@@ -2912,16 +2930,16 @@ function createConfetti(container, teamColors = null) {
 }
 
 // Create fireworks with team colors
-function createFireworks(container, teamColors) {
+function createFireworks(container, teamColors, side = 'full') {
     const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
 
     function launchFirework() {
         const firework = document.createElement('div');
         firework.className = 'firework';
 
-        // Random position
+        // Random position within the container
         const x = 10 + Math.random() * 80;
-        const y = 10 + Math.random() * 50;
+        const y = 10 + Math.random() * 80;
         firework.style.left = x + '%';
         firework.style.top = y + '%';
 
@@ -2948,12 +2966,15 @@ function createFireworks(container, teamColors) {
         }, 1500);
     }
 
-    // Launch fireworks periodically
-    const fireworkInterval = setInterval(launchFirework, 400);
-    launchFirework(); // Initial firework
+    // Launch fireworks periodically - stagger left and right
+    const delay = side === 'right' ? 200 : 0;
+    setTimeout(() => {
+        const fireworkInterval = setInterval(launchFirework, 700);
+        launchFirework(); // Initial firework
 
-    // Stop after 10 seconds
-    setTimeout(() => clearInterval(fireworkInterval), 10000);
+        // Stop after 10 seconds
+        setTimeout(() => clearInterval(fireworkInterval), 10000);
+    }, delay);
 }
 
 function resetGame(isNewGame = false) {
