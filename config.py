@@ -20,7 +20,7 @@ class Config:
         self.max_scores = {
             'nfl': 70,
             'nhl': 12,
-            'nba': 180,
+            'nba': 160,
             'mlb': 30
         }
 
