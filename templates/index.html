@@ -40,6 +40,14 @@
     --mlb-logo-primary: #002D72;    /* Navy Blue */
     --mlb-logo-secondary: #D50032;  /* Red */
 
+    /* Olympics Theme (Gold) */
+    --oly-primary: #FFD700;  /* Olympic Gold */
+    --oly-dark: #332B00;     /* Dark gold for backgrounds */
+    --oly-light: #FFE55C;    /* Lighter gold for highlights */
+    --oly-bg: #1A1500;       /* Very dark gold-tinted for background */
+    --oly-logo-primary: #FFD700;    /* Gold */
+    --oly-logo-secondary: #0085C7;  /* Olympic Blue */
+
     /* Active Theme (set programmatically based on sport) */
     --retro-primary: var(--nfl-primary);
     --retro-dark: var(--nfl-dark);
@@ -1413,6 +1421,7 @@ button:active {
 					<div class="sport-box" data-sport="nhl">NHL</div>
 					<div class="sport-box" data-sport="nba">NBA</div>
 					<div class="sport-box" data-sport="mlb">MLB</div>
+					<div class="sport-box" data-sport="oly">OLY</div>
 				</div>
 				<button id="backToMainBtn" class="landing-btn">Back</button>
 			</div>
@@ -1593,10 +1602,11 @@ function updateGameTitle(sport) {
         'nfl': 'SUPER BOWL SQUARES',
         'nhl': 'SLAP SHOT SQUARES',
         'nba': 'SLAM DUNK SQUARES',
-        'mlb': 'GRAND SLAM SQUARES'
+        'mlb': 'GRAND SLAM SQUARES',
+        'oly': 'GOLD MEDAL SQUARES'
     };
 
-    const title = titles[sport] || 'CHAMPIONSHIP SQUARES'; // Default to Super Bowl Squares
+    const title = titles[sport] || 'CHAMPIONSHIP SQUARES';
     document.getElementById('gameTitle').textContent = title;
     document.getElementById('gameTitleLanding').textContent = title;
     document.title = title;
@@ -1805,6 +1815,8 @@ function getCurrentTeams() {
             return NBA_TEAMS;
         case 'mlb':
             return MLB_TEAMS;
+        case 'oly':
+            return OLY_TEAMS;
         default:
             return NFL_TEAMS;
     }
@@ -2161,6 +2173,32 @@ const MLB_TEAMS = {
     "TEX": { name: "TEXAS RANGERS", colors: ["#003278", "#C0111F"] },
     "TOR": { name: "TORONTO BLUE JAYS", colors: ["#51ADE9", "#003CAB"] },
     "WSH": { name: "WASHINGTON NATIONALS", colors: ["#AB0003", "#14225A"] }
+};
+
+// Olympic Ice Hockey Teams (countries) with flag-based colors
+const OLY_TEAMS = {
+    "AUT": { name: "AUSTRIA", colors: ["#ED2939", "#FFFFFF"] },
+    "CAN": { name: "CANADA", colors: ["#FF0000", "#FFFFFF"] },
+    "CHN": { name: "CHINA", colors: ["#DE2910", "#FFDE00"] },
+    "CZE": { name: "CZECHIA", colors: ["#11457E", "#D7141A"] },
+    "DEN": { name: "DENMARK", colors: ["#C60C30", "#FFFFFF"] },
+    "FIN": { name: "FINLAND", colors: ["#003580", "#FFFFFF"] },
+    "FRA": { name: "FRANCE", colors: ["#002395", "#ED2939"] },
+    "GER": { name: "GERMANY", colors: ["#000000", "#DD0000"] },
+    "GBR": { name: "GREAT BRITAIN", colors: ["#012169", "#C8102E"] },
+    "HUN": { name: "HUNGARY", colors: ["#477050", "#CE2939"] },
+    "ITA": { name: "ITALY", colors: ["#009246", "#CE2B37"] },
+    "JPN": { name: "JAPAN", colors: ["#FFFFFF", "#BC002D"] },
+    "KAZ": { name: "KAZAKHSTAN", colors: ["#00AEC7", "#FEC50C"] },
+    "LAT": { name: "LATVIA", colors: ["#9E3039", "#FFFFFF"] },
+    "NOR": { name: "NORWAY", colors: ["#EF2B2D", "#002868"] },
+    "POL": { name: "POLAND", colors: ["#FFFFFF", "#DC143C"] },
+    "SVK": { name: "SLOVAKIA", colors: ["#0B4EA2", "#EE1C25"] },
+    "SLO": { name: "SLOVENIA", colors: ["#005DA4", "#ED1C24"] },
+    "KOR": { name: "SOUTH KOREA", colors: ["#003478", "#C60C30"] },
+    "SWE": { name: "SWEDEN", colors: ["#006AA7", "#FECC00"] },
+    "SUI": { name: "SWITZERLAND", colors: ["#FF0000", "#FFFFFF"] },
+    "USA": { name: "UNITED STATES", colors: ["#002868", "#BF0A30"] }
 };
 
 function addPlayer() {
@@ -3012,6 +3050,7 @@ function resetGame(isNewGame = false) {
                             <div class="sport-box" data-sport="nhl">NHL</div>
                             <div class="sport-box" data-sport="nba">NBA</div>
                             <div class="sport-box" data-sport="mlb">MLB</div>
+                            <div class="sport-box" data-sport="oly">OLY</div>
                         </div>
                     </div>
                 `;
