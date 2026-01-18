@@ -379,12 +379,17 @@ def get_standings():
 
                 distance = abs(row - left_score) + abs(col - right_score)
 
+                # Get multiplier used for this square
+                square_key = (row, col)
+                multiplier = game_state.square_multipliers.get(square_key, 1)
+
                 all_standings.append({
                     'player': square_value,
                     'player_name': game_state.players.get(square_value, {}).get('name', square_value),
                     'square': {'row': row, 'col': col},
                     'distance': distance,
-                    'winning_team': winning_team
+                    'winning_team': winning_team,
+                    'multiplier': multiplier
                 })
 
         # Sort by distance, then by player name when equal

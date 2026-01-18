@@ -532,6 +532,18 @@ button:active {
     color: #FFD700;
 }
 
+.podium-multiplier {
+    color: #aaa;
+    font-size: 12px;
+    min-width: 40px;
+    text-align: right;
+    margin-left: 10px;
+}
+
+.podium-entry.winner .podium-multiplier {
+    color: #FFD700;
+}
+
 /* Celebration action buttons */
 .celebration-actions {
     display: flex;
@@ -2816,7 +2828,9 @@ function showCelebration(standings, winningTeam) {
     // Get winners (all entries with minimum distance) - unique player names only, sorted
     const winners = standings.filter(s => s.distance === winnerDistance);
     const uniqueWinnerNames = [...new Set(winners.map(w => players[w.player]?.name || w.player_name || w.player))].sort();
-    const winnerNames = uniqueWinnerNames.join(', ');
+    const winnerNames = uniqueWinnerNames.length === 2
+        ? uniqueWinnerNames.join(' & ')
+        : uniqueWinnerNames.join(', ');
 
     // Build podium HTML - top 5, group by distance, show rank
     const top5 = standings.slice(0, 5);
@@ -2842,12 +2856,14 @@ function showCelebration(standings, winningTeam) {
         const playerName = players[entry.player]?.name || entry.player_name || entry.player;
         const distanceText = entry.distance === 0 ? 'EXACT!' : `+${entry.distance}`;
         const scoreText = `${leftTeamCode} ${entry.square.row} - ${rightTeamCode} ${entry.square.col}`;
+        const multiplierText = `${entry.multiplier || 1}x`;
 
         return `
             <div class="podium-entry ${isWinner ? 'winner' : 'other'}">
                 <span class="podium-rank">${currentRank}.</span>
                 <span class="podium-name">${playerName}</span>
                 <span class="podium-score">${scoreText}</span>
+                <span class="podium-multiplier">${multiplierText}</span>
                 <span class="podium-distance">${distanceText}</span>
             </div>
         `;
