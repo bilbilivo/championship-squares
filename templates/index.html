@@ -41,12 +41,20 @@
     --mlb-logo-secondary: #D50032;  /* Red */
 
     /* Olympics Theme (Gold) */
-    --oly-primary: #FFD700;  /* Olympic Gold */
-    --oly-dark: #332B00;     /* Dark gold for backgrounds */
-    --oly-light: #FFE55C;    /* Lighter gold for highlights */
-    --oly-bg: #1A1500;       /* Very dark gold-tinted for background */
-    --oly-logo-primary: #FFD700;    /* Gold */
-    --oly-logo-secondary: #0085C7;  /* Olympic Blue */
+    --olym-primary: #FFD700;  /* Olympic Gold */
+    --olym-dark: #332B00;     /* Dark gold for backgrounds */
+    --olym-light: #FFE55C;    /* Lighter gold for highlights */
+    --olym-bg: #1A1500;       /* Very dark gold-tinted for background */
+    --olym-logo-primary: #FFD700;    /* Gold */
+    --olym-logo-secondary: #0085C7;  /* Olympic Blue */
+
+    /* FIFA World Cup Theme (Green/Gold) - High Contrast */
+    --fifa-primary: #00A651;   /* Bright FIFA Green */
+    --fifa-dark: #0D3D1F;      /* Dark green for backgrounds */
+    --fifa-light: #5FD068;     /* Bright green for highlights */
+    --fifa-bg: #061A0D;        /* Very dark green for background */
+    --fifa-logo-primary: #00A651;     /* Bright FIFA Green */
+    --fifa-logo-secondary: #FFD700;   /* Bright Gold */
 
     /* Active Theme (set programmatically based on sport) */
     --retro-primary: var(--nfl-primary);
@@ -1417,11 +1425,12 @@ button:active {
 			</div>
 			<div class="sport-selection" style="display: none;">
 				<div class="sport-grid">
+					<div class="sport-box" data-sport="fifa">FIFA</div>
+                    <div class="sport-box" data-sport="mlb">MLB</div>
+					<div class="sport-box" data-sport="nba">NBA</div>
 					<div class="sport-box" data-sport="nfl">NFL</div>
 					<div class="sport-box" data-sport="nhl">NHL</div>
-					<div class="sport-box" data-sport="nba">NBA</div>
-					<div class="sport-box" data-sport="mlb">MLB</div>
-					<div class="sport-box" data-sport="oly">OLY</div>
+					<div class="sport-box" data-sport="olym">OLYM</div>
 				</div>
 				<button id="backToMainBtn" class="landing-btn">Back</button>
 			</div>
@@ -1599,11 +1608,12 @@ function generateHelmetSVG(primaryColor, secondaryColor) {
 // Function to update title based on selected sport
 function updateGameTitle(sport) {
     const titles = {
+        'fifa': 'WORLD CUP SQUARES',
         'nfl': 'SUPER BOWL SQUARES',
         'nhl': 'SLAP SHOT SQUARES',
         'nba': 'SLAM DUNK SQUARES',
         'mlb': 'GRAND SLAM SQUARES',
-        'oly': 'GOLD MEDAL SQUARES'
+        'olym': 'GOLD MEDAL SQUARES'
     };
 
     const title = titles[sport] || 'CHAMPIONSHIP SQUARES';
@@ -1809,14 +1819,18 @@ function updateScore(team) {
 
 function getCurrentTeams() {
     switch(currentSport) {
+        case 'nfl':
+            return NHL_TEAMS;
         case 'nhl':
             return NHL_TEAMS;
         case 'nba':
             return NBA_TEAMS;
         case 'mlb':
             return MLB_TEAMS;
-        case 'oly':
-            return OLY_TEAMS;
+        case 'olym':
+            return OLYM_TEAMS;
+        case 'fifa':
+            return FIFA_TEAMS;
         default:
             return NFL_TEAMS;
     }
@@ -2175,8 +2189,8 @@ const MLB_TEAMS = {
     "WSH": { name: "WASHINGTON NATIONALS", colors: ["#AB0003", "#14225A"] }
 };
 
-// Olympic Ice Hockey Teams (countries) with flag-based colors
-const OLY_TEAMS = {
+// Olympic Ice Hockey Teams (countries) with flag-based colors (sorted by team name)
+const OLYM_TEAMS = {
     "AUT": { name: "AUSTRIA", colors: ["#ED2939", "#FFFFFF"] },
     "CAN": { name: "CANADA", colors: ["#FF0000", "#FFFFFF"] },
     "CHN": { name: "CHINA", colors: ["#DE2910", "#FFDE00"] },
@@ -2199,6 +2213,72 @@ const OLY_TEAMS = {
     "SWE": { name: "SWEDEN", colors: ["#006AA7", "#FECC00"] },
     "SUI": { name: "SWITZERLAND", colors: ["#FF0000", "#FFFFFF"] },
     "USA": { name: "UNITED STATES", colors: ["#002868", "#BF0A30"] }
+};
+
+// FIFA World Cup 2026 Teams with flag-based colors (sorted by team name)
+const FIFA_TEAMS = {
+    "ALG": { name: "ALGERIA", colors: ["#006233", "#FFFFFF"] },
+    "ARG": { name: "ARGENTINA", colors: ["#75AADB", "#FFFFFF"] },
+    "AUS": { name: "AUSTRALIA", colors: ["#00843D", "#FFCD00"] },
+    "AUT": { name: "AUSTRIA", colors: ["#ED2939", "#FFFFFF"] },
+    "BHR": { name: "BAHRAIN", colors: ["#CE1126", "#FFFFFF"] },
+    "BEL": { name: "BELGIUM", colors: ["#ED2939", "#FDDA24"] },
+    "BOL": { name: "BOLIVIA", colors: ["#007934", "#D52B1E"] },
+    "BRA": { name: "BRAZIL", colors: ["#009C3B", "#FFDF00"] },
+    "CMR": { name: "CAMEROON", colors: ["#007A5E", "#CE1126"] },
+    "CAN": { name: "CANADA", colors: ["#FF0000", "#FFFFFF"] },
+    "CHI": { name: "CHILE", colors: ["#D52B1E", "#0039A6"] },
+    "COL": { name: "COLOMBIA", colors: ["#FCD116", "#003893"] },
+    "CRC": { name: "COSTA RICA", colors: ["#002B7F", "#CE1126"] },
+    "CRO": { name: "CROATIA", colors: ["#FF0000", "#0000FF"] },
+    "DEN": { name: "DENMARK", colors: ["#C60C30", "#FFFFFF"] },
+    "ECU": { name: "ECUADOR", colors: ["#FFD100", "#0033A0"] },
+    "EGY": { name: "EGYPT", colors: ["#C8102E", "#FFFFFF"] },
+    "ENG": { name: "ENGLAND", colors: ["#FFFFFF", "#CF081F"] },
+    "FIN": { name: "FINLAND", colors: ["#003580", "#FFFFFF"] },
+    "FRA": { name: "FRANCE", colors: ["#002395", "#ED2939"] },
+    "GER": { name: "GERMANY", colors: ["#000000", "#DD0000"] },
+    "GRE": { name: "GREECE", colors: ["#0D5EAF", "#FFFFFF"] },
+    "HON": { name: "HONDURAS", colors: ["#0073CF", "#FFFFFF"] },
+    "HUN": { name: "HUNGARY", colors: ["#477050", "#CE2939"] },
+    "IDN": { name: "INDONESIA", colors: ["#FF0000", "#FFFFFF"] },
+    "IRN": { name: "IRAN", colors: ["#239F40", "#DA0000"] },
+    "IRQ": { name: "IRAQ", colors: ["#007A3D", "#FFFFFF"] },
+    "ITA": { name: "ITALY", colors: ["#009246", "#CE2B37"] },
+    "CIV": { name: "IVORY COAST", colors: ["#FF8200", "#009A44"] },
+    "JAM": { name: "JAMAICA", colors: ["#009B3A", "#FED100"] },
+    "JPN": { name: "JAPAN", colors: ["#FFFFFF", "#BC002D"] },
+    "JOR": { name: "JORDAN", colors: ["#007A3D", "#CE1126"] },
+    "MEX": { name: "MEXICO", colors: ["#006847", "#CE1126"] },
+    "MAR": { name: "MOROCCO", colors: ["#C1272D", "#006233"] },
+    "NED": { name: "NETHERLANDS", colors: ["#FF6600", "#FFFFFF"] },
+    "NZL": { name: "NEW ZEALAND", colors: ["#000000", "#FFFFFF"] },
+    "NGR": { name: "NIGERIA", colors: ["#008751", "#FFFFFF"] },
+    "PRK": { name: "NORTH KOREA", colors: ["#024FA2", "#ED1C27"] },
+    "NOR": { name: "NORWAY", colors: ["#EF2B2D", "#002868"] },
+    "PLE": { name: "PALESTINE", colors: ["#007A3D", "#CE1126"] },
+    "PAN": { name: "PANAMA", colors: ["#005293", "#D21034"] },
+    "PAR": { name: "PARAGUAY", colors: ["#D52B1E", "#0038A8"] },
+    "PER": { name: "PERU", colors: ["#D91023", "#FFFFFF"] },
+    "POL": { name: "POLAND", colors: ["#FFFFFF", "#DC143C"] },
+    "POR": { name: "PORTUGAL", colors: ["#006600", "#FF0000"] },
+    "QAT": { name: "QATAR", colors: ["#8D1B3D", "#FFFFFF"] },
+    "KSA": { name: "SAUDI ARABIA", colors: ["#006C35", "#FFFFFF"] },
+    "SCO": { name: "SCOTLAND", colors: ["#005EB8", "#FFFFFF"] },
+    "SEN": { name: "SENEGAL", colors: ["#00853F", "#FDEF42"] },
+    "SRB": { name: "SERBIA", colors: ["#C6363C", "#0C4076"] },
+    "SLO": { name: "SLOVENIA", colors: ["#005DA4", "#ED1C24"] },
+    "RSA": { name: "SOUTH AFRICA", colors: ["#007A4D", "#FFB612"] },
+    "KOR": { name: "SOUTH KOREA", colors: ["#003478", "#C60C30"] },
+    "ESP": { name: "SPAIN", colors: ["#AA151B", "#F1BF00"] },
+    "SUI": { name: "SWITZERLAND", colors: ["#FF0000", "#FFFFFF"] },
+    "TUR": { name: "TURKEY", colors: ["#E30A17", "#FFFFFF"] },
+    "UKR": { name: "UKRAINE", colors: ["#005BBB", "#FFD500"] },
+    "USA": { name: "UNITED STATES", colors: ["#002868", "#BF0A30"] },
+    "URU": { name: "URUGUAY", colors: ["#5CBFEB", "#FFFFFF"] },
+    "UZB": { name: "UZBEKISTAN", colors: ["#1EB53A", "#0099B5"] },
+    "VEN": { name: "VENEZUELA", colors: ["#FFCC00", "#00247D"] },
+    "WAL": { name: "WALES", colors: ["#C8102E", "#00AB39"] }
 };
 
 function addPlayer() {
@@ -3046,11 +3126,12 @@ function resetGame(isNewGame = false) {
                     <div class="alert-content">
                         <h2 class="alert-title">SELECT SPORT</h2>
                         <div class="sport-grid">
+                            <div class="sport-box" data-sport="fifa">FIFA</div>
+                            <div class="sport-box" data-sport="mlb">MLB</div>
+                            <div class="sport-box" data-sport="nba">NBA</div>
                             <div class="sport-box" data-sport="nfl">NFL</div>
                             <div class="sport-box" data-sport="nhl">NHL</div>
-                            <div class="sport-box" data-sport="nba">NBA</div>
-                            <div class="sport-box" data-sport="mlb">MLB</div>
-                            <div class="sport-box" data-sport="oly">OLY</div>
+                            <div class="sport-box" data-sport="olym">OLYM</div>
                         </div>
                     </div>
                 `;
