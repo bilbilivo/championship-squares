@@ -8,6 +8,7 @@ midi/*
 .vscode/*
 config.json
 game_state.json
+.lite_mode
 !input/*_inputList.txt
 !input/required_files_(overrides_above)*TEST*.xlsx
 !input/*template*.xlsx
