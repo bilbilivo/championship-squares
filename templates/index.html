@@ -128,12 +128,55 @@
     box-shadow: none !important;
 }
 
-/* Hide confetti and fireworks in lite mode */
+/* Hide animated confetti and fireworks in lite mode */
 .lite-mode .celebration-confetti,
 .lite-mode .celebration-fireworks,
 .lite-mode .firework,
 .lite-mode .firework-particle {
     display: none !important;
+}
+
+/* ---- LITE MODE: Static 8-bit decorations ---- */
+
+/* Static pixel confetti pieces */
+.lite-mode .static-confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    image-rendering: pixelated;
+}
+
+/* Static pixel firework bursts */
+.lite-mode .static-firework {
+    position: absolute;
+    image-rendering: pixelated;
+}
+
+.lite-mode .static-firework-center {
+    width: 8px;
+    height: 8px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.lite-mode .static-firework-ray {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+}
+
+/* Static decorations container */
+.lite-mode .static-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
 }
 
 /* Remove button hover transforms */
@@ -3129,9 +3172,15 @@ function showCelebration(standings, winningTeam) {
     document.body.appendChild(overlay);
 
     // Add confetti and fireworks - only winning team colors
-    createConfetti(overlay, teamColors.winner);
-    createFireworks(overlay.querySelector('#fireworksLeft'), teamColors.winner, 'left');
-    createFireworks(overlay.querySelector('#fireworksRight'), teamColors.winner, 'right');
+    if (isLiteMode) {
+        // Lite mode: add static 8-bit decorations
+        createStaticDecorations(overlay, teamColors.winner);
+    } else {
+        // Normal mode: animated effects
+        createConfetti(overlay, teamColors.winner);
+        createFireworks(overlay.querySelector('#fireworksLeft'), teamColors.winner, 'left');
+        createFireworks(overlay.querySelector('#fireworksRight'), teamColors.winner, 'right');
+    }
 
     // Add click handlers for buttons
     overlay.querySelector('#celebrationResetBtn').addEventListener('click', (e) => {
@@ -3223,6 +3272,208 @@ function createFireworks(container, teamColors, side = 'full') {
         // Stop after 10 seconds
         setTimeout(() => clearInterval(fireworkInterval), 10000);
     }, delay);
+}
+
+// Create static 8-bit style decorations for lite mode
+function createStaticDecorations(container, teamColors) {
+    const colors = teamColors || ['#FFD700', '#FF6B6B'];
+
+    // Create decorations container
+    const decorations = document.createElement('div');
+    decorations.className = 'static-decorations';
+
+    // Create static pixel confetti scattered around
+    const confettiPositions = [
+        // Left side confetti
+        { x: 5, y: 10 }, { x: 8, y: 25 }, { x: 3, y: 40 }, { x: 10, y: 55 },
+        { x: 6, y: 70 }, { x: 12, y: 85 }, { x: 4, y: 15 }, { x: 9, y: 45 },
+        { x: 7, y: 60 }, { x: 2, y: 80 }, { x: 11, y: 30 }, { x: 5, y: 92 },
+        // Right side confetti
+        { x: 88, y: 12 }, { x: 92, y: 28 }, { x: 95, y: 42 }, { x: 89, y: 58 },
+        { x: 94, y: 72 }, { x: 91, y: 88 }, { x: 87, y: 20 }, { x: 96, y: 48 },
+        { x: 90, y: 65 }, { x: 93, y: 78 }, { x: 88, y: 35 }, { x: 97, y: 90 },
+    ];
+
+    confettiPositions.forEach((pos, i) => {
+        const confetti = document.createElement('div');
+        confetti.className = 'static-confetti';
+        confetti.style.left = pos.x + '%';
+        confetti.style.top = pos.y + '%';
+        confetti.style.backgroundColor = colors[i % colors.length];
+        // Vary sizes for 8-bit look
+        const size = (i % 3 === 0) ? 6 : (i % 3 === 1) ? 8 : 10;
+        confetti.style.width = size + 'px';
+        confetti.style.height = size + 'px';
+        decorations.appendChild(confetti);
+    });
+
+    // Create static 8-bit firework bursts - BIG and impressive
+    const fireworkPositions = [
+        { x: 6, y: 12, size: 'large' }, { x: 14, y: 45, size: 'large' }, { x: 8, y: 78, size: 'large' },
+        { x: 94, y: 15, size: 'large' }, { x: 86, y: 50, size: 'large' }, { x: 92, y: 82, size: 'large' },
+        { x: 10, y: 28, size: 'medium' }, { x: 5, y: 60, size: 'medium' },
+        { x: 90, y: 32, size: 'medium' }, { x: 95, y: 65, size: 'medium' },
+    ];
+
+    fireworkPositions.forEach((pos, i) => {
+        const firework = document.createElement('div');
+        firework.className = 'static-firework';
+        firework.style.left = pos.x + '%';
+        firework.style.top = pos.y + '%';
+
+        const isLarge = pos.size === 'large';
+        const baseSize = isLarge ? 120 : 70;
+        firework.style.width = baseSize + 'px';
+        firework.style.height = baseSize + 'px';
+
+        const color = colors[i % colors.length];
+        const altColor = colors[(i + 1) % colors.length];
+
+        // Large center pixel cluster (3x3 for big, 2x2 for medium)
+        const centerSize = isLarge ? 12 : 8;
+        const center = document.createElement('div');
+        center.className = 'static-firework-center';
+        center.style.backgroundColor = color;
+        center.style.width = centerSize + 'px';
+        center.style.height = centerSize + 'px';
+        firework.appendChild(center);
+
+        // Inner ring pixels around center
+        const innerDist = isLarge ? 14 : 10;
+        const innerPositions = [
+            { dx: 0, dy: -innerDist }, { dx: 0, dy: innerDist },
+            { dx: -innerDist, dy: 0 }, { dx: innerDist, dy: 0 },
+        ];
+        innerPositions.forEach(p => {
+            const pixel = document.createElement('div');
+            pixel.className = 'static-firework-ray';
+            pixel.style.backgroundColor = color;
+            pixel.style.width = '6px';
+            pixel.style.height = '6px';
+            pixel.style.left = `calc(50% + ${p.dx}px - 3px)`;
+            pixel.style.top = `calc(50% + ${p.dy}px - 3px)`;
+            firework.appendChild(pixel);
+        });
+
+        // Main rays - 8 directions with multiple pixels each
+        const rayLength = isLarge ? 50 : 30;
+        const rays = [
+            { dx: 0, dy: -1 },   // up
+            { dx: 0, dy: 1 },    // down
+            { dx: -1, dy: 0 },   // left
+            { dx: 1, dy: 0 },    // right
+            { dx: -0.7, dy: -0.7 }, // up-left
+            { dx: 0.7, dy: -0.7 },  // up-right
+            { dx: -0.7, dy: 0.7 },  // down-left
+            { dx: 0.7, dy: 0.7 },   // down-right
+        ];
+
+        rays.forEach((ray, j) => {
+            const isCardinal = j < 4;
+            const numPixels = isLarge ? (isCardinal ? 5 : 4) : (isCardinal ? 4 : 3);
+
+            for (let k = 1; k <= numPixels; k++) {
+                const dist = (rayLength / numPixels) * k;
+                const pixel = document.createElement('div');
+                pixel.className = 'static-firework-ray';
+                // Alternate colors along the ray
+                pixel.style.backgroundColor = k % 2 === 0 ? altColor : color;
+                // Pixels get smaller toward the end
+                const pixelSize = isLarge ? (7 - k) : (6 - k);
+                pixel.style.width = Math.max(pixelSize, 3) + 'px';
+                pixel.style.height = Math.max(pixelSize, 3) + 'px';
+                pixel.style.left = `calc(50% + ${ray.dx * dist}px - ${pixelSize/2}px)`;
+                pixel.style.top = `calc(50% + ${ray.dy * dist}px - ${pixelSize/2}px)`;
+                // Fade out toward tips
+                pixel.style.opacity = 1 - (k * 0.15);
+                firework.appendChild(pixel);
+            }
+        });
+
+        // Add extra sparkle pixels scattered around for large fireworks
+        if (isLarge) {
+            const sparkles = [
+                { dx: 25, dy: -35 }, { dx: -30, dy: -30 }, { dx: 35, dy: 25 }, { dx: -25, dy: 35 },
+                { dx: 40, dy: -15 }, { dx: -40, dy: 15 }, { dx: 15, dy: 40 }, { dx: -15, dy: -40 },
+            ];
+            sparkles.forEach((s, k) => {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'static-firework-ray';
+                sparkle.style.backgroundColor = k % 2 === 0 ? color : altColor;
+                sparkle.style.width = '4px';
+                sparkle.style.height = '4px';
+                sparkle.style.left = `calc(50% + ${s.dx}px - 2px)`;
+                sparkle.style.top = `calc(50% + ${s.dy}px - 2px)`;
+                sparkle.style.opacity = '0.8';
+                firework.appendChild(sparkle);
+            });
+        }
+
+        decorations.appendChild(firework);
+    });
+
+    // Add bigger star/sparkle shapes
+    const starPositions = [
+        { x: 22, y: 8 }, { x: 78, y: 10 },
+        { x: 20, y: 92 }, { x: 80, y: 90 },
+        { x: 25, y: 40 }, { x: 75, y: 38 },
+        { x: 23, y: 65 }, { x: 77, y: 62 },
+    ];
+
+    starPositions.forEach((pos, i) => {
+        const star = document.createElement('div');
+        star.className = 'static-firework';
+        star.style.left = pos.x + '%';
+        star.style.top = pos.y + '%';
+        star.style.width = '50px';
+        star.style.height = '50px';
+
+        const color = colors[i % colors.length];
+        const altColor = colors[(i + 1) % colors.length];
+
+        // 4-point star with extended rays
+        const starRays = [
+            { dx: 0, dy: -20, size: 5 },
+            { dx: 0, dy: 20, size: 5 },
+            { dx: -20, dy: 0, size: 5 },
+            { dx: 20, dy: 0, size: 5 },
+            { dx: 0, dy: -12, size: 4 },
+            { dx: 0, dy: 12, size: 4 },
+            { dx: -12, dy: 0, size: 4 },
+            { dx: 12, dy: 0, size: 4 },
+            // Diagonal accents
+            { dx: -10, dy: -10, size: 3 },
+            { dx: 10, dy: -10, size: 3 },
+            { dx: -10, dy: 10, size: 3 },
+            { dx: 10, dy: 10, size: 3 },
+        ];
+
+        // Center cluster
+        const starCenter = document.createElement('div');
+        starCenter.style.position = 'absolute';
+        starCenter.style.width = '8px';
+        starCenter.style.height = '8px';
+        starCenter.style.backgroundColor = color;
+        starCenter.style.left = 'calc(50% - 4px)';
+        starCenter.style.top = 'calc(50% - 4px)';
+        star.appendChild(starCenter);
+
+        starRays.forEach((ray, j) => {
+            const pixel = document.createElement('div');
+            pixel.className = 'static-firework-ray';
+            pixel.style.backgroundColor = j < 4 ? color : (j < 8 ? altColor : color);
+            pixel.style.width = ray.size + 'px';
+            pixel.style.height = ray.size + 'px';
+            pixel.style.left = `calc(50% + ${ray.dx}px - ${ray.size/2}px)`;
+            pixel.style.top = `calc(50% + ${ray.dy}px - ${ray.size/2}px)`;
+            if (j >= 8) pixel.style.opacity = '0.7';
+            star.appendChild(pixel);
+        });
+
+        decorations.appendChild(star);
+    });
+
+    container.appendChild(decorations);
 }
 
 function resetGame(isNewGame = false) {

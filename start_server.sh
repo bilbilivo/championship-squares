@@ -22,6 +22,7 @@ VENV_DIR="$SCRIPT_DIR/venv"
 PYTHON=${PYTHON:-python3}
 LOG_DIR="$SCRIPT_DIR/logs"
 PID_FILE="$SCRIPT_DIR/server.pid"
+LITE_FILE="$SCRIPT_DIR/.lite_mode"
 LOGFILE="$LOG_DIR/server.log"
 LITE_MODE=0
 
@@ -30,6 +31,12 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --lite)
             LITE_MODE=1
+            shift
+            ;;
+        --no-lite)
+            LITE_MODE=0
+            # Remove lite mode file if switching back
+            rm -f "$LITE_FILE"
             shift
             ;;
         *)
@@ -56,11 +63,20 @@ start() {
 
     activate_venv
 
+    # Check for persisted lite mode if not explicitly set on command line
+    if [ "$LITE_MODE" -eq 0 ] && [ -f "$LITE_FILE" ]; then
+        LITE_MODE=1
+    fi
+
     if [ "$LITE_MODE" -eq 1 ]; then
         echo "Starting championship-squares (LITE MODE)..."
+        # Persist lite mode setting for restarts
+        echo "1" > "$LITE_FILE"
         LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     else
         echo "Starting championship-squares..."
+        # Remove lite mode file if starting in normal mode
+        rm -f "$LITE_FILE"
         nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     fi
     PID=$!
@@ -90,7 +106,11 @@ status() {
     if [ -f "$PID_FILE" ]; then
         PID=$(cat "$PID_FILE")
         if kill -0 "$PID" 2>/dev/null; then
-            echo "Running (pid=$PID). Logs: $LOGFILE"
+            if [ -f "$LITE_FILE" ]; then
+                echo "Running in LITE MODE (pid=$PID). Logs: $LOGFILE"
+            else
+                echo "Running (pid=$PID). Logs: $LOGFILE"
+            fi
             return 0
         else
             echo "Stale pid file found (pid=$PID)."
@@ -118,8 +138,9 @@ case "$ACTION" in
         start
         ;;
     *)
-        echo "Usage: $0 [--lite] {start|stop|status|restart}"
-        echo "       --lite  Enable lite mode (reduced visual effects)"
+        echo "Usage: $0 [--lite|--no-lite] {start|stop|status|restart}"
+        echo "       --lite     Enable lite mode (reduced visual effects)"
+        echo "       --no-lite  Disable lite mode (full visual effects)"
         exit 2
         ;;
 esac
