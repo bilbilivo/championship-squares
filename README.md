@@ -1,6 +1,6 @@
 # Championship Squares
 
-Small web app to run a Championship Squares game. Works on Linux, macOS, Windows and Raspberry Pi (3+).
+Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
 **Quick overview**
 - Start the server from a Python virtual environment or use the provided `start_server.sh` launcher.
@@ -21,7 +21,7 @@ cd championship-squares
 
 2. Create and activate a virtual environment (recommended):
 
-Unix / macOS / Raspberry Pi:
+Unix / macOS:
 
 ```bash
 python3 -m venv venv
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 Running the app
 ---------------
 
-Unix / macOS / Raspberry Pi:
+Unix / macOS:
 
 Preferred: use the launcher which activates the `venv` and manages the process:
 ```bash
@@ -62,11 +62,6 @@ python app.py
 
 Open a browser to:
 - `http://localhost:8080` (default)
-
-Notes for Raspberry Pi
-----------------------
-- `config.py` writes a `config.json` with a Raspberry Pi-specific entry (port 8080). Adjust it if needed.
-- The app tries to open a browser when started; on headless devices this will fail harmlessly — the server still runs.
 
 Files of interest
 -----------------
