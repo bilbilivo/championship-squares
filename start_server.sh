@@ -25,18 +25,19 @@ PID_FILE="$SCRIPT_DIR/server.pid"
 LITE_FILE="$SCRIPT_DIR/.lite_mode"
 LOGFILE="$LOG_DIR/server.log"
 LITE_MODE=0
+LITE_MODE_EXPLICIT=0  # Track if user explicitly set lite mode
 
 # Parse --lite flag
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --lite)
             LITE_MODE=1
+            LITE_MODE_EXPLICIT=1
             shift
             ;;
         --no-lite)
             LITE_MODE=0
-            # Remove lite mode file if switching back
-            rm -f "$LITE_FILE"
+            LITE_MODE_EXPLICIT=1
             shift
             ;;
         *)
@@ -63,11 +64,6 @@ start() {
 
     activate_venv
 
-    # Check for persisted lite mode if not explicitly set on command line
-    if [ "$LITE_MODE" -eq 0 ] && [ -f "$LITE_FILE" ]; then
-        LITE_MODE=1
-    fi
-
     if [ "$LITE_MODE" -eq 1 ]; then
         echo "Starting championship-squares (LITE MODE)..."
         # Persist lite mode setting for restarts
@@ -75,8 +71,10 @@ start() {
         LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     else
         echo "Starting championship-squares..."
-        # Remove lite mode file if starting in normal mode
-        rm -f "$LITE_FILE"
+        # Remove lite mode file if explicitly disabled
+        if [ "$LITE_MODE_EXPLICIT" -eq 1 ]; then
+            rm -f "$LITE_FILE"
+        fi
         nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     fi
     PID=$!
@@ -134,6 +132,10 @@ case "$ACTION" in
         status
         ;;
     restart)
+        # Preserve previous lite mode setting if no explicit flag given
+        if [ "$LITE_MODE_EXPLICIT" -eq 0 ] && [ -f "$LITE_FILE" ]; then
+            LITE_MODE=1
+        fi
         stop || true
         start
         ;;
