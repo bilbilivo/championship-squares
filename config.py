@@ -7,7 +7,6 @@ from pathlib import Path
 class Config:
     def __init__(self):
         self.system = platform.system().lower()
-        self.is_raspberry_pi = self._is_raspberry_pi()
         self.base_dir = Path(__file__).parent.absolute()
         self.template_dir = self.base_dir / 'templates'
         self.static_dir = self.base_dir / 'static'
@@ -68,14 +67,6 @@ class Config:
         # Load environment-specific configuration
         self._load_environment_config()
 
-    def _is_raspberry_pi(self):
-        """Check if running on Raspberry Pi"""
-        try:
-            with open('/proc/cpuinfo', 'r') as f:
-                return 'Raspberry Pi' in f.read()
-        except:
-            return False
-
     def _load_environment_config(self):
         """Load configuration based on environment"""
         config_file = self.base_dir / 'config.json'
@@ -94,10 +85,6 @@ class Config:
                 'darwin': {  # macOS
                     'host': 'localhost',
                     'port': 8080
-                },
-                'raspberry_pi': {
-                    'host': '0.0.0.0',
-                    'port': 8080
                 }
             }
             
@@ -110,10 +97,7 @@ class Config:
                 env_config = json.load(f)
                 
             # Select configuration based on platform
-            if self.is_raspberry_pi:
-                platform_config = env_config.get('raspberry_pi', {})
-            else:
-                platform_config = env_config.get(self.system, {})
+            platform_config = env_config.get(self.system, {})
                 
             # Update configuration with platform-specific settings
             self.config.update(platform_config)
