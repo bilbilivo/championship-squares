@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="{% if lite_mode %}lite-mode{% endif %}">
 <head>
     <title>CHAMPIONSHIP SQUARES</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -67,6 +67,112 @@
 
 	--pixel-border: 2px solid var(--retro-primary);
 }
+
+/* ==========================================
+   LITE MODE - Reduced visual effects
+   Disables animations, transitions, glows,
+   confetti, fireworks, and scanlines
+   while preserving all gameplay functionality
+   ========================================== */
+
+/* Disable all animations in lite mode */
+.lite-mode *,
+.lite-mode *::before,
+.lite-mode *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Remove scanline effect */
+.lite-mode .grid-container::after {
+    display: none !important;
+}
+
+/* Remove glow effects from buttons */
+.lite-mode .multiplier-btn.active {
+    box-shadow: none !important;
+}
+
+/* Remove winner glow effects */
+.lite-mode .square.winner-square {
+    filter: none !important;
+}
+
+.lite-mode .square.winner-path {
+    fill: rgba(255, 215, 0, 0.3) !important;
+    stroke: rgba(255, 215, 0, 0.6) !important;
+}
+
+/* Simplified celebration overlay */
+.lite-mode .celebration-overlay {
+    animation: none !important;
+}
+
+.lite-mode .celebration-trophy {
+    animation: none !important;
+    filter: none !important;
+}
+
+.lite-mode .celebration-winner-banner .winner-name {
+    animation: none !important;
+    text-shadow: 2px 2px 0 #8B4513 !important;
+}
+
+.lite-mode .celebration-winner-name {
+    animation: none !important;
+    text-shadow: 2px 2px 0 #8B4513 !important;
+}
+
+.lite-mode .podium-entry.winner {
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+/* Hide confetti and fireworks in lite mode */
+.lite-mode .celebration-confetti,
+.lite-mode .celebration-fireworks,
+.lite-mode .firework,
+.lite-mode .firework-particle {
+    display: none !important;
+}
+
+/* Remove button hover transforms */
+.lite-mode button:hover {
+    transform: none !important;
+}
+
+.lite-mode .celebration-btn:hover {
+    transform: none !important;
+}
+
+/* Remove title blink */
+.lite-mode .title {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Remove landing content glow */
+.lite-mode .landing-content {
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+.lite-mode .landing-title {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Remove tooltip transition */
+.lite-mode .tooltip {
+    transition: none !important;
+}
+
+/* Remove square fill transition */
+.lite-mode .square {
+    transition: none !important;
+}
+
+/* ========================================== */
 
 
 /* Base Styles */
@@ -1531,6 +1637,8 @@ const baseSize = 40;
 let currentSize = baseSize;
 // Update maxScore variable to be dynamic
 let maxScore = 60; // Default NFL score, will be updated based on sport
+// Lite mode - detected from html class set by server
+const isLiteMode = document.documentElement.classList.contains('lite-mode');
 let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0, 'tokens': 40}
 let currentSport = 'nfl';  // Default sport
 let currentMultiplier = 1;  // Current betting multiplier
@@ -3040,6 +3148,9 @@ function showCelebration(standings, winningTeam) {
 
 // Create confetti particles
 function createConfetti(container, teamColors = null) {
+    // Skip confetti in lite mode
+    if (isLiteMode) return;
+
     // Use team colors if provided, otherwise fall back to defaults
     const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
 
@@ -3065,6 +3176,9 @@ function createConfetti(container, teamColors = null) {
 
 // Create fireworks with team colors
 function createFireworks(container, teamColors, side = 'full') {
+    // Skip fireworks in lite mode
+    if (isLiteMode) return;
+
     const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
 
     function launchFirework() {
