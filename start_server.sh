@@ -12,7 +12,8 @@ fi
 set -euo pipefail
 
 # start_server.sh - simple launcher that activates the repository venv
-# Usage: ./start_server.sh start|stop|status
+# Usage: ./start_server.sh [--lite] start|stop|status|restart
+#        --lite  Enable lite mode (reduced visual effects for better performance)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
@@ -22,6 +23,20 @@ PYTHON=${PYTHON:-python3}
 LOG_DIR="$SCRIPT_DIR/logs"
 PID_FILE="$SCRIPT_DIR/server.pid"
 LOGFILE="$LOG_DIR/server.log"
+LITE_MODE=0
+
+# Parse --lite flag
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --lite)
+            LITE_MODE=1
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 mkdir -p "$LOG_DIR"
 
@@ -41,8 +56,13 @@ start() {
 
     activate_venv
 
-    echo "Starting championship-squares..."
-    nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
+    if [ "$LITE_MODE" -eq 1 ]; then
+        echo "Starting championship-squares (LITE MODE)..."
+        LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
+    else
+        echo "Starting championship-squares..."
+        nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
+    fi
     PID=$!
     echo "$PID" > "$PID_FILE"
     echo "Started (pid=$PID). Logs: $LOGFILE"
@@ -82,7 +102,8 @@ status() {
     fi
 }
 
-case "${1:-start}" in
+ACTION="${1:-start}"
+case "$ACTION" in
     start)
         start
         ;;
@@ -97,7 +118,8 @@ case "${1:-start}" in
         start
         ;;
     *)
-        echo "Usage: $0 {start|stop|status|restart}"
+        echo "Usage: $0 [--lite] {start|stop|status|restart}"
+        echo "       --lite  Enable lite mode (reduced visual effects)"
         exit 2
         ;;
 esac

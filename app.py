@@ -1,7 +1,11 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory
 import json
+import os
 from pathlib import Path
 from config import config
+
+# Check for lite mode from environment variable
+LITE_MODE = os.environ.get('LITE_MODE', '0') == '1'
 
 app = Flask(__name__, 
            template_folder=str(config.template_dir),
@@ -270,7 +274,7 @@ def calculate_winner():
 @app.route('/')
 def index():
     try:
-        return render_template('index.html')
+        return render_template('index.html', lite_mode=LITE_MODE)
     except Exception as e:
         return f"Error loading template: {e}", 500
 
