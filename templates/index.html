@@ -1874,6 +1874,10 @@ const tooltip = d3.select("body")
     .append("div")
     .attr("class", "tooltip");
 
+// Cache team input elements to avoid DOM lookups on every hover
+const teamLeftInput = document.getElementById('teamLeft');
+const teamRightInput = document.getElementById('teamRight');
+
 // Enhanced pan constraints
 const getPanBounds = (transform) => {
     const gridWidth = (maxScore + 2) * currentSize;
@@ -2181,10 +2185,8 @@ function createGrid() {
           if (!isTieSquare) handleSquareDelete(row, col);
         })
         .on("mouseover", (event) => {
-          const leftTeam = document.getElementById('teamLeft').value;
-          const rightTeam = document.getElementById('teamRight').value;
           tooltip.style("opacity", 1)
-            .html(`${leftTeam}: ${row}<br><br>${rightTeam}: ${col}`)
+            .html(`${teamLeftInput.value}: ${row}<br><br>${teamRightInput.value}: ${col}`)
             .style("left", (event.pageX + 10) + "px")
             .style("top", (event.pageY - 10) + "px");
         })
