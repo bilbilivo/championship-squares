@@ -3196,7 +3196,7 @@ function showCelebration(standings, winningTeam) {
     // Create celebration overlay with winning team color gradient background
     const overlay = document.createElement('div');
     overlay.className = 'celebration-overlay';
-    overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]}ee 0%, ${teamColors.winner[1]}ee 100%)`;
+    overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]} 0%, ${teamColors.winner[1]} 100%)`;
     overlay.innerHTML = `
         <div class="celebration-fireworks fireworks-left" id="fireworksLeft"></div>
         <div class="celebration-fireworks fireworks-right" id="fireworksRight"></div>
