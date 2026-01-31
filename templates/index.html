@@ -150,6 +150,11 @@
     34%, 100% { opacity: 0.3; }
 }
 
+/* Lite mode - override animation: none to allow loading dots */
+.lite-mode .loading-dots span {
+    animation: dot-blink 1.2s steps(1) infinite !important;
+}
+
 .lite-mode .celebration-winner-name {
     animation: none !important;
     text-shadow: 2px 2px 0 #8B4513 !important;
