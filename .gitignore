@@ -6,7 +6,6 @@ output/*
 venv/*
 midi/*
 .vscode/*
-config.json
 game_state.json
 .lite_mode
 !input/*_inputList.txt
