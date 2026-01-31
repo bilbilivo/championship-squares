@@ -13,6 +13,7 @@ game_state.json
 !input/*template*.xlsx
 input/unwanted_files_(overrides_the_override_above)*TEST*xlsx
 *test*.py
+!test_setup.py
 server.pid
 server.log
 championship-squares.desktop
