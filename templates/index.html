@@ -134,7 +134,7 @@
     width: 12px;
     height: 12px;
     background: var(--retro-primary);
-    animation: dot-blink 1.2s steps(1) infinite;
+    animation: dot-blink 1.2s ease-in-out infinite;
 }
 
 .loading-dots span:nth-child(2) {
@@ -146,13 +146,13 @@
 }
 
 @keyframes dot-blink {
-    0%, 33% { opacity: 1; }
-    34%, 100% { opacity: 0.3; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8); }
 }
 
 /* Lite mode - override animation: none to allow loading dots */
 .lite-mode .loading-dots span {
-    animation: dot-blink 1.2s steps(1) infinite !important;
+    animation: dot-blink 1.2s ease-in-out infinite !important;
 }
 
 .lite-mode .celebration-winner-name {
