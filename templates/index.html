@@ -128,17 +128,25 @@
 
 /* Loading dots animation for all modes */
 .loading-dots {
-    display: flex;
+    display: flex !important;
     gap: 12px;
     justify-content: center;
+    align-items: center;
     margin: 20px auto;
+    min-height: 20px;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .loading-dots span {
     display: inline-block;
     width: 12px;
     height: 12px;
-    background: var(--retro-primary);
+    min-width: 12px;
+    min-height: 12px;
+    background: var(--retro-primary, #007FFF);
+    opacity: 1;
+    visibility: visible;
     animation: dot-blink 1.2s ease-in-out infinite;
 }
 
