@@ -129,21 +129,21 @@
 /* Loading dots animation - works in all modes */
 /* 8-bit style: fill and drain wave - 000 → 100 → 110 → 111 → 011 → 001 → 000 */
 @keyframes dot1-wave {
-    0%, 17% { background-color: #333; }
+    0%, 17% { background-color: var(--retro-dark); }
     18%, 66% { background-color: var(--retro-primary); }
-    67%, 100% { background-color: #333; }
+    67%, 100% { background-color: var(--retro-dark); }
 }
 
 @keyframes dot2-wave {
-    0%, 33% { background-color: #333; }
+    0%, 33% { background-color: var(--retro-dark); }
     34%, 83% { background-color: var(--retro-primary); }
-    84%, 100% { background-color: #333; }
+    84%, 100% { background-color: var(--retro-dark); }
 }
 
 @keyframes dot3-wave {
-    0%, 50% { background-color: #333; }
+    0%, 50% { background-color: var(--retro-dark); }
     51%, 99% { background-color: var(--retro-primary); }
-    100% { background-color: #333; }
+    100% { background-color: var(--retro-dark); }
 }
 
 .loading-dots {
@@ -159,7 +159,7 @@
     display: block;
     width: 16px;
     height: 16px;
-    background-color: #333;
+    background-color: var(--retro-dark);
 }
 
 .loading-dots span:nth-child(1) {
