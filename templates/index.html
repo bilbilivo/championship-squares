@@ -129,10 +129,10 @@
 /* Loading dots animation - works in all modes */
 @keyframes loading-dot-pulse {
     0%, 80%, 100% {
-        background-color: #333;
+        background-color: var(--retro-primary);
     }
     40% {
-        background-color: var(--retro-primary);
+        background-color: #333;
     }
 }
 
@@ -149,7 +149,7 @@
     display: block;
     width: 16px;
     height: 16px;
-    background-color: #333;
+    background-color: var(--retro-primary);
     animation: loading-dot-pulse 1.4s ease-in-out infinite !important;
 }
 
@@ -3662,10 +3662,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Update loadGameBtn click handler to handle max score
 	loadGameBtn.addEventListener('click', () => {
+		// Temporarily enable lite-mode to reduce animation load during loading
+		const wasLiteMode = document.body.classList.contains('lite-mode');
+		document.body.classList.add('lite-mode');
+
+		// Use requestAnimationFrame to ensure lite-mode is applied before showing overlay
+		requestAnimationFrame(() => {
+		requestAnimationFrame(() => {
+
 		// Show loading indicator
 		const loadingOverlay = document.createElement('div');
 		loadingOverlay.className = 'alert-overlay';
 		loadingOverlay.style.display = 'flex';
+		loadingOverlay.dataset.tempLiteMode = !wasLiteMode;
 		loadingOverlay.innerHTML = `
 			<div class="alert-content">
 				<h2 class="alert-title">LOADING GAME</h2>
@@ -3747,6 +3756,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Hide overlays
 			document.getElementById('landing-overlay').style.display = 'none';
+			// Restore lite-mode state if it was temporarily added
+			if (loadingOverlay.dataset.tempLiteMode === 'true') {
+				document.body.classList.remove('lite-mode');
+			}
 			document.body.removeChild(loadingOverlay);
 
 			// Show success message
@@ -3755,8 +3768,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		.catch(error => {
 			console.error('Error loading game state:', error);
 			showAlert('Failed to load game state: ' + error.message);
+			// Restore lite-mode state if it was temporarily added
+			if (loadingOverlay.dataset.tempLiteMode === 'true') {
+				document.body.classList.remove('lite-mode');
+			}
 			document.body.removeChild(loadingOverlay);
 		});
+
+		}); // close inner requestAnimationFrame
+		}); // close outer requestAnimationFrame
 	});
 
     // Then populate the team selects
