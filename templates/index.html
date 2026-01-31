@@ -126,57 +126,63 @@
     text-shadow: 2px 2px 0 #8B4513, 0 0 20px #FFD700 !important;
 }
 
-/* Loading dots animation for all modes */
+/* Loading dots animation - works in all modes */
+@keyframes loading-dot-pulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .loading-dots {
-    display: flex !important;
-    gap: 12px;
+    display: flex;
+    gap: 8px;
     justify-content: center;
     align-items: center;
     margin: 20px auto;
-    min-height: 20px;
-    visibility: visible !important;
-    opacity: 1 !important;
+    min-height: 24px;
 }
 
 .loading-dots span {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    min-width: 12px;
-    min-height: 12px;
-    background: var(--retro-primary, #007FFF);
-    opacity: 1;
-    visibility: visible;
-    animation: dot-blink 1.2s ease-in-out infinite;
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--retro-primary);
+    animation: loading-dot-pulse 1.4s ease-in-out infinite !important;
+}
+
+.loading-dots span:nth-child(1) {
+    animation-delay: 0s !important;
 }
 
 .loading-dots span:nth-child(2) {
-    animation-delay: 0.4s;
+    animation-delay: 0.2s !important;
 }
 
 .loading-dots span:nth-child(3) {
-    animation-delay: 0.8s;
-}
-
-@keyframes dot-blink {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.3; transform: scale(0.8); }
-}
-
-/* Lite mode - override animation: none to allow loading dots */
-.lite-mode .loading-dots span {
-    animation-name: dot-blink !important;
-    animation-duration: 1.2s !important;
-    animation-timing-function: ease-in-out !important;
-    animation-iteration-count: infinite !important;
-}
-
-.lite-mode .loading-dots span:nth-child(2) {
     animation-delay: 0.4s !important;
 }
 
+/* Ensure loading dots animate even in lite-mode */
+.lite-mode .loading-dots span {
+    animation: loading-dot-pulse 1.4s ease-in-out infinite !important;
+}
+
+.lite-mode .loading-dots span:nth-child(1) {
+    animation-delay: 0s !important;
+}
+
+.lite-mode .loading-dots span:nth-child(2) {
+    animation-delay: 0.2s !important;
+}
+
 .lite-mode .loading-dots span:nth-child(3) {
-    animation-delay: 0.8s !important;
+    animation-delay: 0.4s !important;
 }
 
 .lite-mode .celebration-winner-name {
