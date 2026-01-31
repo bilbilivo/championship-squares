@@ -2183,15 +2183,6 @@ function createGrid() {
         .on("contextmenu", (event) => {
           event.preventDefault();
           if (!isTieSquare) handleSquareDelete(row, col);
-        })
-        .on("mouseover", (event) => {
-          tooltip.style("opacity", 1)
-            .html(`${teamLeftInput.value}: ${row}<br><br>${teamRightInput.value}: ${col}`)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 10) + "px");
-        })
-        .on("mouseout", () => {
-          tooltip.style("opacity", 0);
         });
 
       // Add text for squares
@@ -2205,6 +2196,25 @@ function createGrid() {
         .text(isTieSquare ? row : '');
     }
   }
+
+  // Event delegation for hover - one handler instead of 100+ individual handlers
+  squaresGroup
+    .on("mouseover", (event) => {
+      const target = event.target;
+      if (target.classList.contains("square")) {
+        const row = target.getAttribute("data-row");
+        const col = target.getAttribute("data-col");
+        tooltip.style("opacity", 1)
+          .text(`${teamLeftInput.value}: ${row}  |  ${teamRightInput.value}: ${col}`)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY - 10) + "px");
+      }
+    })
+    .on("mouseout", (event) => {
+      if (event.target.classList.contains("square")) {
+        tooltip.style("opacity", 0);
+      }
+    });
 
   // Update team names with adjusted positioning
   const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
