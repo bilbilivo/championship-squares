@@ -129,12 +129,10 @@
 /* Loading dots animation - works in all modes */
 @keyframes loading-dot-pulse {
     0%, 80%, 100% {
-        opacity: 0.3;
-        transform: scale(0.8);
+        background-color: #333;
     }
     40% {
-        opacity: 1;
-        transform: scale(1);
+        background-color: var(--retro-primary);
     }
 }
 
@@ -151,20 +149,20 @@
     display: block;
     width: 16px;
     height: 16px;
-    background-color: var(--retro-primary);
+    background-color: #333;
     animation: loading-dot-pulse 1.4s ease-in-out infinite !important;
 }
 
 .loading-dots span:nth-child(1) {
-    animation-delay: 0s !important;
+    animation-delay: 0.01s !important;
 }
 
 .loading-dots span:nth-child(2) {
-    animation-delay: 0.2s !important;
+    animation-delay: 0.21s !important;
 }
 
 .loading-dots span:nth-child(3) {
-    animation-delay: 0.4s !important;
+    animation-delay: 0.41s !important;
 }
 
 /* Ensure loading dots animate even in lite-mode */
@@ -946,7 +944,7 @@ button:active {
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 1000;
-    box-shadow: 0 0 10px rgba(var(--retro-primary), 0.2);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--retro-primary) 20%, transparent);
 }
 
 /* Player Management */
@@ -1207,7 +1205,7 @@ button:active {
     padding: 40px;
     border: var(--pixel-border);
     background: var(--retro-bg);
-    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
     animation: glow 2s infinite alternate;
 }
 
@@ -1253,10 +1251,10 @@ button:active {
 
 @keyframes glow {
     from {
-        box-shadow: 0 0 10px rgba(var(--retro-primary), 0.2);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--retro-primary) 20%, transparent);
     }
     to {
-        box-shadow: 0 0 20px rgba(var(--retro-primary), 0.4);
+        box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 40%, transparent);
     }
 }
 
@@ -1273,17 +1271,17 @@ button:active {
   border: none;
   position: relative;
   letter-spacing: 2px;
-  text-shadow: 
-    0 0 4px rgba(var(--retro-light), 0.4),
-    0 0 8px rgba(var(--retro-light), 0.2);
+  text-shadow:
+    0 0 4px color-mix(in srgb, var(--retro-light) 40%, transparent),
+    0 0 8px color-mix(in srgb, var(--retro-light) 20%, transparent);
   image-rendering: pixelated;
 }
 
 .score:hover {
   color: #E5D820;
-  text-shadow: 
-    0 0 6px rgba(var(--retro-light), 0.6),
-    0 0 12px rgba(var(--retro-light), 0.3);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--retro-light) 60%, transparent),
+    0 0 12px color-mix(in srgb, var(--retro-light) 30%, transparent);
 }
 
 /* Remove any existing borders or box shadows */
@@ -1301,7 +1299,8 @@ button:active {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(var(--retro-dark), 0.95);
+    background: var(--retro-dark);
+    background: color-mix(in srgb, var(--retro-dark) 95%, transparent);
     z-index: 4000;
     display: flex;
     align-items: center;
@@ -1314,7 +1313,7 @@ button:active {
     padding: 40px;
     border: var(--pixel-border);
     background: var(--retro-bg);
-    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
     animation: glow 2s infinite alternate;
 }
 
@@ -1403,7 +1402,8 @@ button:active {
     display: none;  /* Hidden by default */
     align-items: center;
     justify-content: center;
-    background: rgba(var(--retro-dark), 0.9);  /* Slightly transparent background */
+    background: var(--retro-dark);
+    background: color-mix(in srgb, var(--retro-dark) 90%, transparent);
 	animation: overlayFadeIn 0.3s ease-out;
 }
 
@@ -1418,7 +1418,7 @@ button:active {
     padding: 40px;
     border: 2px solid var(--retro-primary);
     background: var(--retro-bg);
-    box-shadow: 0 0 20px rgba(var(--retro-primary), 0.2);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
     animation: glow 2s infinite alternate;
     max-width: 90%;
     max-height: 90vh;
