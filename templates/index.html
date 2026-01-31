@@ -119,10 +119,6 @@
 }
 
 /* Loading dots animation for all modes */
-.loading-spinner {
-    display: none;
-}
-
 .loading-dots {
     display: flex;
     gap: 12px;
@@ -131,6 +127,7 @@
 }
 
 .loading-dots span {
+    display: inline-block;
     width: 12px;
     height: 12px;
     background: var(--retro-primary);
@@ -152,7 +149,18 @@
 
 /* Lite mode - override animation: none to allow loading dots */
 .lite-mode .loading-dots span {
-    animation: dot-blink 1.2s ease-in-out infinite !important;
+    animation-name: dot-blink !important;
+    animation-duration: 1.2s !important;
+    animation-timing-function: ease-in-out !important;
+    animation-iteration-count: infinite !important;
+}
+
+.lite-mode .loading-dots span:nth-child(2) {
+    animation-delay: 0.4s !important;
+}
+
+.lite-mode .loading-dots span:nth-child(3) {
+    animation-delay: 0.8s !important;
 }
 
 .lite-mode .celebration-winner-name {
@@ -505,12 +513,14 @@ button:active {
     cursor: pointer;
 }
 
-.square.tie-square {
+.square.tie-square,
+.square.header-square {
     fill: var(--retro-bg) !important;
     cursor: not-allowed !important;
 }
 
-.square.tie-square:hover {
+.square.tie-square:hover,
+.square.header-square:hover {
     fill: var(--retro-bg) !important;
 }
 
@@ -1089,10 +1099,6 @@ button:active {
     text-anchor: start;
 }
 
-.header-square {
-    cursor: default;
-}
-
 .header-text {
     pointer-events: none;
     font-family: 'Press Start 2P', monospace;
@@ -1552,10 +1558,6 @@ button:active {
 .square:hover {
 	fill: var(--retro-light);
 	cursor: pointer;
-}
-
-.header-square {
-	cursor: default;
 }
 
 .tie-square.highlight {
@@ -2210,8 +2212,15 @@ function createGrid() {
       if (target.classList.contains("square")) {
         const row = target.getAttribute("data-row");
         const col = target.getAttribute("data-col");
+        // Skip header squares (no data attributes)
+        if (row === null || col === null) return;
+        // Tie squares (diagonal) - show TIE
+        const isTie = row === col;
+        const text = isTie
+          ? `TIE: ${row} - ${col}`
+          : `${teamLeftInput.value}: ${row}  |  ${teamRightInput.value}: ${col}`;
         tooltip.style("opacity", 1)
-          .text(`${teamLeftInput.value}: ${row}  |  ${teamRightInput.value}: ${col}`)
+          .text(text)
           .style("left", (event.pageX + 10) + "px")
           .style("top", (event.pageY - 10) + "px");
       }
