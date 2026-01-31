@@ -1317,6 +1317,11 @@ button:active {
     animation: glow 2s infinite alternate;
 }
 
+/* Disable glow when loading dots are present - helps low-spec systems */
+.alert-content:has(.loading-dots) {
+    animation: none;
+}
+
 /* Alert Title */
 .alert-title {
     color: var(--retro-primary);
