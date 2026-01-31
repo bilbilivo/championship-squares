@@ -572,7 +572,7 @@ button:active {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 2000;
     animation: celebrationFadeIn 0.5s ease-out;
 }
 
@@ -1295,15 +1295,15 @@ button:active {
 .highlight {
   fill: var(--retro-light) !important;
 }
-/* Alert Overlay */
+/* Alert Overlay - always on top */
 .alert-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--retro-dark);
-    z-index: 1000;
+    background: rgba(var(--retro-dark), 0.95);
+    z-index: 4000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1408,24 +1408,9 @@ button:active {
 	animation: overlayFadeIn 0.3s ease-out;
 }
 
-/* Landing overlay - lowest layer */
-.landing-overlay {
-    /*composes: base-overlay;*/
-    z-index: 1000;
-}
-
-/* Prompt overlay - middle layer */
+/* Prompt overlay */
 .generic-prompt {
-    /*composes: base-overlay;*/
-    z-index: 2000;
-}
-
-/* Alert overlay - top layer */
-.alert-overlay {
-    /*composes: base-overlay;*/
     z-index: 3000;
-    background: rgba(var(--retro-dark), 0.95);  /* Slightly more opaque */
-    /* background: rgba(0, 34, 0, 0.95);  /* Slightly more opaque */ 
 }
 
 /* Content containers */
