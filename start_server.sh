@@ -69,6 +69,11 @@ activate_venv() {
 start() {
     if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
         echo "Server already running (pid=$(cat "$PID_FILE"))."
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open http://localhost:8080 &
+        elif command -v open >/dev/null 2>&1; then
+            open http://localhost:8080
+        fi
         return 0
     fi
 

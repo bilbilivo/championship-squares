@@ -81,6 +81,7 @@ function Start-Server {
     if (Test-Running) {
         $pid = (Get-Content $PidFile -Raw).Trim()
         Write-Host "Server already running (pid=$pid)."
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c start http://localhost:8080" -NoNewWindow
         return
     }
 
@@ -156,16 +157,28 @@ function Get-Status {
 
 function New-Shortcut {
     $lnkPath  = Join-Path $ScriptDir "championship-squares.lnk"
-    $iconPath = Join-Path $ScriptDir "icon.png"
+    $pngPath  = Join-Path $ScriptDir "icon.png"
+    $icoPath  = Join-Path $ScriptDir "icon.ico"
     $psScript = Join-Path $ScriptDir "start_server.ps1"
+
+    # Windows shortcuts require .ico — convert from PNG if available
+    if (Test-Path $pngPath) {
+        Add-Type -AssemblyName System.Drawing
+        $image  = [System.Drawing.Image]::FromFile($pngPath)
+        $icon   = [System.Drawing.Icon]::FromImage($image)
+        $stream = [System.IO.File]::Create($icoPath)
+        $icon.Save($stream)
+        $stream.Close()
+        $image.Dispose()
+    }
 
     $shell = New-Object -COM WScript.Shell
     $lnk   = $shell.CreateShortcut($lnkPath)
     $lnk.TargetPath        = "powershell.exe"
     $lnk.Arguments         = "-ExecutionPolicy Bypass -NoProfile -File `"$psScript`" start"
     $lnk.WorkingDirectory  = $ScriptDir
-    if (Test-Path $iconPath) {
-        $lnk.IconLocation  = "$iconPath,0"
+    if (Test-Path $icoPath) {
+        $lnk.IconLocation  = "$icoPath,0"
     }
     $lnk.Save()
 
