@@ -51,7 +51,15 @@ done
 mkdir -p "$LOG_DIR"
 
 activate_venv() {
-    if [ -f "$VENV_DIR/bin/activate" ]; then
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "First run — creating virtual environment..."
+        "$PYTHON" -m venv "$VENV_DIR"
+        # shellcheck disable=SC1090
+        . "$VENV_DIR/bin/activate"
+        PYTHON="$VENV_DIR/bin/python"
+        echo "Installing dependencies..."
+        "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+    elif [ -f "$VENV_DIR/bin/activate" ]; then
         # shellcheck disable=SC1090
         . "$VENV_DIR/bin/activate"
         PYTHON=${PYTHON:-"$VENV_DIR/bin/python"}
