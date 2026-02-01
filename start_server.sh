@@ -12,8 +12,10 @@ fi
 set -euo pipefail
 
 # start_server.sh - simple launcher that activates the repository venv
-# Usage: ./start_server.sh [--lite] start|stop|status|restart
-#        --lite  Enable lite mode (reduced visual effects for better performance)
+# Usage: ./start_server.sh [--lite|--no-lite] {start|stop|status|restart|setup}
+#        --lite     Enable lite mode (reduced visual effects for better performance)
+#        --no-lite  Disable lite mode
+#        setup      Create a desktop shortcut (.desktop) in this folder
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
@@ -120,6 +122,25 @@ status() {
     fi
 }
 
+setup() {
+    DESKTOP_FILE="$SCRIPT_DIR/championship-squares.desktop"
+    ICON_FILE="$SCRIPT_DIR/icon.png"
+
+    cat > "$DESKTOP_FILE" << EOF
+[Desktop Entry]
+Type=Application
+Name=Championship Squares
+Comment=Launch Championship Squares game
+Icon=$ICON_FILE
+Exec="$SCRIPT_DIR/start_server.sh" start
+Terminal=false
+EOF
+
+    chmod +x "$DESKTOP_FILE"
+    echo "Desktop shortcut created: $DESKTOP_FILE"
+    echo "Double-click it from this folder to launch the game."
+}
+
 ACTION="${1:-start}"
 case "$ACTION" in
     start)
@@ -139,10 +160,14 @@ case "$ACTION" in
         stop || true
         start
         ;;
+    setup)
+        setup
+        ;;
     *)
-        echo "Usage: $0 [--lite|--no-lite] {start|stop|status|restart}"
+        echo "Usage: $0 [--lite|--no-lite] {start|stop|status|restart|setup}"
         echo "       --lite     Enable lite mode (reduced visual effects)"
         echo "       --no-lite  Disable lite mode (full visual effects)"
+        echo "       setup      Create a desktop shortcut (.desktop) in this folder"
         exit 2
         ;;
 esac
