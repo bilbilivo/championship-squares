@@ -1,4 +1,4 @@
-# Championship Squares
+# CHAMPIONSHIP SQUARES
 
 Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
