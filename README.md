@@ -3,50 +3,28 @@
 Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
 **Quick overview**
-- Start the server from a Python virtual environment or use the provided `start_server.sh` launcher.
+- Clone the repo and run the launcher. It creates the virtual environment and installs dependencies automatically on first run.
 
 **Requirements**
 - Python 3.7+
-- Flask (installed via `requirements.txt`)
 - Web browser with JavaScript enabled
 
 Installation
 ------------
-1. Clone the repository:
+Clone the repository:
 
 ```bash
 git clone https://github.com/bilbilivo/championship-squares.git
 cd championship-squares
 ```
 
-2. Create and activate a virtual environment (recommended):
-
-Unix / macOS:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Windows (PowerShell):
-
-```powershell
-python -m venv venv
-venv\Scripts\Activate.ps1
-```
-
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
+The launchers handle virtual environment creation and dependency installation automatically on first run.
 
 Running the app
 ---------------
 
 Unix / macOS:
 
-Preferred: use the launcher which activates the `venv` and manages the process:
 ```bash
 ./start_server.sh start
 ./start_server.sh status
@@ -55,19 +33,27 @@ Preferred: use the launcher which activates the `venv` and manages the process:
 
 Windows (PowerShell):
 
-run directly inside an activated venv:
-```bash
-python app.py
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 start
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 status
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 stop
 ```
 
-Open a browser to:
-- `http://localhost:8080` (default)
+Both launchers support `--lite` / `--no-lite` flags to toggle reduced visual effects, and a `setup` action to create a desktop shortcut for double-click launching:
+
+```bash
+./start_server.sh setup                                              # Unix / macOS
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 setup    # Windows
+```
+
+The app opens `http://localhost:8080` in your default browser automatically on start.
 
 Files of interest
 -----------------
 - `app.py` — main application
 - `config.py` — platform-aware configuration
-- `start_server.sh` — launcher that activates `venv` and manages the process
+- `start_server.sh` — Unix/macOS launcher
+- `start_server.ps1` — Windows launcher
 - `requirements.txt` — Python dependencies
 
 License

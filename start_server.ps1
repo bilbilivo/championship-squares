@@ -47,6 +47,23 @@ function Get-Python {
     return "python"
 }
 
+function Ensure-Venv {
+    if (Test-Path $VenvDir) { return }
+    Write-Host "First run — creating virtual environment..."
+    & python -m venv $VenvDir
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Failed to create virtual environment. Is Python installed?"
+        exit 1
+    }
+    $venvPython = Join-Path $VenvDir "Scripts" "python.exe"
+    Write-Host "Installing dependencies..."
+    & $venvPython -m pip install -r (Join-Path $ScriptDir "requirements.txt")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Failed to install dependencies."
+        exit 1
+    }
+}
+
 function Test-Running {
     if (-not (Test-Path $PidFile)) { return $false }
     $pid = (Get-Content $PidFile -Raw).Trim()
@@ -67,6 +84,7 @@ function Start-Server {
         return
     }
 
+    Ensure-Venv
     $python = Get-Python
     $appPy  = Join-Path $ScriptDir "app.py"
 
