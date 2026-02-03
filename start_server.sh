@@ -155,16 +155,18 @@ start() {
         echo "Starting championship-squares (LITE MODE)..."
         # Persist lite mode setting for restarts
         echo "1" > "$LITE_FILE"
-        LITE_MODE=1 nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+        LITE_MODE=1 nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
     else
         echo "Starting championship-squares..."
         # Remove lite mode file if explicitly disabled
         if [ "$LITE_MODE_EXPLICIT" -eq 1 ]; then
             rm -f "$LITE_FILE"
         fi
-        nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+        nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
     fi
     PID=$!
+    # Wait for background substitution to initialize
+    sleep 0.1
     echo "$PID" > "$PID_FILE"
 
     # Verify the server actually started
@@ -193,11 +195,12 @@ start() {
 
                 # Retry starting the server
                 if [ "$LITE_MODE" -eq 1 ]; then
-                    LITE_MODE=1 nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+                    LITE_MODE=1 nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
                 else
-                    nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+                    nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
                 fi
                 PID=$!
+                sleep 0.1
                 echo "$PID" > "$PID_FILE"
 
                 sleep 1
