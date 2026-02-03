@@ -11,11 +11,29 @@ Small web app to run a Championship Squares game. Works on Linux, macOS, and Win
 
 Installation
 ------------
+Install GitHub CLI if you don't have it:
+
+```bash
+# Ubuntu / Debian
+sudo apt install gh
+
+# macOS
+brew install gh
+
+# Other platforms: https://cli.github.com/
+```
+
 Clone the repository:
 
 ```bash
-git clone https://github.com/bilbilivo/championship-squares.git
+gh repo clone bilbilivo/championship-squares
 cd championship-squares
+```
+
+If you're on Ubuntu/Debian and don't have the venv package, install it:
+
+```bash
+sudo apt install python3-venv
 ```
 
 The launchers handle virtual environment creation and dependency installation automatically on first run.

@@ -51,29 +51,59 @@ done
 mkdir -p "$LOG_DIR"
 
 activate_venv() {
+    local FIRST_RUN=0
     if [ ! -d "$VENV_DIR" ]; then
+        FIRST_RUN=1
         echo "First run — creating virtual environment..."
-        "$PYTHON" -m venv "$VENV_DIR"
+        if ! "$PYTHON" -m venv "$VENV_DIR"; then
+            echo "ERROR: Failed to create virtual environment."
+            echo "Make sure python3-venv is installed: sudo apt install python3-venv"
+            exit 1
+        fi
         # shellcheck disable=SC1090
         . "$VENV_DIR/bin/activate"
         PYTHON="$VENV_DIR/bin/python"
         echo "Installing dependencies..."
-        "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+        if ! "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+            echo "ERROR: Failed to install dependencies."
+            echo "Check your internet connection and try again."
+            exit 1
+        fi
+
+        # Run setup automatically on first run
+        echo "Creating desktop shortcut..."
+        setup
     elif [ -f "$VENV_DIR/bin/activate" ]; then
         # shellcheck disable=SC1090
         . "$VENV_DIR/bin/activate"
         PYTHON=${PYTHON:-"$VENV_DIR/bin/python"}
+
+        # Check if Flask is installed, reinstall dependencies if missing
+        if ! "$PYTHON" -c "import flask" 2>/dev/null; then
+            echo "Dependencies missing or incomplete. Reinstalling..."
+            if ! "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+                echo "ERROR: Failed to install dependencies."
+                echo "Try removing the venv folder and running again: rm -rf venv"
+                exit 1
+            fi
+        fi
+    fi
+    return $FIRST_RUN
+}
+
+open_browser() {
+    sleep 1  # Give the server a moment to start
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open http://localhost:8080 &
+    elif command -v open >/dev/null 2>&1; then
+        open http://localhost:8080
     fi
 }
 
 start() {
     if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
         echo "Server already running (pid=$(cat "$PID_FILE"))."
-        if command -v xdg-open >/dev/null 2>&1; then
-            xdg-open http://localhost:8080 &
-        elif command -v open >/dev/null 2>&1; then
-            open http://localhost:8080
-        fi
+        open_browser
         return 0
     fi
 
@@ -94,7 +124,20 @@ start() {
     fi
     PID=$!
     echo "$PID" > "$PID_FILE"
+
+    # Verify the server actually started
+    sleep 1
+    if ! kill -0 "$PID" 2>/dev/null; then
+        echo "ERROR: Server failed to start. Check logs: $LOGFILE"
+        tail -n 20 "$LOGFILE"
+        rm -f "$PID_FILE"
+        exit 1
+    fi
+
     echo "Started (pid=$PID). Logs: $LOGFILE"
+
+    # Open browser after starting
+    open_browser
 }
 
 stop() {
