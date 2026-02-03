@@ -2821,8 +2821,13 @@ function handleSquareClick(row, col) {
 		.map(initial => `${initial}`)
         .join(',');
 
+    // Build title with team/score info
+    const leftTeam = document.getElementById('teamLeft').value || 'Away';
+    const rightTeam = document.getElementById('teamRight').value || 'Home';
+    const scoreTitle = `${leftTeam}: ${row} - ${rightTeam}: ${col}`;
+
     showGenericPrompt({
-        title: 'Select Player',
+        title: scoreTitle,
         message: 'Player initial',
         maxLength: 1,
         showPlayerList: true,
