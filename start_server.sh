@@ -175,7 +175,18 @@ start() {
         if grep -q -E "Address already in use|port.*already.*in use" "$LOGFILE" 2>/dev/null; then
             echo ""
             echo "ERROR: Port 8080 is already in use by another program."
-            echo "Please stop the other program or change the port in config.py"
+            echo ""
+            echo "To resolve this:"
+            echo ""
+            echo "1. Find what's using the port:"
+            echo "   sudo lsof -i :8080"
+            echo "   (or: sudo netstat -tulpn | grep 8080)"
+            echo ""
+            echo "2. Stop the process (replace PID with actual process ID):"
+            echo "   kill <PID>"
+            echo "   (or: sudo kill <PID> if you don't own the process)"
+            echo ""
+            echo "3. Or change the port in config.py to use a different port"
             rm -f "$PID_FILE"
             exit 1
         fi
