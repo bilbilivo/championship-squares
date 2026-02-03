@@ -1295,7 +1295,11 @@ button:active {
   display: none;
 }
 .highlight {
-  fill: var(--retro-light) !important;
+  fill: #FFD700 !important; /* Gold color for current score square */
+}
+.highlight:hover {
+  fill: var(--retro-light) !important; /* Light color when hovering over current score */
+  cursor: pointer;
 }
 /* Alert Overlay - always on top */
 .alert-overlay {
@@ -1577,7 +1581,7 @@ button:active {
 }
 
 .tie-square.highlight {
-	fill: var(--retro-light) !important;
+	fill: #FFD700 !important; /* Gold color for current score square on tie */
 }
 
 /* Keep existing tie-square styles but remove the !important from the fill */
