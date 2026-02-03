@@ -4,7 +4,6 @@ log/*
 input/*
 output/*
 venv/*
-midi/*
 .vscode/*
 game_state.json
 .lite_mode
