@@ -2232,7 +2232,7 @@ function createGrid() {
         const isTie = row === col;
         const text = isTie
           ? `TIE: ${row} - ${col}`
-          : `${teamLeftInput.value}: ${row}  |  ${teamRightInput.value}: ${col}`;
+          : `${teamLeftInput.value}: ${row} - ${teamRightInput.value}: ${col}`;
         tooltip.style("opacity", 1)
           .text(text)
           .style("left", (event.pageX + 10) + "px")
