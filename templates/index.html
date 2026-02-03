@@ -2780,6 +2780,8 @@ function deletePlayer(initial) {
                                 const col = d3.select(this).attr('data-col');
                                 updateSquare(row, col, '');
                             });
+                        // Update winner display since removing a player might change the winner
+                        updateWinnerDisplay();
                     } else {
                         showAlert(data.error || "Failed to delete player");
                     }
