@@ -30,10 +30,10 @@ gh repo clone bilbilivo/championship-squares
 cd championship-squares
 ```
 
-If you're on Ubuntu/Debian and don't have the venv package, install it:
+If you're on Ubuntu/Debian, install the required Python packages:
 
 ```bash
-sudo apt install python3-venv
+sudo apt install python3-venv python3-pip
 ```
 
 The launchers handle virtual environment creation and dependency installation automatically on first run.

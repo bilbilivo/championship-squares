@@ -63,6 +63,17 @@ activate_venv() {
         # shellcheck disable=SC1090
         . "$VENV_DIR/bin/activate"
         PYTHON="$VENV_DIR/bin/python"
+
+        # Ensure pip is available in the venv
+        if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+            echo "pip not found in venv. Installing pip..."
+            if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
+                echo "ERROR: Failed to install pip in virtual environment."
+                echo "Try: sudo apt install python3-pip python3-venv"
+                exit 1
+            fi
+        fi
+
         echo "Installing dependencies..."
         if ! "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
             echo "ERROR: Failed to install dependencies."
