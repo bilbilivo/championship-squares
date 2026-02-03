@@ -171,6 +171,15 @@ start() {
         echo "ERROR: Server failed to start. Check logs: $LOGFILE"
         tail -n 20 "$LOGFILE"
 
+        # Check if it's a port conflict error
+        if grep -q -E "Address already in use|port.*already.*in use" "$LOGFILE" 2>/dev/null; then
+            echo ""
+            echo "ERROR: Port 8080 is already in use by another program."
+            echo "Please stop the other program or change the port in config.py"
+            rm -f "$PID_FILE"
+            exit 1
+        fi
+
         # Check if it's a missing module error
         if grep -q -E "ModuleNotFoundError|No module named" "$LOGFILE" 2>/dev/null; then
             echo ""
