@@ -89,6 +89,17 @@ activate_venv() {
         . "$VENV_DIR/bin/activate"
         PYTHON=${PYTHON:-"$VENV_DIR/bin/python"}
 
+        # Ensure pip is available in the venv
+        if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+            echo "pip not found in venv. Installing pip..."
+            if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
+                echo "ERROR: Failed to install pip in virtual environment."
+                echo "Recreating venv. Please run the script again after this completes."
+                rm -rf "$VENV_DIR"
+                exit 1
+            fi
+        fi
+
         # Check if Flask is installed, reinstall dependencies if missing
         if ! "$PYTHON" -c "import flask" 2>/dev/null; then
             echo "Dependencies missing or incomplete. Reinstalling..."
@@ -167,6 +178,15 @@ start() {
             echo ""
             echo "Detected missing Python module. Reinstalling dependencies..."
             rm -f "$PID_FILE"
+
+            # Ensure pip is available before trying to reinstall
+            if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+                echo "pip not available. Attempting to install pip..."
+                if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
+                    echo "ERROR: Cannot install pip. Please run: rm -rf venv && ./start_server.sh start"
+                    exit 1
+                fi
+            fi
 
             if "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
                 echo "Dependencies reinstalled. Retrying server start..."
