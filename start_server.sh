@@ -91,6 +91,23 @@ activate_venv() {
     return $FIRST_RUN
 }
 
+cleanup_old_logs() {
+    # Archive log file if older than 72 hours (3 days)
+    if [ -f "$LOGFILE" ]; then
+        local LOG_AGE_SECONDS=$(( $(date +%s) - $(date -r "$LOGFILE" +%s 2>/dev/null || echo 0) ))
+        local SEVENTY_TWO_HOURS=$((72 * 60 * 60))
+
+        if [ "$LOG_AGE_SECONDS" -gt "$SEVENTY_TWO_HOURS" ]; then
+            local ARCHIVE_NAME="$LOG_DIR/server_$(date -r "$LOGFILE" +%Y%m%d_%H%M%S).log"
+            mv "$LOGFILE" "$ARCHIVE_NAME"
+            echo "Archived old log to: $ARCHIVE_NAME"
+        fi
+    fi
+
+    # Remove archived logs older than 72 hours
+    find "$LOG_DIR" -name "server_*.log" -type f -mtime +3 -delete 2>/dev/null || true
+}
+
 open_browser() {
     sleep 1  # Give the server a moment to start
     if command -v xdg-open >/dev/null 2>&1; then
@@ -107,20 +124,23 @@ start() {
         return 0
     fi
 
+    # Clean up old logs before starting
+    cleanup_old_logs
+
     activate_venv
 
     if [ "$LITE_MODE" -eq 1 ]; then
         echo "Starting championship-squares (LITE MODE)..."
         # Persist lite mode setting for restarts
         echo "1" > "$LITE_FILE"
-        LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
+        LITE_MODE=1 nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
     else
         echo "Starting championship-squares..."
         # Remove lite mode file if explicitly disabled
         if [ "$LITE_MODE_EXPLICIT" -eq 1 ]; then
             rm -f "$LITE_FILE"
         fi
-        nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
+        nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
     fi
     PID=$!
     echo "$PID" > "$PID_FILE"
@@ -130,6 +150,42 @@ start() {
     if ! kill -0 "$PID" 2>/dev/null; then
         echo "ERROR: Server failed to start. Check logs: $LOGFILE"
         tail -n 20 "$LOGFILE"
+
+        # Check if it's a missing module error
+        if grep -q -E "ModuleNotFoundError|No module named" "$LOGFILE" 2>/dev/null; then
+            echo ""
+            echo "Detected missing Python module. Reinstalling dependencies..."
+            rm -f "$PID_FILE"
+
+            if "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+                echo "Dependencies reinstalled. Retrying server start..."
+
+                # Retry starting the server
+                if [ "$LITE_MODE" -eq 1 ]; then
+                    LITE_MODE=1 nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+                else
+                    nohup "$PYTHON" app.py 2>&1 | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE" &
+                fi
+                PID=$!
+                echo "$PID" > "$PID_FILE"
+
+                sleep 1
+                if ! kill -0 "$PID" 2>/dev/null; then
+                    echo "ERROR: Server still failed to start after reinstalling dependencies."
+                    tail -n 20 "$LOGFILE"
+                    rm -f "$PID_FILE"
+                    exit 1
+                fi
+
+                echo "Started (pid=$PID). Logs: $LOGFILE"
+                open_browser
+                return 0
+            else
+                echo "ERROR: Failed to reinstall dependencies."
+                exit 1
+            fi
+        fi
+
         rm -f "$PID_FILE"
         exit 1
     fi
