@@ -612,22 +612,6 @@ def update_multiplier():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def open_browser():
-    """Open the browser to the application URL"""
-    import webbrowser
-    import threading
-    import time
-    
-    def _open_browser():
-        time.sleep(1.5)  # Wait for the server to start
-        url = f'http://{config.config["host"]}:{config.config["port"]}'
-        # If host is 0.0.0.0, replace with localhost for browser
-        if config.config["host"] == "0.0.0.0":
-            url = f'http://localhost:{config.config["port"]}'
-        webbrowser.open(url)
-
-    threading.Thread(target=_open_browser).start()
-
 if __name__ == '__main__':
     # Ensure the template exists in the template directory
     index_template = config.template_dir / 'index.html'
@@ -640,9 +624,6 @@ if __name__ == '__main__':
             exit(1)
 
     # Start the server with platform-specific configuration
-    # Open browser when app starts
-    open_browser()
-    
     app.run(
         host=config.config['host'],
         port=config.config['port'],

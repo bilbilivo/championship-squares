@@ -131,7 +131,7 @@ cleanup_old_logs() {
 }
 
 open_browser() {
-    sleep 1  # Give the server a moment to start
+    sleep 1.5  # Give the server a moment to start
     if command -v xdg-open >/dev/null 2>&1; then
         xdg-open http://localhost:8080 &
     elif command -v open >/dev/null 2>&1; then
@@ -155,18 +155,14 @@ start() {
         echo "Starting championship-squares (LITE MODE)..."
         # Persist lite mode setting for restarts
         echo "1" > "$LITE_FILE"
-        LITE_MODE=1 nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
+        LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     else
         echo "Starting championship-squares..."
-        # Remove lite mode file if explicitly disabled
-        if [ "$LITE_MODE_EXPLICIT" -eq 1 ]; then
-            rm -f "$LITE_FILE"
-        fi
-        nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
+        # Remove lite mode file when starting in normal mode
+        rm -f "$LITE_FILE"
+        nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
     fi
     PID=$!
-    # Wait for background substitution to initialize
-    sleep 0.1
     echo "$PID" > "$PID_FILE"
 
     # Verify the server actually started
@@ -195,12 +191,11 @@ start() {
 
                 # Retry starting the server
                 if [ "$LITE_MODE" -eq 1 ]; then
-                    LITE_MODE=1 nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
+                    LITE_MODE=1 nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
                 else
-                    nohup "$PYTHON" app.py > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' >> "$LOGFILE") 2>&1 &
+                    nohup "$PYTHON" app.py >> "$LOGFILE" 2>&1 &
                 fi
                 PID=$!
-                sleep 0.1
                 echo "$PID" > "$PID_FILE"
 
                 sleep 1
@@ -225,8 +220,6 @@ start() {
     fi
 
     echo "Started (pid=$PID). Logs: $LOGFILE"
-
-    # Open browser after starting
     open_browser
 }
 
