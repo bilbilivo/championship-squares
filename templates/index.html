@@ -2803,6 +2803,12 @@ function deletePlayer(initial) {
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
 
+    // Check if any players exist
+    if (Object.keys(players).length === 0) {
+        showAlert('Please add players before claiming squares', 'No players');
+        return;
+    }
+
     const currentValue = d3.select(`text[data-row='${row}'][data-col='${col}']`).text();
     if (currentValue) {
         showAlert(`Owned by ${currentValue}`, 'Square taken');
