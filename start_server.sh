@@ -284,6 +284,7 @@ status() {
 setup() {
     DESKTOP_FILE="$SCRIPT_DIR/championship-squares.desktop"
     ICON_FILE="$SCRIPT_DIR/icon.png"
+    APPS_DIR="$HOME/.local/share/applications"
 
     cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
@@ -297,7 +298,22 @@ EOF
 
     chmod +x "$DESKTOP_FILE"
     echo "Desktop shortcut created: $DESKTOP_FILE"
-    echo "Double-click it from this folder to launch the game."
+
+    # Install to Applications menu
+    mkdir -p "$APPS_DIR"
+    if cp "$DESKTOP_FILE" "$APPS_DIR/"; then
+        echo "Installed to Applications menu: $APPS_DIR/championship-squares.desktop"
+        # Update desktop database (ignore errors if update-desktop-database not available)
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database "$APPS_DIR" 2>/dev/null || true
+        fi
+        echo ""
+        echo "✓ Championship Squares is now available in your Applications menu!"
+        echo "  - Press Super (Windows key) and search for 'Championship'"
+        echo "  - Or double-click: $DESKTOP_FILE"
+    else
+        echo "Could not install to Applications menu, but you can still double-click: $DESKTOP_FILE"
+    fi
 }
 
 ACTION="${1:-start}"
