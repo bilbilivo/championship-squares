@@ -309,10 +309,10 @@ EOF
         fi
         echo ""
         echo "✓ Championship Squares is now available in your Applications menu!"
-        echo "  - Press Super (Windows key) and search for 'Championship'"
-        echo "  - Or double-click: $DESKTOP_FILE"
+        echo "  - Press Super (Windows key) and search for 'Championship' or 'Squares' to find it."
     else
-        echo "Could not install to Applications menu, but you can still double-click: $DESKTOP_FILE"
+        echo "Could not install to Applications menu"
+        echo "Local shortcut: $DESKTOP_FILE (right-click → 'Allow Launching' to use)"
     fi
 }
 
