@@ -133,7 +133,7 @@ cleanup_old_logs() {
 open_browser() {
     sleep 1.5  # Give the server a moment to start
     if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open http://localhost:8080 &
+        NO_AT_BRIDGE=1 xdg-open http://localhost:8080 >/dev/null 2>&1 &
     elif command -v open >/dev/null 2>&1; then
         open http://localhost:8080
     fi
