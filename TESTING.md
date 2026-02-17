@@ -269,7 +269,7 @@ Verify 13th player add fails with appropriate error.
 ### Test: Insufficient Tokens
 
 1. Load test game
-2. Manually update player tokens to low value in JSON
+2. Manually update player tokens to low value in DB
 3. Attempt to claim high-multiplier square
 4. Verify rejection/error
 
@@ -282,7 +282,7 @@ Verify 13th player add fails with appropriate error.
 ### Test: Corrupted State
 
 1. Start server normally
-2. Edit `game_state.json` directly to invalid JSON
+2. Corrupt `game_state.db` (e.g. `echo "junk" > game_state.db`)
 3. Restart server
 4. Verify graceful recovery (reset to fresh state)
 5. Check logs for error messages

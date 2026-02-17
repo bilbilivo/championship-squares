@@ -219,7 +219,7 @@ docker build -t championship-squares:latest .
 # Run container
 docker run -d \
   -p 8080:8080 \
-  -v $(pwd)/game_state.json:/app/game_state.json \
+  -v $(pwd)/game_state.db:/app/game_state.db \
   --name championship-squares \
   championship-squares:latest
 ```
@@ -235,7 +235,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./game_state.json:/app/game_state.json
+      - ./game_state.db:/app/game_state.db
     restart: unless-stopped
     environment:
       - FLASK_ENV=production
@@ -310,19 +310,19 @@ MAX_PLAYERS = int(os.environ.get('MAX_PLAYERS', 12))
 
 ### Database Backup
 
-Game state stored in `game_state.json`. Backup strategies:
+Game state stored in `game_state.db`. Backup strategies:
 
 **Daily backup:**
 ```bash
 # Cron job (add to crontab)
-0 2 * * * cp /opt/championship-squares/game_state.json \
-                /backup/game_state.$(date +\%Y\%m\%d).json
+0 2 * * * cp /opt/championship-squares/game_state.db \
+                /backup/game_state.$(date +\%Y\%m\%d).db
 ```
 
 **Cloud backup:**
-- Upload `game_state.json` to S3 regularly
+- Upload `game_state.db` to S3 regularly
 - Use rsync to remote backup server
-- Database service (if migrating from JSON)
+- Database service (if migrating from SQLite)
 
 ---
 
@@ -444,8 +444,8 @@ Always use HTTPS in production:
 Secure game state file:
 
 ```bash
-chmod 600 game_state.json
-chown www-data:www-data game_state.json
+chmod 600 game_state.db
+chown www-data:www-data game_state.db
 ```
 
 ### Rate Limiting
@@ -517,7 +517,7 @@ free -h
 
 ### State File Corruption
 
-If `game_state.json` corrupted:
+If `game_state.db` corrupted:
 
 1. Stop application
 2. Restore from backup
@@ -526,17 +526,17 @@ If `game_state.json` corrupted:
 
 If no backup:
 ```bash
-rm game_state.json
+rm game_state.db
 # Application recreates on next start with fresh state
 ```
 
 ### Database Migration
 
-To migrate from JSON to database (future):
-1. Keep JSON as fallback
-2. Load from JSON, write to database
+To migrate to another database (future):
+1. Keep SQLite as fallback
+2. Load from SQLite, write to new database
 3. Test thoroughly before switching
-4. Keep JSON backup during migration
+4. Keep SQLite backup during migration
 
 ---
 
@@ -550,7 +550,7 @@ To migrate from JSON to database (future):
 - Test game functionality
 
 **Monthly:**
-- Backup game_state.json
+- Backup game_state.db
 - Review server performance
 - Update dependencies if needed
 
@@ -565,7 +565,7 @@ To migrate from JSON to database (future):
 
 ### Single Server Limitation
 
-Current design (JSON file storage) limited to:
+Current design (SQLite storage) limited to:
 - Single server instance
 - No distributed state
 - Not suitable for 1000+ concurrent players
@@ -573,7 +573,7 @@ Current design (JSON file storage) limited to:
 ### Future Scaling
 
 To scale beyond current limits:
-1. Migrate to database (PostgreSQL/MongoDB)
+1. Migrate to client-server database (PostgreSQL)
 2. Add caching layer (Redis)
 3. Load balance with nginx/HAProxy
 4. Consider microservices for game instances

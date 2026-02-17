@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from config import config
+from database import save_game_state as db_save_state, load_game_state as db_load_state, init_db
 
 # Check for lite mode from environment variable
 LITE_MODE = os.environ.get('LITE_MODE', '0') == '1'
@@ -13,6 +14,7 @@ app = Flask(__name__,
 
 class GameState:
     def __init__(self):
+        init_db()  # Initialize database
         self.reset_state()  # Initialize with a fresh state
 
     def reset_state(self):
@@ -29,13 +31,10 @@ class GameState:
         self.current_multiplier = 1  # Default multiplier
 
     def save_state(self):
-        """Save current game state to file"""
-        # Convert tuple keys to string for JSON serialization
-        square_multipliers_json = {f"{k[0]},{k[1]}": v for k, v in self.square_multipliers.items()}
-
+        """Save current game state to database"""
         state = {
             'squares': self.squares,
-            'square_multipliers': square_multipliers_json,
+            'square_multipliers': self.square_multipliers,
             'players': self.players,
             'teams': self.teams,
             'scores': self.scores,
@@ -43,74 +42,63 @@ class GameState:
             'sport': self.sport,
             'current_multiplier': self.current_multiplier
         }
-        try:
-            with open(config.base_dir / 'game_state.json', 'w') as f:
-                json.dump(state, f)
-            return True
-        except Exception as e:
-            print(f"Error saving game state: {e}")
-            return False
+        return db_save_state(state)
 
     def load_state(self):
-        """Load game state from file"""
+        """Load game state from database"""
         try:
-            state_file = config.base_dir / 'game_state.json'
-            if state_file.exists():
-                with open(state_file, 'r') as f:
-                    state = json.load(f)
-                    
-                    # Update sport first to ensure correct max_score
-                    self.sport = state.get('sport', 'nfl')
-                    config.update_sport(self.sport)  # This updates max_score in config
+            state = db_load_state()
+            if state:
+                # Update sport first to ensure correct max_score
+                self.sport = state.get('sport', 'nfl')
+                config.update_sport(self.sport)  # This updates max_score in config
 
-                    # Load multiplier state
-                    self.current_multiplier = state.get('current_multiplier', 1)
+                # Load multiplier state
+                self.current_multiplier = state.get('current_multiplier', 1)
 
-                    # Load square multipliers (convert string keys back to tuples)
-                    square_multipliers_json = state.get('square_multipliers', {})
-                    self.square_multipliers = {tuple(map(int, k.split(','))): v for k, v in square_multipliers_json.items()}
-                    
-                    # Create fresh squares array with current max_score
-                    max_score = config.config['max_score']
-                    self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
-                    
-                    # Copy saved squares data, but only up to current max_score
-                    saved_squares = state.get('squares', [])
-                    for i in range(min(len(saved_squares), max_score + 1)):
-                        row = saved_squares[i]
-                        for j in range(min(len(row), max_score + 1)):
-                            self.squares[i][j] = row[j]
-                    
-                    self.players = state.get('players', self.players)
+                # Load square multipliers
+                self.square_multipliers = state.get('square_multipliers', {})
+                
+                # Create fresh squares array with current max_score
+                max_score = config.config['max_score']
+                self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
+                
+                # Populate squares from loaded dictionary
+                squares_dict = state.get('squares_dict', {})
+                for (row, col), val in squares_dict.items():
+                    if row <= max_score and col <= max_score:
+                        self.squares[row][col] = val
+                
+                self.players = state.get('players', self.players)
 
-                    # Migrate old players to add tokens field if missing
-                    tokens_per_player = config.total_tokens.get(self.sport, 40)
-                    for player_initial in self.players:
-                        if 'tokens' not in self.players[player_initial]:
-                            # Calculate tokens based on current bets
-                            bets = self.players[player_initial].get('bets', 0)
-                            self.players[player_initial]['tokens'] = max(0, tokens_per_player - bets)
+                # Migrate old players to add tokens field if missing
+                tokens_per_player = config.total_tokens.get(self.sport, 40)
+                for player_initial in self.players:
+                    if 'tokens' not in self.players[player_initial]:
+                        # Calculate tokens based on current bets
+                        bets = self.players[player_initial].get('bets', 0)
+                        self.players[player_initial]['tokens'] = max(0, tokens_per_player - bets)
 
-                    self.teams = state.get('teams', {'left': '', 'right': ''})
-                    self.scores = state.get('scores', {'left': 0, 'right': 0})
-                    
-                    # Ensure scores don't exceed current max_score
-                    self.scores['left'] = min(self.scores['left'], max_score)
-                    self.scores['right'] = min(self.scores['right'], max_score)
-                    
-                    # Handle available indices safely
-                    max_players = config.config['max_players']
-                    loaded_indices = state.get('available_indices', list(range(max_players)))
-                    self.available_indices = [i for i in loaded_indices if i < max_players]
-                    
-                    # Add missing indices
-                    current_indices = set(self.available_indices)
-                    used_indices = {p['playerIndex'] for p in self.players.values()}
-                    for i in range(max_players):
-                        if i not in current_indices and i not in used_indices:
-                            self.available_indices.append(i)
-                    
-                    self.available_indices.sort()
+                self.teams = state.get('teams', {'left': '', 'right': ''})
+                self.scores = state.get('scores', {'left': 0, 'right': 0})
+                
+                # Ensure scores don't exceed current max_score
+                self.scores['left'] = min(self.scores['left'], max_score)
+                self.scores['right'] = min(self.scores['right'], max_score)
+                
+                # Handle available indices safely
+                max_players = config.config['max_players']
+                loaded_indices = state.get('available_indices', list(range(max_players)))
+                self.available_indices = [i for i in loaded_indices if i < max_players]
+                
+                # Add missing indices
+                current_indices = set(self.available_indices)
+                used_indices = {p['playerIndex'] for p in self.players.values()}
+                for i in range(max_players):
+                    if i not in current_indices and i not in used_indices:
+                        self.available_indices.append(i)
+                
+                self.available_indices.sort()
                 return True
             return False
         except Exception as e:
