@@ -11,6 +11,7 @@ Usage:
   python test_setup.py olym         # Olympics game (8 players)
 
 Each player gets a sport-specific token allocation distributed across multiplier tiers.
+Square placement biases toward lower scores using an expanding-range loop.
 """
 
 import requests
@@ -18,43 +19,44 @@ import random
 import string
 import sys
 import time
-from config import config
 
 BASE_URL = "http://localhost:8080"
 
 # Sport-specific configuration
+# bet_distribution: number of squares at each multiplier level
+# Token math: sum(bet_distribution[i] * multipliers[i]) must equal tokens_per_player
 SPORT_CONFIG = {
     'nfl': {
         'players': 12,
         'max_score': 70,
         'multipliers': [1, 2, 4, 8],
         'tokens_per_player': 40,
-        'bet_distribution': [26, 1, 1, 1],  # squares at each multiplier level
+        'bet_distribution': [26, 1, 1, 1],  # 26*1 + 1*2 + 1*4 + 1*8 = 40 tokens
     },
     'nhl': {
         'players': 8,
         'max_score': 12,
         'multipliers': [1, 2, 4],
         'tokens_per_player': 12,
-        'bet_distribution': [6, 3, 2],  # 6@1x(6) + 3@2x(6) + 2@4x(8) = 20 tokens
+        'bet_distribution': [4, 2, 1],       # 4*1 + 2*2 + 1*4 = 12 tokens
     },
     'mlb': {
         'players': 10,
         'max_score': 30,
         'multipliers': [1, 2, 4, 8],
         'tokens_per_player': 16,
-        'bet_distribution': [8, 2, 1, 0],  # 8@1x(8) + 2@2x(4) + 1@4x(4) = 16 tokens
+        'bet_distribution': [8, 2, 1, 0],    # 8*1 + 2*2 + 1*4 + 0*8 = 16 tokens
     },
     'olym': {
         'players': 8,
         'max_score': 12,
         'multipliers': [1, 2, 4],
         'tokens_per_player': 12,
-        'bet_distribution': [6, 3, 2],  # 6@1x(6) + 3@2x(6) + 2@4x(8) = 20 tokens
+        'bet_distribution': [4, 2, 1],       # 4*1 + 2*2 + 1*4 = 12 tokens
     }
 }
 
-# Team codes by sport
+# Team codes by sport - MUST match the keys in static/js/game.js team objects exactly
 TEAMS = {
     'nfl': [
         "ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
@@ -63,22 +65,22 @@ TEAMS = {
         "NYJ", "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS"
     ],
     'nhl': [
-        "ANA", "BOS", "BUF", "CAR", "CHI", "COL", "DAL", "DET",
-        "EDM", "FLA", "LAK", "MIN", "MTL", "NJ", "NYI", "NYR",
-        "OTT", "PHI", "PIT", "SJ", "STL", "TB", "TOR", "VAN",
-        "VGK", "WAS", "WPG"
+        "ANA", "ARI", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI",
+        "COL", "DAL", "DET", "EDM", "FLA", "HAR", "LAK", "MIN",
+        "MNS", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI",
+        "PIT", "QUE", "SEA", "SJS", "STL", "TBL", "TOR", "VAN",
+        "VGK", "WPG", "WSH"
     ],
     'mlb': [
-        "ARI", "ATL", "BAL", "BOS", "CHC", "CIN", "CLE", "COL",
-        "DET", "HOU", "KC", "LAA", "LAD", "MIA", "MIL", "MIN",
-        "NYM", "NYY", "OAK", "PHI", "PIT", "SD", "SF", "SEA",
-        "STL", "TB", "TEX", "TOR", "WSH"
+        "ARI", "ATL", "BAL", "BOS", "CHC", "CWS", "CIN", "CLE",
+        "COL", "DET", "MIA", "HOU", "KC", "LAA", "LAD", "MIL",
+        "MIN", "MTL", "NYM", "NYY", "OAK", "PHI", "PIT", "SD",
+        "SF", "SEA", "STL", "TB", "TEX", "TOR", "WSH"
     ],
     'olym': [
-        "CAN", "CHE", "CZE", "FIN", "FRA", "GER", "JPN", "LAT",
-        "NOR", "RUS", "SWE", "USA", "AUT", "BEL", "CRO", "DEN",
-        "EST", "GBR", "ITA", "KOR", "NED", "POL", "ROU", "SVK",
-        "SVN", "THA", "UKR"
+        "AUT", "CAN", "CHN", "CZE", "DEN", "FIN", "FRA", "GER",
+        "GBR", "HUN", "ITA", "JPN", "KAZ", "LAT", "NOR", "POL",
+        "SVK", "SLO", "KOR", "SWE", "SUI", "USA"
     ]
 }
 
@@ -124,8 +126,6 @@ def set_sport(sport="nfl"):
     if response.status_code == 200:
         data = response.json()
         print(f"  Sport set to {sport.upper()}, max_score: {data.get('max_score')}")
-        # Small delay to ensure frontend theme updates
-        time.sleep(0.5)
     else:
         print(f"  Failed to set sport: {response.text}")
         return False
@@ -149,34 +149,33 @@ def set_teams(sport="nfl"):
 
 
 def set_final_scores(sport="nfl"):
-    """Set non-equal final scores with bias toward lower scores."""
-    sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
-    max_score = sport_cfg['max_score']
-    
+    """Set non-equal final scores within typical ranges for the sport."""
     # Define typical score ranges by sport
     score_ranges = {
-        'nfl': (17, 35),      # Typical NFL scores
-        'nhl': (2, 6),        # Typical hockey scores
-        'mlb': (3, 8),        # Typical baseball scores
-        'olym': (2, 6),       # Olympic hockey scores
+        'nfl': (17, 35),      # Typical NFL final scores
+        'nhl': (2, 6),        # Typical hockey final scores
+        'mlb': (3, 8),        # Typical baseball final scores
+        'olym': (2, 6),       # Olympic hockey final scores
     }
-    
+
+    sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
+    max_score = sport_cfg['max_score']
     min_score, max_typical = score_ranges.get(sport, (3, max_score // 3))
-    
+
     # Generate two different scores within typical range
     left_score = random.randint(min_score, max_typical)
     right_score = random.randint(min_score, max_typical)
-    
+
     # Ensure scores are different
     while right_score == left_score:
         right_score = random.randint(min_score, max_typical)
-    
+
     print(f"Setting final scores: {left_score} - {right_score}...")
     response = requests.post(f"{BASE_URL}/api/scores", json={
         "left": left_score,
         "right": right_score
     })
-    
+
     if response.status_code == 200:
         print(f"  Final scores set: {left_score} (away) - {right_score} (home)")
         return left_score, right_score
@@ -241,57 +240,72 @@ def place_bet(player_id, row, col):
     return response.status_code == 200
 
 
-def place_bets_for_players(players, sport="nfl"):
-    """Place bets for all players based on sport configuration.
-    Uses incremental score ranges - starts with lower scores and gradually expands."""
-    print("Placing bets for all players...")
+def generate_biased_squares(max_score):
+    """Generate a list of squares biased toward lower scores.
     
-    # Get sport config
+    Uses an expanding-range loop: iterates x from 0 to max_score.
+    At each value of x, picks multiple random squares within the
+    (0..x, 0..x) range. Since x starts low and grows, early squares
+    cluster around low scores. As x increases the eligible area grows
+    and higher scores gradually appear.
+    """
+    squares = []
+    used = set()
+    total_available = (max_score + 1) * (max_score + 1)
+
+    # At each step x, try to place several squares within [0..x, 0..x].
+    # The number of attempts per step scales with x so we fill the grid.
+    for x in range(max_score + 1):
+        picks = max(2, (x + 1) // 2)  # more picks as range grows
+        for _ in range(picks):
+            attempts = 0
+            while attempts < 10:
+                r = random.randint(0, x)
+                c = random.randint(0, x)
+                if (r, c) not in used:
+                    squares.append((r, c))
+                    used.add((r, c))
+                    break
+                attempts += 1
+
+            if len(used) >= total_available:
+                return squares
+
+    # Fill any remaining squares in random order
+    remaining = [(r, c) for r in range(max_score + 1)
+                 for c in range(max_score + 1) if (r, c) not in used]
+    random.shuffle(remaining)
+    squares.extend(remaining)
+
+    return squares
+
+
+def place_bets_for_players(players, sport="nfl"):
+    """Place bets for all players using an expanding-range square selection."""
+    print("Placing bets for all players...")
+
     sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
     max_score = sport_cfg['max_score']
     multipliers = sport_cfg['multipliers']
     bet_distribution = sport_cfg['bet_distribution']
-    
-    # Calculate total squares that will be filled
-    total_squares_per_player = sum(bet_distribution)
-    total_squares_to_fill = len(players) * total_squares_per_player
-    
-    # Generate squares with incremental score range preference
-    # Start with a small range and gradually expand as we place more bets
-    all_squares = []
-    
-    # Define initial range (lower scores are more common in real games)
-    initial_range = min(max_score // 3, 10)  # Start with roughly 1/3 of max or 10
-    
-    # Generate squares in expanding circles from lower scores
-    for expansion_factor in range(1, 20):  # Multiple passes with expanding ranges
-        current_max = min(initial_range * expansion_factor, max_score)
-        
-        # Add squares within current range that haven't been added yet
-        for r in range(current_max + 1):
-            for c in range(current_max + 1):
-                if (r, c) not in all_squares:
-                    all_squares.append((r, c))
-        
-        # Stop when we have enough squares
-        if len(all_squares) >= total_squares_to_fill + 50:  # Add buffer
-            break
-    
-    # Shuffle to randomize within the biased distribution
-    random.shuffle(all_squares)
-    
+
+    # Generate squares biased toward lower scores
+    all_squares = generate_biased_squares(max_score)
+
     square_index = 0
 
     for player_id in players:
         print(f"  Placing bets for player {player_id}...")
-        bet_counts = [0] * len(multipliers)  # Track bets at each multiplier level
-        
+        bet_counts = [0] * len(multipliers)
+
         # Place bets according to distribution
         for multiplier_idx, (multiplier, num_squares) in enumerate(zip(multipliers, bet_distribution)):
+            if num_squares == 0:
+                continue
             if not set_multiplier(multiplier):
                 print(f"    ERROR: Failed to set {multiplier}x multiplier")
                 continue
-            
+
             for _ in range(num_squares):
                 if square_index < len(all_squares):
                     row, col = all_squares[square_index]
@@ -302,14 +316,15 @@ def place_bets_for_players(players, sport="nfl"):
                         print(f"    Failed to place {multiplier}x bet at ({row}, {col})")
 
         # Print summary for this player
-        bet_summary_parts = [f"{bet_counts[i]}@{multipliers[i]}x({bet_counts[i] * multipliers[i]})" 
-                            for i in range(len(multipliers))]
+        bet_parts = []
+        for i in range(len(multipliers)):
+            if bet_distribution[i] > 0:
+                bet_parts.append(f"{bet_counts[i]}@{multipliers[i]}x({bet_counts[i] * multipliers[i]})")
         total_tokens = sum(bet_counts[i] * multipliers[i] for i in range(len(multipliers)))
         total_squares = sum(bet_counts)
-        print(f"    {player_id}: {' + '.join(bet_summary_parts)} = {total_squares} squares ({total_tokens} tokens)")
+        print(f"    {player_id}: {' + '.join(bet_parts)} = {total_squares} squares ({total_tokens} tokens)")
 
     print(f"  Total squares filled: {square_index}")
-    print(f"  Score range bias: Lower scores preferred (incremental expansion used)")
 
 
 def main(sport="nfl"):
@@ -319,9 +334,16 @@ def main(sport="nfl"):
         print(f"ERROR: Unknown sport '{sport}'")
         print(f"Available sports: {', '.join(SPORT_CONFIG.keys())}")
         sys.exit(1)
-    
+
     sport_cfg = SPORT_CONFIG[sport]
-    
+
+    # Verify token math before running
+    token_cost = sum(sport_cfg['bet_distribution'][i] * sport_cfg['multipliers'][i]
+                     for i in range(len(sport_cfg['multipliers'])))
+    if token_cost > sport_cfg['tokens_per_player']:
+        print(f"ERROR: bet_distribution costs {token_cost} tokens but only {sport_cfg['tokens_per_player']} available")
+        sys.exit(1)
+
     print("=" * 50)
     print(f"Championship Squares - Test Setup ({sport.upper()})")
     print("=" * 50)
@@ -336,15 +358,15 @@ def main(sport="nfl"):
     print("  Server is running")
     print()
 
-    # Step 1: Set sport first (ensures correct grid size)
-    if not set_sport(sport):
-        return
-
-    # Step 2: Reset game (now with correct sport config)
+    # Step 1: Reset game first (clears everything, resets to NFL defaults)
     if not reset_game():
         return
 
-    # Step 3: Set random teams
+    # Step 2: Set sport AFTER reset (reset hardcodes sport to nfl)
+    if not set_sport(sport):
+        return
+
+    # Step 3: Set random teams (using correct sport-specific team codes)
     if not set_teams(sport):
         return
 
@@ -353,26 +375,27 @@ def main(sport="nfl"):
     if len(players) < sport_cfg['players']:
         print(f"Warning: Only added {len(players)} players")
 
-    # Step 5: Place bets
+    # Step 5: Place bets (biased toward lower scores)
     place_bets_for_players(players, sport)
 
-    # Step 6: Set final scores (non-equal, biased toward lower scores)
+    # Step 6: Set final scores (non-equal, within typical range)
     print()
     left_score, right_score = set_final_scores(sport)
 
-    # Calculate totals
-    total_squares = sum(sport_cfg['bet_distribution'])
-    total_tokens_per_player = sum(sport_cfg['bet_distribution'][i] * sport_cfg['multipliers'][i] 
+    # Print summary
+    total_squares = sum(d for d in sport_cfg['bet_distribution'] if d > 0)
+    total_tokens_per_player = sum(sport_cfg['bet_distribution'][i] * sport_cfg['multipliers'][i]
                                   for i in range(len(sport_cfg['multipliers'])))
 
     print()
     print("=" * 50)
     print("Test setup complete!")
     print(f"  - Sport: {sport.upper()}")
+    print(f"  - Grid: {sport_cfg['max_score'] + 1}x{sport_cfg['max_score'] + 1} ({(sport_cfg['max_score'] + 1)**2} squares)")
     print(f"  - Players: {len(players)}")
     print(f"  - Squares per player: {total_squares}")
-    print(f"  - Tokens per player: {total_tokens_per_player}")
-    print(f"  - Total bets: {len(players) * total_squares} squares ({len(players) * total_tokens_per_player} tokens)")
+    print(f"  - Tokens per player: {total_tokens_per_player} / {sport_cfg['tokens_per_player']}")
+    print(f"  - Total bets: {len(players) * total_squares} squares")
     if left_score and right_score:
         print(f"  - Final score: {left_score} - {right_score}")
     print("=" * 50)
