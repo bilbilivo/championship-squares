@@ -334,17 +334,17 @@ FLASK_DEBUG=1 python app.py
 
 **Sport colors in template:** `/templates/index.html` (CSS section)
 
-**Game state file:** `/game_state.json` (auto-created)
+**Game state file:** `/game_state.db` (auto-created)
 
 ---
 
 ## Restoring Defaults
 
-If configuration becomes corrupted, delete `game_state.json` and reset `config.py` to factory defaults (from git).
+If configuration becomes corrupted, delete `game_state.db` and reset `config.py` to factory defaults (from git).
 
 ```bash
 git checkout config.py
-rm game_state.json
+rm game_state.db
 python app.py
 ```
 
