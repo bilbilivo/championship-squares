@@ -6,6 +6,7 @@ output/*
 venv/*
 .vscode/*
 game_state.json
+game_state.db
 .lite_mode
 !input/*_inputList.txt
 !input/required_files_(overrides_above)*TEST*.xlsx

@@ -111,7 +111,7 @@
 
 **Possible Causes:**
 - File permission issue
-- Corrupted JSON file
+- Corrupted database file
 - Disk full
 - Invalid sport configuration
 
@@ -119,9 +119,9 @@
 
 1. **Check file permissions:**
    ```bash
-   ls -l game_state.json
+   ls -l game_state.db
    # Should be writable by current user
-   chmod 644 game_state.json
+   chmod 644 game_state.db
    ```
 
 2. **Check if disk full:**
@@ -133,14 +133,14 @@
 3. **Repair corrupted state file:**
    ```bash
    # Delete corrupted file (fresh start)
-   rm game_state.json
+   rm game_state.db
    # Server recreates on next start
    ```
 
-4. **Verify JSON validity:**
+4. **Verify Database integrity:**
    ```bash
-   python -m json.tool game_state.json
-   # Should show formatted JSON without errors
+   sqlite3 game_state.db "PRAGMA integrity_check;"
+   # Should return "ok"
    ```
 
 ---
@@ -545,32 +545,32 @@ sudo ufw allow 8080
 
 ## File System Issues
 
-### game_state.json Corrupted
+### game_state.db Corrupted
 
-**Problem:** Game won't load or error about JSON parsing
+**Problem:** Game won't load or error about database
 
 **Solutions:**
 
-1. **Check validity:**
+1. **Check integrity:**
    ```bash
-   python -m json.tool game_state.json
+   sqlite3 game_state.db "PRAGMA integrity_check;"
    ```
 
 2. **Restore from backup:**
    ```bash
-   cp game_state.json.backup game_state.json
+   cp game_state.db.backup game_state.db
    ```
 
 3. **Start fresh:**
    ```bash
-   rm game_state.json
+   rm game_state.db
    # Server creates new file on next start
    ```
 
 4. **View last known good:**
    ```bash
-   git show HEAD:game_state.json > game_state.json
-   # If using version control
+   # Not easily possible with binary DB file from git
+   # Use backup instead
    ```
 
 ---
@@ -583,12 +583,12 @@ sudo ufw allow 8080
 
 1. **Fix ownership:**
    ```bash
-   sudo chown $USER game_state.json
+   sudo chown $USER game_state.db
    ```
 
 2. **Fix permissions:**
    ```bash
-   chmod 644 game_state.json
+   chmod 644 game_state.db
    chmod 755 .
    ```
 
@@ -685,4 +685,4 @@ free -h  # or 'top' on macOS
 7. ✓ Check terminal for error messages
 8. ✓ Use correct host setting for your OS
 9. ✓ Enable firewall access on Linux (ufw)
-10. ✓ Back up game_state.json regularly
+10. ✓ Back up game_state.db regularly

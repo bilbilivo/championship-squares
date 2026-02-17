@@ -310,4 +310,4 @@ Increases bet value on a square. Available multipliers depend on sport (1x, 2x, 
 ---
 
 ## State Persistence
-All changes are automatically saved to `game_state.json`. Game state persists between server restarts.
+All changes are automatically saved to `game_state.db`. Game state persists between server restarts.

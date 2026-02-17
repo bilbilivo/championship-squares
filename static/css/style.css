@@ -1,0 +1,1598 @@
+/* Local font */
+@font-face {
+    font-family: 'Press Start 2P';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/static/fonts/PressStart2P-Regular.woff2') format('woff2');
+}
+
+/* Root Variables */
+/* Sport-Specific Color Schemes */
+:root {
+    /* NFL Theme (Blue) */
+    --nfl-primary: #007FFF;  /* Main NFL blue */
+    --nfl-dark: #051333;     /* Darker shade for backgrounds */
+    --nfl-light: #2B5BBA;    /* Lighter blue for highlights */
+    --nfl-bg: #030A1F;       /* Very dark blue for background */
+    --nfl-logo-primary: #003087;    /* Dark Royal Blue */
+    --nfl-logo-secondary: #DB1F26;  /* Bright Red */
+
+    /* NHL Theme (Orange) */
+    --nhl-primary: #F78F1E;  /* Main NHL orange */
+    --nhl-dark: #331C04;     /* Darker shade for backgrounds */
+    --nhl-light: #FFB05C;    /* Lighter orange for highlights */
+    --nhl-bg: #1F1103;       /* Very dark orange-tinted for background */
+	--nhl-logo-primary: #FF4C00;    /* Orange */
+    --nhl-logo-secondary: #FFFFFF;  /* White */
+
+    /* NBA Theme (Red) */
+    --nba-primary: #ff0000;
+    --nba-dark: #220000;
+    --nba-light: #ff8888;
+    --nba-bg: #110000;
+    --nba-logo-primary: #EC003D;    /* Bright Red */
+    --nba-logo-secondary: #1D428A;  /* Royal Blue */
+	
+    /* MLB Theme (Green) */
+    --mlb-primary: #00ff00;
+    --mlb-dark: #002200;
+    --mlb-light: #88ff88;
+    --mlb-bg: #001100;
+    --mlb-logo-primary: #002D72;    /* Navy Blue */
+    --mlb-logo-secondary: #D50032;  /* Red */
+
+    /* Olympics Theme (Gold) */
+    --olym-primary: #FFD700;  /* Olympic Gold */
+    --olym-dark: #332B00;     /* Dark gold for backgrounds */
+    --olym-light: #FFE55C;    /* Lighter gold for highlights */
+    --olym-bg: #1A1500;       /* Very dark gold-tinted for background */
+    --olym-logo-primary: #FFD700;    /* Gold */
+    --olym-logo-secondary: #0085C7;  /* Olympic Blue */
+
+    /* FIFA World Cup Theme (Green/Gold) - High Contrast */
+    --fifa-primary: #00A651;   /* Bright FIFA Green */
+    --fifa-dark: #0D3D1F;      /* Dark green for backgrounds */
+    --fifa-light: #5FD068;     /* Bright green for highlights */
+    --fifa-bg: #061A0D;        /* Very dark green for background */
+    --fifa-logo-primary: #00A651;     /* Bright FIFA Green */
+    --fifa-logo-secondary: #FFD700;   /* Bright Gold */
+
+    /* Active Theme (set programmatically based on sport) */
+    --retro-primary: var(--nfl-primary);
+    --retro-dark: var(--nfl-dark);
+    --retro-light: var(--nfl-light);
+    --retro-bg: var(--nfl-bg);
+    --retro-logo-primary: var(--nfl-logo-primary);
+    --retro-logo-secondary: var(--nfl-logo-secondary);
+
+
+	--pixel-border: 2px solid var(--retro-primary);
+}
+
+/* ==========================================
+   LITE MODE - Reduced visual effects
+   Disables animations, transitions, glows,
+   confetti, fireworks, and scanlines
+   while preserving all gameplay functionality
+   ========================================== */
+
+/* Disable all animations in lite mode */
+.lite-mode *,
+.lite-mode *::before,
+.lite-mode *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Remove scanline effect */
+.lite-mode .grid-container::after {
+    display: none !important;
+}
+
+/* Remove glow effects from buttons */
+.lite-mode .multiplier-btn.active {
+    box-shadow: none !important;
+}
+
+/* Remove winner glow effects */
+.lite-mode .square.winner-square {
+    filter: none !important;
+}
+
+.lite-mode .square.winner-path {
+    fill: rgba(255, 215, 0, 0.3) !important;
+    stroke: rgba(255, 215, 0, 0.6) !important;
+}
+
+/* Simplified celebration overlay */
+.lite-mode .celebration-overlay {
+    animation: none !important;
+}
+
+.lite-mode .celebration-trophy {
+    animation: none !important;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)) !important;
+}
+
+.lite-mode .celebration-winner-banner .winner-name {
+    animation: none !important;
+    text-shadow: 2px 2px 0 #8B4513, 0 0 20px #FFD700 !important;
+}
+
+/* Loading dots animation - works in all modes */
+/* 8-bit style: fill and drain wave - 000 → 100 → 110 → 111 → 011 → 001 → 000 */
+@keyframes dot1-wave {
+    0%, 17% { background-color: var(--retro-dark); }
+    18%, 66% { background-color: var(--retro-primary); }
+    67%, 100% { background-color: var(--retro-dark); }
+}
+
+@keyframes dot2-wave {
+    0%, 33% { background-color: var(--retro-dark); }
+    34%, 83% { background-color: var(--retro-primary); }
+    84%, 100% { background-color: var(--retro-dark); }
+}
+
+@keyframes dot3-wave {
+    0%, 50% { background-color: var(--retro-dark); }
+    51%, 99% { background-color: var(--retro-primary); }
+    100% { background-color: var(--retro-dark); }
+}
+
+.loading-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+    min-height: 24px;
+}
+
+.loading-dots span {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background-color: var(--retro-dark);
+}
+
+.loading-dots span:nth-child(1) {
+    animation: dot1-wave 3s steps(1) infinite !important;
+}
+
+.loading-dots span:nth-child(2) {
+    animation: dot2-wave 3s steps(1) infinite !important;
+}
+
+.loading-dots span:nth-child(3) {
+    animation: dot3-wave 3s steps(1) infinite !important;
+}
+
+/* Ensure loading dots animate even in lite-mode */
+.lite-mode .loading-dots span:nth-child(1) {
+    animation: dot1-wave 3s steps(1) infinite !important;
+}
+
+.lite-mode .loading-dots span:nth-child(2) {
+    animation: dot2-wave 3s steps(1) infinite !important;
+}
+
+.lite-mode .loading-dots span:nth-child(3) {
+    animation: dot3-wave 3s steps(1) infinite !important;
+}
+
+.lite-mode .celebration-winner-name {
+    animation: none !important;
+    text-shadow: 2px 2px 0 #8B4513 !important;
+}
+
+.lite-mode .podium-entry.winner {
+    animation: none !important;
+    box-shadow: 0 0 15px #FFD700 !important;
+}
+
+/* Hide animated confetti and fireworks in lite mode */
+.lite-mode .celebration-confetti,
+.lite-mode .celebration-fireworks,
+.lite-mode .firework,
+.lite-mode .firework-particle {
+    display: none !important;
+}
+
+/* ---- LITE MODE: Static 8-bit decorations ---- */
+
+/* Static pixel confetti pieces */
+.lite-mode .static-confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    image-rendering: pixelated;
+}
+
+/* Static pixel firework bursts */
+.lite-mode .static-firework {
+    position: absolute;
+    image-rendering: pixelated;
+}
+
+.lite-mode .static-firework-center {
+    width: 8px;
+    height: 8px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.lite-mode .static-firework-ray {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+}
+
+/* Static decorations container */
+.lite-mode .static-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Remove button hover transforms */
+.lite-mode button:hover {
+    transform: none !important;
+}
+
+.lite-mode .celebration-btn:hover {
+    transform: none !important;
+}
+
+/* Remove title blink */
+.lite-mode .title {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Remove landing content glow */
+.lite-mode .landing-content {
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+.lite-mode .landing-title {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Remove tooltip transition */
+.lite-mode .tooltip {
+    transition: none !important;
+}
+
+/* Remove square fill transition */
+.lite-mode .square {
+    transition: none !important;
+}
+
+/* ========================================== */
+
+
+/* Base Styles */
+body {
+    font-family: 'Press Start 2P', monospace;
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    box-sizing: border-box;
+    text-shadow: 2px 2px var(--retro-dark);
+}
+
+/* Layout Structure */
+.container {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 5px;
+    padding: 5px 10px;
+    box-sizing: border-box;
+    image-rendering: pixelated;
+    overflow: hidden;
+}
+
+.title {
+    text-align: center;
+    color: var(--retro-primary);
+    font-size: 2em;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 2s infinite;
+}
+
+.controls {
+    text-align: center;
+    border: var(--pixel-border);
+    padding: 5px 10px;
+    background: var(--retro-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    min-height: 0;
+    height: calc(100vh - 200px);
+}
+
+/* Grid Container */
+.grid-container {
+    height: 100%;
+    min-height: 600px;
+    background: var(--retro-bg);
+    border: var(--pixel-border);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 4px 4px 0 var(--retro-primary);
+    flex-grow: 1;
+}
+
+/* Legend Container */
+.legend-container {
+    height: 100%;
+    background: var(--retro-bg);
+    border: var(--pixel-border);
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: 4px 4px 0 var(--retro-primary);
+}
+
+/* Team Selection Styles */
+.team-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 8px 15px;
+    border: var(--pixel-border);
+    background: var(--retro-bg);
+    margin: 0;
+}
+
+.team-vs {
+    color: var(--retro-primary);
+    font-size: 1.2em;
+}
+
+.multiplier-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.multiplier-label {
+    color: var(--retro-primary);
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.multiplier-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.multiplier-btn {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: 2px solid var(--retro-primary);
+    padding: 6px 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 50px;
+}
+
+.multiplier-btn:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+}
+
+.multiplier-btn.active {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    box-shadow: 0 0 10px var(--retro-primary);
+}
+
+.multiplier-value {
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+.multiplier-hint {
+    font-size: 0.7em;
+    opacity: 0.8;
+    line-height: 1;
+}
+
+.tokens-display {
+    color: var(--retro-primary);
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.team-selection {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Helmet Icon */
+.helmet-icon {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+}
+
+/* Select Dropdowns */
+select {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: var(--pixel-border);
+    padding: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+select option {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    font-size: 20px;
+    padding: 6px;
+}
+
+/* Button Styles */
+button {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    border: 2px solid var(--retro-light);
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-family: 'Press Start 2P', monospace;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 12px;
+    box-shadow: 2px 2px 0 var(--retro-dark);
+}
+
+button:hover {
+    background: var(--retro-light);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* Animations */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.grid-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--retro-primary);
+    opacity: 0.1;
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scanline {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100%); }
+}
+
+/* Grid Elements */
+.square {
+    stroke: var(--retro-primary);
+    stroke-width: 2;
+    fill: var(--retro-bg);
+    transition: fill 0.3s ease;
+}
+
+.square:hover {
+    fill: var(--retro-light);
+    cursor: pointer;
+}
+
+.square.tie-square,
+.square.header-square {
+    fill: var(--retro-bg) !important;
+    cursor: not-allowed !important;
+}
+
+.square.tie-square:hover,
+.square.header-square:hover {
+    fill: var(--retro-bg) !important;
+}
+
+/* Winner Path Styles */
+.square.winner-path {
+    fill: rgba(255, 215, 0, 0.3) !important;
+    stroke: rgba(255, 215, 0, 0.6) !important;
+    stroke-width: 3 !important;
+}
+
+.square.winner-square {
+    fill: rgba(255, 215, 0, 0.4) !important;
+    stroke: gold !important;
+    stroke-width: 5 !important;
+    filter: drop-shadow(0 0 10px gold);
+}
+
+/* Winner Celebration Overlay */
+.celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: celebrationFadeIn 0.5s ease-out;
+}
+
+@keyframes celebrationFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.celebration-trophy {
+    margin-bottom: 20px;
+    animation: trophyBounceGlow 0.6s ease-in-out infinite alternate;
+}
+
+.celebration-trophy img {
+    height: 200px;
+    width: auto;
+}
+
+@keyframes trophyBounceGlow {
+    0% {
+        transform: scale(1) translateY(0);
+        filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    }
+    100% {
+        transform: scale(1.08) translateY(-8px);
+        filter: drop-shadow(0 0 25px rgba(255, 223, 0, 1)) drop-shadow(0 0 40px rgba(255, 180, 0, 0.6)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    }
+}
+
+.celebration-winner-banner {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.celebration-winner-banner .winner-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 36px;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+    margin-bottom: 10px;
+}
+
+.celebration-winner-banner .winner-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 48px;
+    color: #FFD700;
+    text-shadow: 4px 4px 0 #8B4513, 0 0 30px #FFD700;
+    animation: winnerGlow 0.6s ease-in-out infinite alternate;
+}
+
+.celebration-final-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-family: 'Press Start 2P', monospace;
+    margin-bottom: 20px;
+}
+
+.final-score-team {
+    font-size: 18px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.final-score-value {
+    font-size: 32px;
+    color: #FFD700;
+    text-shadow: 2px 2px 0 #8B4513;
+}
+
+.final-score-separator {
+    font-size: 24px;
+    color: #fff;
+}
+
+.celebration-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 10px;
+}
+
+@keyframes titlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.celebration-winners {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 24px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 2;
+}
+
+.celebration-winner-name {
+    display: block;
+    color: #FFD700;
+    text-shadow: 2px 2px 0 #8B4513, 0 0 10px #FFD700, 0 0 20px #FFA500;
+    animation: winnerGlow 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes winnerGlow {
+    from { text-shadow: 2px 2px 0 #8B4513, 0 0 10px #FFD700, 0 0 20px #FFA500; }
+    to { text-shadow: 2px 2px 0 #8B4513, 0 0 20px #FFD700, 0 0 40px #FFA500; }
+}
+
+/* Podium/Standings styles */
+.celebration-podium {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+    width: 700px;
+    max-width: 700px;
+}
+
+.podium-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 16px;
+    margin: 4px 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid;
+    border-radius: 4px;
+}
+
+.podium-entry.winner {
+    font-size: 20px;
+    padding: 16px 20px;
+    background: rgba(255, 215, 0, 0.3);
+    border-color: #FFD700;
+    animation: winnerPulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes winnerPulse {
+    from { box-shadow: 0 0 10px #FFD700; }
+    to { box-shadow: 0 0 25px #FFD700; }
+}
+
+.podium-entry.other {
+    border-color: rgba(255, 255, 255, 0.3);
+    opacity: 0.8;
+}
+
+.podium-rank {
+    color: #888;
+    width: 24px;
+    min-width: 24px;
+    flex-shrink: 0;
+}
+
+.podium-entry.winner .podium-rank {
+    color: #FFD700;
+}
+
+.podium-name {
+    width: 140px;
+    min-width: 140px;
+    text-align: left;
+    margin-left: 15px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.podium-entry.winner .podium-name {
+    color: #FFD700;
+}
+
+.podium-score {
+    color: #ccc;
+    font-size: 14px;
+    width: 200px;
+    min-width: 200px;
+    margin-left: 15px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.podium-entry.winner .podium-score {
+    color: #FFD700;
+}
+
+.podium-distance {
+    color: #aaa;
+    font-size: 14px;
+    width: 140px;
+    min-width: 140px;
+    margin-left: 15px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.podium-entry.winner .podium-distance {
+    color: #FFD700;
+}
+
+.podium-multiplier {
+    color: #aaa;
+    font-size: 14px;
+    width: 50px;
+    min-width: 50px;
+    text-align: center;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.podium-entry.winner .podium-multiplier {
+    color: #FFD700;
+}
+
+/* Celebration action buttons */
+.celebration-actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.celebration-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    padding: 15px 30px;
+    cursor: pointer;
+    border: 3px solid;
+    transition: all 0.2s;
+}
+
+.celebration-btn.reset-btn {
+    background: var(--retro-primary);
+    color: var(--retro-bg);
+    border-color: var(--retro-primary);
+}
+
+.celebration-btn.reset-btn:hover {
+    background: var(--retro-light);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+}
+
+.celebration-btn.cancel-btn {
+    background: transparent;
+    color: #fff;
+    border-color: #fff;
+}
+
+.celebration-btn.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.celebration-confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Fireworks */
+.celebration-fireworks {
+    position: absolute;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.celebration-fireworks.fireworks-left {
+    left: 0;
+}
+
+.celebration-fireworks.fireworks-right {
+    right: 0;
+}
+
+.celebration-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 50;
+}
+
+.firework {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+}
+
+.firework-particle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    animation: fireworkBurst 1.5s ease-out forwards;
+}
+
+.firework-particle.large {
+    width: 21px;
+    height: 21px;
+}
+
+@keyframes fireworkBurst {
+    0% {
+        transform: rotate(var(--angle)) translateX(0) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(var(--angle)) translateX(156px) scale(0);
+        opacity: 0;
+    }
+}
+
+/* End Game Button */
+.end-game-btn {
+    background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+    color: #000;
+    border: 3px solid #8B4513;
+}
+
+.end-game-btn:hover {
+    background: linear-gradient(180deg, #FFA500 0%, #FF8C00 100%);
+}
+
+/* Axis Styles */
+.axis line,
+.axis path {
+    stroke: var(--retro-primary);
+    stroke-width: 1;
+}
+
+.axis text {
+    fill: var(--retro-primary);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px !important;
+}
+
+
+/* Square Text */
+.square-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px !important;
+    fill: var(--retro-primary);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+/* Tooltip */
+.tooltip {
+    position: absolute;
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-primary);
+    padding: 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--retro-primary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1000;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--retro-primary) 20%, transparent);
+}
+
+/* Player Management */
+.player-form {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: var(--pixel-border);
+    padding: 10px;
+    background: var(--retro-bg);
+}
+
+.player-form .input-row {
+    display: flex;
+    gap: 4px;
+}
+
+.player-form input {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    padding: 6px;
+    color: var(--retro-primary);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+.player-form input#playerInitial {
+    width: 36px;
+    padding: 6px 2px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.player-form input#playerName {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 44px);
+}
+
+/* Player List Styles */
+.player-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.player-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    margin: 0 !important;
+    background: var(--retro-dark) !important;
+    border: 2px solid var(--retro-primary) !important;
+    height: 28px !important;
+	font-family: 'Press Start 2P', monospace;
+	margin-bottom: 8px;
+}
+
+
+.player-info {
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 200px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.color-dot {
+    width: 14px !important;
+    height: 14px !important;
+    border: 2px solid var(--retro-primary) !important;
+    flex-shrink: 0 !important;
+    margin: 0 3px !important;
+}
+
+.delete-btn {
+    margin-left: auto !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    padding: 2px !important;
+    font-size: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 2px !important;
+}
+
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--retro-primary);
+    border: 2px solid var(--retro-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--retro-light);
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 1fr 250px;
+    }
+    
+    .grid-container {
+        min-height: 500px;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .grid-container {
+        min-height: 400px;
+    }
+    
+    .legend-container {
+        height: 300px;
+    }
+    
+    .team-selector {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    .team-selection {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Team Name Background Highlights */
+.team-name-background {
+    fill: var(--retro-dark);
+    opacity: 0.8;
+}
+
+/* Axis Label Positioning */
+.axis-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    fill: var(--retro-primary);
+}
+
+.axis-label.left {
+    text-anchor: end;
+}
+
+.axis-label.right {
+    text-anchor: start;
+}
+
+.header-text {
+    pointer-events: none;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* Adjust margins to account for score cells */
+.grid-container {
+    padding: 40px;  /* Increased padding to accommodate score cells */
+}
+
+/* Update team name positioning */
+.team-name.vertical {
+    transform: rotate(-90deg);
+    transform-origin: left center;
+}
+
+/* Static Team Names */
+.team-name-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    padding: 10px;
+    background-color: var(--retro-dark);
+    z-index: 20;  /* Higher z-index to appear above left team name */
+}
+
+.team-name-left {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: calc(100vh - 80px);
+    transform-origin: 0 0;
+    transform: rotate(-90deg) translateX(-50%);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    padding: 10px;
+    background-color: var(--retro-dark);
+    white-space: nowrap;
+    z-index: 10;  /* Lower z-index to appear below top team name */
+    text-align: center;
+}
+
+
+.reset-game-btn {
+	background-color: var(--retro-dark);
+	color: var(--retro-primary);
+	border-color: var(--retro-light);
+}
+
+.reset-game-btn:hover {
+	background-color: var(--retro-dark);
+}
+.legend-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.legend-controls button {
+    flex: 1 1 auto;
+    min-width: fit-content;
+}
+
+.landing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--retro-dark);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.landing-content {
+    text-align: center;
+    padding: 40px;
+    border: var(--pixel-border);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
+    animation: glow 2s infinite alternate;
+}
+
+.landing-title {
+    color: var(--retro-primary);
+    font-size: 3em;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    animation: blink 2s infinite;
+}
+
+.landing-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.landing-btn {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: var(--pixel-border);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    width: 240px;
+    transition: all 0.3s ease;
+}
+
+.landing-btn:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.landing-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 10px color-mix(in srgb, var(--retro-primary) 20%, transparent);
+    }
+    to {
+        box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 40%, transparent);
+    }
+}
+
+.score {
+  cursor: pointer;
+  padding: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 2.5em;
+  color: #E7E7A7;
+  min-width: 70px;
+  text-align: center;
+  margin: 0 20px;
+  background: var(--retro-bg);
+  border: none;
+  position: relative;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 4px color-mix(in srgb, var(--retro-light) 40%, transparent),
+    0 0 8px color-mix(in srgb, var(--retro-light) 20%, transparent);
+  image-rendering: pixelated;
+}
+
+.score:hover {
+  color: #E5D820;
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--retro-light) 60%, transparent),
+    0 0 12px color-mix(in srgb, var(--retro-light) 30%, transparent);
+}
+
+/* Remove any existing borders or box shadows */
+.score::before,
+.score::after {
+  display: none;
+}
+.highlight {
+  fill: #FFD700 !important; /* Gold color for current score square */
+}
+.highlight:hover {
+  fill: var(--retro-light) !important; /* Light color when hovering over current score */
+  cursor: pointer;
+}
+/* Alert Overlay - always on top */
+.alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--retro-dark);
+    background: color-mix(in srgb, var(--retro-dark) 95%, transparent);
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Alert Content */
+.alert-content {
+    text-align: center;
+    padding: 40px;
+    border: var(--pixel-border);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
+    animation: glow 2s infinite alternate;
+}
+
+/* Disable glow when loading dots are present - helps low-spec systems */
+.alert-content:has(.loading-dots) {
+    animation: none;
+}
+
+/* Alert Title */
+.alert-title {
+    color: var(--retro-primary);
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 2s infinite;
+}
+
+/* Alert Message */
+.alert-message {
+    color: var(--retro-primary);
+    font-size: 1.2em;
+    margin-bottom: 30px;
+}
+
+/* Alert Buttons */
+.alert-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.alert-btn {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: var(--pixel-border);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.alert-btn:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.alert-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+.prompt-input {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    padding: 8px;
+    color: var(--retro-primary);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    margin: 20px 0;
+    width: 80%;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.player-list-prompt {
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 10px;
+    border: var(--pixel-border);
+    background: var(--retro-dark);
+    text-align: left;
+}
+
+.alert-message {
+    margin: 20px 0;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Base overlay styles */
+.base-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;  /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    background: var(--retro-dark);
+    background: color-mix(in srgb, var(--retro-dark) 90%, transparent);
+	animation: overlayFadeIn 0.3s ease-out;
+}
+
+/* Prompt overlay */
+.generic-prompt {
+    z-index: 3000;
+}
+
+/* Content containers */
+.overlay-content {
+    text-align: center;
+    padding: 40px;
+    border: 2px solid var(--retro-primary);
+    background: var(--retro-bg);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 20%, transparent);
+    animation: glow 2s infinite alternate;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Title styles */
+.overlay-title {
+    color: var(--retro-primary);
+    font-size: 2em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: blink 2s infinite;
+}
+
+/* Message styles */
+.overlay-message {
+    color: var(--retro-primary);
+    font-size: 1.2em;
+    margin: 20px 0;
+    line-height: 1.5;
+    white-space: pre-line;
+}
+
+/* Button container */
+.overlay-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Button styles */
+.overlay-btn {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: 2px solid var(--retro-primary);
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.overlay-btn:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.overlay-btn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* Input field styles */
+.overlay-input {
+    background: var(--retro-dark);
+    border: 2px solid var(--retro-primary);
+    padding: 8px;
+    color: var(--retro-primary);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    margin: 20px 0;
+    width: 80%;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+/* Player list in prompt */
+.overlay-player-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 10px;
+    border: 2px solid var(--retro-primary);
+    background: var(--retro-dark);
+    text-align: left;
+    font-size: 0.8em;
+}
+
+/* Scrollbar styles for overlays */
+.overlay-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.overlay-content::-webkit-scrollbar-track {
+    background: var(--retro-dark);
+}
+
+.overlay-content::-webkit-scrollbar-thumb {
+    background: var(--retro-primary);
+    border: 1px solid var(--retro-dark);
+}
+
+/* Animations */
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.sport-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sport-box {
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.5em;
+    line-height: 1.5;
+    color: var(--retro-primary);
+}
+
+.sport-box:hover {
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 0 var(--retro-dark);
+}
+
+.sport-box:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.square {
+	stroke: var(--retro-primary);
+	stroke-width: 2;
+	fill: var(--retro-bg);
+	transition: fill 0.3s ease;
+}
+
+.square:hover {
+	fill: var(--retro-light);
+	cursor: pointer;
+}
+
+.tie-square.highlight {
+	fill: #FFD700 !important; /* Gold color for current score square on tie */
+}
+
+/* Keep existing tie-square styles but remove the !important from the fill */
+.tie-square {
+	fill: var(--retro-bg);
+	cursor: not-allowed;
+}
+
+.tie-square:hover {
+	fill: var(--retro-bg);
+}
+
+.square-text, .header-text, .tie-text {
+	font-family: 'Press Start 2P', monospace;
+	fill: var(--retro-primary);
+	text-anchor: middle;
+	dominant-baseline: middle;
+	pointer-events: none;
+	transition: font-size 0.3s ease;
+}

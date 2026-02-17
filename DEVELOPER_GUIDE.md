@@ -6,7 +6,7 @@ Championship Squares uses a modern client-server architecture:
 
 **Backend:** Python Flask REST API  
 **Frontend:** HTML5 + CSS3 + Vanilla JavaScript + D3.js visualization  
-**State:** JSON file-based persistence  
+**State:** SQLite database persistence  
 
 ---
 
@@ -15,11 +15,12 @@ Championship Squares uses a modern client-server architecture:
 ```
 app.py                 # Main Flask application with API endpoints
 config.py              # Configuration and sport settings
+database.py            # Database access layer
 requirements.txt       # Python dependencies
 templates/index.html   # Single-page HTML template with embedded CSS/JS
 static/               # Frontend assets (D3.js, fonts, images)
 logs/                 # Runtime logs
-game_state.json       # Persisted game state
+game_state.db         # Persisted game state (SQLite)
 ```
 
 ---
@@ -142,8 +143,8 @@ In `templates/index.html`, add CSS variables for the new sport in the theme sect
 
 ### Adding New State Properties
 1. Update `reset_state()` to initialize new property
-2. Update `save_state()` to include in JSON
-3. Update `load_state()` to restore from JSON
+2. Update `save_game_state()` in `database.py` to include in DB
+3. Update `load_game_state()` in `database.py` to restore from DB
 4. Update any relevant API routes to read/return property
 
 ### Adding Game Logic
@@ -183,20 +184,18 @@ def example_endpoint():
 
 ## State Persistence
 
-### JSON Format
-Game state saved to `game_state.json` with structure:
-- `squares` - 2D array
-- `square_multipliers` - Key-value pairs (serialized as "row,col": value)
-- `players` - Player dictionary
-- `teams` - Team names
-- `scores` - Score values
-- `sport` - Sport identifier
-- `current_multiplier` - Active multiplier
-- `available_indices` - Available player slots
+### Database Schema (SQLite)
+Game state saved to `game_state.db`.
+
+Tables:
+- `game_config`: Key-value store for global settings (sport, scores, teams)
+- `players`: Player records (name, tokens, bets)
+- `squares`: Grid state (row, col, player, multiplier)
+- `available_indices`: Available player slots
 
 ### Migration Support
-`load_state()` includes legacy data migration:
-- Auto-generates missing tokens field
+`load_state()` handles data loading and validation:
+- Auto-generates missing tokens field if needed
 - Handles format changes gracefully
 - Validates array sizes match current sport
 - Caps scores at maximum
@@ -250,12 +249,11 @@ Game state saved to `game_state.json` with structure:
 
 ### Optimization Opportunities
 - D3.js visualization refreshes full grid on updates (could be incremental)
-- State fully persisted on every change (could batch writes)
+- State persisted on every change (database transactions are fast but frequent)
 - No caching of winner calculations (recalculated on demand)
-- No database (JSON file sufficient for single instance)
 
 ### Scalability Limitations
-- Single JSON file (not concurrent-safe at scale)
+- SQLite database (better than JSON, but still file-based)
 - Single Flask process (adequate for small to medium deployments)
 - All players in memory (acceptable for <100 players)
 - No distributed state (single machine only)
@@ -271,7 +269,7 @@ Game state saved to `game_state.json` with structure:
 4. Run server: `python app.py` or use launcher script
 
 ### Making Changes
-1. Edit relevant file (app.py, config.py, or index.html)
+1. Edit relevant file (app.py, config.py, database.py, or index.html)
 2. Server auto-reloads on file changes (debug mode)
 3. Test via browser UI or API calls
 4. Verify state persistence
@@ -280,7 +278,7 @@ Game state saved to `game_state.json` with structure:
 - Check browser console (F12) for JavaScript errors
 - Check terminal output for Flask errors
 - Review `logs/` directory if present
-- Check `game_state.json` for state validity
+- Check `game_state.db` using sqlite3 CLI
 
 ---
 
