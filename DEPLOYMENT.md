@@ -104,71 +104,41 @@ sudo iptables -L -n | grep 8080
 
 ## Production Deployment
 
-### Using Gunicorn
+Championship Squares uses Flask's built-in development server. Always start the application using the provided launcher scripts.
 
-For production, replace Flask's development server with Gunicorn:
+### Using Launcher Scripts (Recommended)
 
-**Install Gunicorn:**
+The provided launcher scripts handle virtual environment setup, dependency installation, and server startup.
+
+**Linux/macOS:**
 ```bash
-pip install gunicorn
+./start_server.sh
 ```
 
-**Run server:**
+**Windows:**
+```powershell
+.\start_server.ps1
+```
+
+These scripts:
+- Create virtual environment if needed
+- Install dependencies from requirements.txt
+- Activate virtual environment
+- Start Flask server on port 8080
+
+### Manual Flask Startup
+
+If you prefer to run Flask directly:
+
 ```bash
-gunicorn -w 4 -b 0.0.0.0:8080 app:app
+python app.py
 ```
 
-**Parameters:**
-- `-w 4` - Use 4 worker processes (adjust for your CPU cores)
-- `-b 0.0.0.0:8080` - Bind to all interfaces on port 8080
-- `app:app` - Load the Flask app
+This starts the server with configuration from `config.py` (port 8080, debug disabled).
 
-**Recommended settings for scalability:**
-```bash
-gunicorn \
-  -w 4 \
-  -b 0.0.0.0:8080 \
-  --timeout 120 \
-  --access-logfile - \
-  --error-logfile - \
-  app:app
-```
+### Running Behind Reverse Proxy (nginx)
 
-### Using systemd (Linux)
-
-Create systemd service file `/etc/systemd/system/championship-squares.service`:
-
-```ini
-[Unit]
-Description=Championship Squares
-After=network.target
-
-[Service]
-Type=notify
-User=www-data
-WorkingDirectory=/opt/championship-squares
-ExecStart=/opt/championship-squares/venv/bin/gunicorn \
-  -w 4 \
-  -b 0.0.0.0:8080 \
-  app:app
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Enable and start:**
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable championship-squares
-sudo systemctl start championship-squares
-sudo systemctl status championship-squares
-```
-
-### Reverse Proxy (nginx)
-
-Use nginx to proxy requests and handle SSL:
+For production with SSL and multiple servers, use nginx as a reverse proxy:
 
 **Nginx config** `/etc/nginx/sites-available/championship-squares`:
 
@@ -237,7 +207,7 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8080", "app:app"]
+CMD ["python", "app.py"]
 ```
 
 ### Build and Run
@@ -285,7 +255,7 @@ docker-compose up -d
 1. **Install Heroku CLI**
 2. **Create Procfile:**
    ```
-   web: gunicorn -w 4 -b 0.0.0.0:$PORT app:app
+   web: python app.py
    ```
 3. **Create app and deploy:**
    ```bash
@@ -298,14 +268,14 @@ docker-compose up -d
 1. Launch Ubuntu 20.04 instance
 2. Install Python 3.9+
 3. Clone repository
-4. Use systemd service (see above)
+4. Run launcher script: `./start_server.sh`
 5. Attach security group allowing ports 80, 443, 8080
 
 ### DigitalOcean App Platform
 
 1. Connect GitHub repository
 2. Auto-detect Python
-3. Set run command: `gunicorn -w 4 -b 0.0.0.0:8080 app:app`
+3. Set run command: `python app.py`
 4. Configure environment (optional)
 5. Deploy
 
@@ -360,15 +330,21 @@ Game state stored in `game_state.json`. Backup strategies:
 
 ### Application Logs
 
-Redirect to file:
+Flask logs server requests and errors to the terminal. To capture logs to a file:
 
+**Linux/macOS:**
 ```bash
-gunicorn \
-  -w 4 \
-  -b 0.0.0.0:8080 \
-  --access-logfile /var/log/championship-squares/access.log \
-  --error-logfile /var/log/championship-squares/error.log \
-  app:app
+./start_server.sh > championship-squares.log 2>&1 &
+```
+
+**Windows (PowerShell):**
+```powershell
+.\start_server.ps1 | Tee-Object -FilePath championship-squares.log
+```
+
+Or redirect manually:
+```bash
+python app.py > /var/log/championship-squares/app.log 2>&1
 ```
 
 ### Health Check Endpoint
@@ -398,16 +374,22 @@ No built-in metrics. For production monitoring, consider:
 
 ## Performance Tuning
 
-### Gunicorn Workers
+### Flask Configuration
 
-Calculate optimal workers:
-```
-Workers = (2 × CPU cores) + 1
+Flask's development server is adequate for small to medium deployments. For basic tuning:
+
+**In config.py:**
+```python
+self.config = {
+    'debug': False,           # Always False in production
+    'max_players': 12,        # Increase if needed
+}
 ```
 
-Example (4 cores):
+**Environment variables:**
 ```bash
-gunicorn -w 9 -b 0.0.0.0:8080 app:app
+FLASK_ENV=production
+LITE_MODE=1  # Disable animations for better performance
 ```
 
 ### Memory Optimization
@@ -416,10 +398,16 @@ Monitor memory per process:
 
 ```bash
 # Current processes
-ps aux | grep gunicorn
+ps aux | grep python
 
-# Set memory limit (systemd)
-MemoryLimit=512M  # In service file
+# Check resource usage
+top -p $(pgrep -f "python app.py")
+```
+
+Flask typically uses 50-100 MB per instance. Enable lite mode for reduced memory:
+
+```bash
+LITE_MODE=1 ./start_server.sh
 ```
 
 ### Caching Headers
@@ -487,7 +475,8 @@ lsof -i :8080
 kill -9 <PID>
 
 # Or use different port
-gunicorn -b 0.0.0.0:9000 app:app
+# Edit config.py: 'port': 9000
+python app.py
 ```
 
 ### Permission Denied
@@ -505,7 +494,7 @@ ls -la /opt/championship-squares
 
 ```bash
 # Verify server running
-ps aux | grep gunicorn
+ps aux | grep python
 
 # Check firewall
 sudo ufw status
@@ -515,11 +504,11 @@ sudo ufw allow 8080
 ### Slow Performance
 
 ```bash
-# Increase workers
-gunicorn -w 8 -b 0.0.0.0:8080 app:app
+# Enable lite mode for faster rendering
+LITE_MODE=1 ./start_server.sh
 
-# Use lite mode for testing
-LITE_MODE=1 gunicorn -w 4 -b 0.0.0.0:8080 app:app
+# Check system resources
+free -h
 ```
 
 ---
@@ -585,7 +574,6 @@ Current design (JSON file storage) limited to:
 
 To scale beyond current limits:
 1. Migrate to database (PostgreSQL/MongoDB)
-2. Use application server (Gunicorn/uWSGI)
-3. Add caching layer (Redis)
-4. Load balance with nginx/HAProxy
-5. Consider microservices for game instances
+2. Add caching layer (Redis)
+3. Load balance with nginx/HAProxy
+4. Consider microservices for game instances

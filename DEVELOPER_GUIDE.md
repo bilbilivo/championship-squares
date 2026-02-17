@@ -256,7 +256,7 @@ Game state saved to `game_state.json` with structure:
 
 ### Scalability Limitations
 - Single JSON file (not concurrent-safe at scale)
-- Single Flask process (use gunicorn for production)
+- Single Flask process (adequate for small to medium deployments)
 - All players in memory (acceptable for <100 players)
 - No distributed state (single machine only)
 
