@@ -254,12 +254,12 @@ def generate_biased_squares(max_score):
     total_available = (max_score + 1) * (max_score + 1)
 
     # At each step x, try to place several squares within [0..x, 0..x].
-    # The number of attempts per step scales with x so we fill the grid.
+    # picks scales with x so we generate enough biased squares even on small grids.
     for x in range(max_score + 1):
-        picks = max(2, (x + 1) // 2)  # more picks as range grows
+        picks = max(3, x + 1)
         for _ in range(picks):
             attempts = 0
-            while attempts < 10:
+            while attempts < 20:
                 r = random.randint(0, x)
                 c = random.randint(0, x)
                 if (r, c) not in used:
@@ -281,7 +281,8 @@ def generate_biased_squares(max_score):
 
 
 def place_bets_for_players(players, sport="nfl"):
-    """Place bets for all players using an expanding-range square selection."""
+    """Place bets using a draft-style round-robin: cycle through players
+    at each multiplier tier, starting from the lowest."""
     print("Placing bets for all players...")
 
     sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
@@ -293,35 +294,38 @@ def place_bets_for_players(players, sport="nfl"):
     all_squares = generate_biased_squares(max_score)
 
     square_index = 0
+    # Track per-player bet counts at each multiplier level
+    bet_counts = {pid: [0] * len(multipliers) for pid in players}
 
-    for player_id in players:
-        print(f"  Placing bets for player {player_id}...")
-        bet_counts = [0] * len(multipliers)
+    # Outer loop: multipliers from lowest to highest
+    for mult_idx, (multiplier, num_squares) in enumerate(zip(multipliers, bet_distribution)):
+        if num_squares == 0:
+            continue
+        if not set_multiplier(multiplier):
+            print(f"  ERROR: Failed to set {multiplier}x multiplier")
+            continue
 
-        # Place bets according to distribution
-        for multiplier_idx, (multiplier, num_squares) in enumerate(zip(multipliers, bet_distribution)):
-            if num_squares == 0:
-                continue
-            if not set_multiplier(multiplier):
-                print(f"    ERROR: Failed to set {multiplier}x multiplier")
-                continue
+        print(f"  Round-robin at {multiplier}x ({num_squares} squares each)...")
 
-            for _ in range(num_squares):
+        # Each player places one square per round, cycling through all players
+        for round_num in range(num_squares):
+            for player_id in players:
                 if square_index < len(all_squares):
                     row, col = all_squares[square_index]
                     if place_bet(player_id, row, col):
                         square_index += 1
-                        bet_counts[multiplier_idx] += 1
+                        bet_counts[player_id][mult_idx] += 1
                     else:
-                        print(f"    Failed to place {multiplier}x bet at ({row}, {col})")
+                        print(f"    Failed to place {multiplier}x bet for {player_id} at ({row}, {col})")
 
-        # Print summary for this player
+    # Print per-player summaries
+    for player_id in players:
         bet_parts = []
         for i in range(len(multipliers)):
             if bet_distribution[i] > 0:
-                bet_parts.append(f"{bet_counts[i]}@{multipliers[i]}x({bet_counts[i] * multipliers[i]})")
-        total_tokens = sum(bet_counts[i] * multipliers[i] for i in range(len(multipliers)))
-        total_squares = sum(bet_counts)
+                bet_parts.append(f"{bet_counts[player_id][i]}@{multipliers[i]}x({bet_counts[player_id][i] * multipliers[i]})")
+        total_tokens = sum(bet_counts[player_id][i] * multipliers[i] for i in range(len(multipliers)))
+        total_squares = sum(bet_counts[player_id])
         print(f"    {player_id}: {' + '.join(bet_parts)} = {total_squares} squares ({total_tokens} tokens)")
 
     print(f"  Total squares filled: {square_index}")

@@ -19,6 +19,8 @@ class GameState:
 
     def reset_state(self):
         """Reset all game state to initial values"""
+        self.sport = 'nfl'  # Default sport
+        config.update_sport(self.sport)  # Sync config so grid size matches
         max_score = config.config['max_score']
         max_players = config.config['max_players']
         self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
@@ -27,7 +29,6 @@ class GameState:
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
         self.available_indices = list(range(max_players))
-        self.sport = 'nfl'  # Add default sport
         self.current_multiplier = 1  # Default multiplier
 
     def save_state(self):
@@ -554,12 +555,17 @@ def update_sport():
             # Reset multiplier to 1x
             game_state.current_multiplier = 1
 
+            # Rebuild the grid to match the new sport's max_score
+            new_max = config.config['max_score']
+            game_state.squares = [['' for _ in range(new_max + 1)] for _ in range(new_max + 1)]
+            game_state.square_multipliers = {}
+
             # Update all existing players to have the new sport's token total
+            # Grid was cleared so all bets are gone — give full tokens
             tokens_per_player = config.total_tokens.get(sport, 40)
             for player_initial in game_state.players:
-                # Reset each player's tokens to the sport total minus their current bets
-                current_bets = game_state.players[player_initial].get('bets', 0)
-                game_state.players[player_initial]['tokens'] = tokens_per_player - current_bets
+                game_state.players[player_initial]['bets'] = 0
+                game_state.players[player_initial]['tokens'] = tokens_per_player
 
             game_state.save_state()
 
