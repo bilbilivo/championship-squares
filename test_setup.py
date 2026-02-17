@@ -17,6 +17,7 @@ import requests
 import random
 import string
 import sys
+import time
 from config import config
 
 BASE_URL = "http://localhost:8080"
@@ -123,6 +124,8 @@ def set_sport(sport="nfl"):
     if response.status_code == 200:
         data = response.json()
         print(f"  Sport set to {sport.upper()}, max_score: {data.get('max_score')}")
+        # Small delay to ensure frontend theme updates
+        time.sleep(0.5)
     else:
         print(f"  Failed to set sport: {response.text}")
         return False
@@ -143,6 +146,43 @@ def set_teams(sport="nfl"):
         print(f"  Failed to set teams: {response.text}")
         return False
     return True
+
+
+def set_final_scores(sport="nfl"):
+    """Set non-equal final scores with bias toward lower scores."""
+    sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
+    max_score = sport_cfg['max_score']
+    
+    # Define typical score ranges by sport
+    score_ranges = {
+        'nfl': (17, 35),      # Typical NFL scores
+        'nhl': (2, 6),        # Typical hockey scores
+        'mlb': (3, 8),        # Typical baseball scores
+        'olym': (2, 6),       # Olympic hockey scores
+    }
+    
+    min_score, max_typical = score_ranges.get(sport, (3, max_score // 3))
+    
+    # Generate two different scores within typical range
+    left_score = random.randint(min_score, max_typical)
+    right_score = random.randint(min_score, max_typical)
+    
+    # Ensure scores are different
+    while right_score == left_score:
+        right_score = random.randint(min_score, max_typical)
+    
+    print(f"Setting final scores: {left_score} - {right_score}...")
+    response = requests.post(f"{BASE_URL}/api/scores", json={
+        "left": left_score,
+        "right": right_score
+    })
+    
+    if response.status_code == 200:
+        print(f"  Final scores set: {left_score} (away) - {right_score} (home)")
+        return left_score, right_score
+    else:
+        print(f"  Failed to set scores: {response.text}")
+        return None, None
 
 
 def add_players(count=12):
@@ -202,7 +242,8 @@ def place_bet(player_id, row, col):
 
 
 def place_bets_for_players(players, sport="nfl"):
-    """Place bets for all players based on sport configuration."""
+    """Place bets for all players based on sport configuration.
+    Uses incremental score ranges - starts with lower scores and gradually expands."""
     print("Placing bets for all players...")
     
     # Get sport config
@@ -211,10 +252,34 @@ def place_bets_for_players(players, sport="nfl"):
     multipliers = sport_cfg['multipliers']
     bet_distribution = sport_cfg['bet_distribution']
     
-    # Generate all possible squares
-    all_squares = [(r, c) for r in range(max_score + 1) for c in range(max_score + 1)]
+    # Calculate total squares that will be filled
+    total_squares_per_player = sum(bet_distribution)
+    total_squares_to_fill = len(players) * total_squares_per_player
+    
+    # Generate squares with incremental score range preference
+    # Start with a small range and gradually expand as we place more bets
+    all_squares = []
+    
+    # Define initial range (lower scores are more common in real games)
+    initial_range = min(max_score // 3, 10)  # Start with roughly 1/3 of max or 10
+    
+    # Generate squares in expanding circles from lower scores
+    for expansion_factor in range(1, 20):  # Multiple passes with expanding ranges
+        current_max = min(initial_range * expansion_factor, max_score)
+        
+        # Add squares within current range that haven't been added yet
+        for r in range(current_max + 1):
+            for c in range(current_max + 1):
+                if (r, c) not in all_squares:
+                    all_squares.append((r, c))
+        
+        # Stop when we have enough squares
+        if len(all_squares) >= total_squares_to_fill + 50:  # Add buffer
+            break
+    
+    # Shuffle to randomize within the biased distribution
     random.shuffle(all_squares)
-
+    
     square_index = 0
 
     for player_id in players:
@@ -244,6 +309,7 @@ def place_bets_for_players(players, sport="nfl"):
         print(f"    {player_id}: {' + '.join(bet_summary_parts)} = {total_squares} squares ({total_tokens} tokens)")
 
     print(f"  Total squares filled: {square_index}")
+    print(f"  Score range bias: Lower scores preferred (incremental expansion used)")
 
 
 def main(sport="nfl"):
@@ -290,6 +356,10 @@ def main(sport="nfl"):
     # Step 5: Place bets
     place_bets_for_players(players, sport)
 
+    # Step 6: Set final scores (non-equal, biased toward lower scores)
+    print()
+    left_score, right_score = set_final_scores(sport)
+
     # Calculate totals
     total_squares = sum(sport_cfg['bet_distribution'])
     total_tokens_per_player = sum(sport_cfg['bet_distribution'][i] * sport_cfg['multipliers'][i] 
@@ -303,6 +373,8 @@ def main(sport="nfl"):
     print(f"  - Squares per player: {total_squares}")
     print(f"  - Tokens per player: {total_tokens_per_player}")
     print(f"  - Total bets: {len(players) * total_squares} squares ({len(players) * total_tokens_per_player} tokens)")
+    if left_score and right_score:
+        print(f"  - Final score: {left_score} - {right_score}")
     print("=" * 50)
 
 
