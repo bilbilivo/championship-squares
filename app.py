@@ -9,6 +9,14 @@ LITE_MODE = os.environ.get('LITE_MODE', '0') == '1'
 app = Flask(__name__, 
            template_folder=str(config.template_dir),
            static_folder=str(config.static_dir))
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
 
 class GameState:
     def __init__(self):
@@ -263,7 +271,8 @@ def index():
     try:
         return render_template('index.html', lite_mode=LITE_MODE)
     except Exception as e:
-        return f"Error loading template: {e}", 500
+        print(f"Error loading template: {e}")
+        return "Error loading page", 500
 
 @app.route('/api/reset', methods=['POST'])
 def reset_game():
@@ -408,6 +417,10 @@ def update_square():
         row = data.get('row')
         col = data.get('col')
         value = data.get('value')
+
+        # Validate row and col are integers
+        if not isinstance(row, int) or not isinstance(col, int):
+            return jsonify({'error': 'Invalid input: row and col must be integers'}), 400
 
         if not (0 <= row <= config.config['max_score'] and 0 <= col <= config.config['max_score']):
             return jsonify({'error': 'Invalid input'}), 400

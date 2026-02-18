@@ -1,55 +1,58 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to Championship Squares will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
-
-## [1.0.0] - 2026-02-17
+## [v2026.02] - 2026-02-18
 
 ### Added
-- Initial release of Championship Squares web application
-- Flask-based REST API backend with SQLite database persistence
-- Interactive web-based grid interface with D3.js visualization
-- Support for multiple sports: NFL, NHL, MLB, and Olympics
-- Platform-aware configuration system for cross-platform compatibility
-- Automatic launcher scripts for Unix/macOS (`start_server.sh`) and Windows (`start_server.ps1`)
-- Player management system with token-based betting
-- Real-time multiplier system for variable bet values
-- Team selection with comprehensive sport-specific team lists
-- Score tracking and winner determination
-- Lite mode toggle for reduced visual effects
-- Desktop shortcut creation via launcher setup action
-- Comprehensive documentation:
-  - API documentation for all endpoints
-  - Configuration guide for sport-specific settings
-  - Deployment guide with Docker support
-  - Developer guide with architecture overview
-  - Game rules and mechanics documentation
-  - Testing guide with pytest configuration
-  - Troubleshooting guide for common issues
-- GitHub Actions CI/CD pipeline
-- Test suite with pytest:
-  - API endpoint tests
-  - Game state tests
-  - Smoke tests for basic functionality
-  - Test setup script (`generate_fake_game.py`) for automated game creation with:
-    - Support for all sports (NFL, NHL, MLB, Olympics)
-    - Configurable player count and token distribution
-    - Biased square generation favoring lower scores
-    - Automated team selection and score setting
-    - Server health checks and error handling
+- SQLite database persistence layer, replacing JSON file storage (`database.py`)
+- Comprehensive test suite with pytest achieving 80%+ code coverage
+- CI/CD pipeline via GitHub Actions (lint, test across Python 3.8/3.12, dependency audit)
+- Full documentation suite: API reference, configuration guide, deployment guide, developer guide, game rules, testing procedures, and troubleshooting
+- Development dependency manifest (`requirements-dev.txt`)
+- Test data generator for simulating full games (`tests/generate_fake_game.py`)
+- Flask `SECRET_KEY` configuration via `FLASK_SECRET_KEY` environment variable
+- Security response headers (`X-Content-Type-Options`, `X-Frame-Options`)
 
-### Technical Details
-- Python 3.7+ requirement
-- Flask web framework
-- SQLite database for state persistence
-- Vanilla JavaScript frontend with D3.js
-- Cross-platform support (Linux, macOS, Windows)
-- Virtual environment auto-setup on first run
-- Automatic browser launch on server start
+### Changed
+- Refactored frontend: extracted CSS and JavaScript from monolithic `index.html` into `static/css/style.css` and `static/js/game.js`
+- Implemented draft-style round-robin betting system
+- Moved `requests` package from production to development dependencies
+- Improved `.gitignore` with broader coverage for Python artifacts and sensitive files
 
-[Unreleased]: https://github.com/bilbilivo/championship-squares/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/bilbilivo/championship-squares/releases/tag/v1.0.0
+### Fixed
+- Grid desynchronization when switching sports mid-game
+- Hardened `/api/squares` endpoint with explicit integer type validation for row/col
+- Prevented error message information leaks on template loading failures
+- Eliminated XSS vector in celebration overlay by using `textContent` instead of `innerHTML` for player names
+- Removed debug `console.log` statements from production JavaScript
+- Removed `.coverage` binary file from version control
+
+### Security
+- Full security audit of codebase and git history (no secrets or credentials found)
+- Added security response headers to all Flask responses
+- Added Flask secret key for defense-in-depth (configurable via environment variable)
+- Hardened input validation on square placement API
+- Removed unused production dependency (`requests`) to reduce attack surface
+
+## [v2026.01] - 2026-02-10
+
+### Added
+- Initial public release of Championship Squares
+- Multi-sport support: NFL, NHL, NBA, MLB, Olympics, FIFA
+- Interactive D3.js grid visualization with zoom and pan
+- Multiplier-based betting system with sport-specific token allocations
+- Winner calculation via Manhattan distance algorithm
+- Multi-winner support for ties at equal distance
+- End-game celebration with confetti, fireworks, and podium display
+- Lite mode for reduced visual effects on lower-performance devices
+- Desktop launcher scripts for Linux/macOS (`start_server.sh`) and Windows (`start_server.ps1`)
+- Automatic virtual environment creation and dependency installation on first run
+- Desktop shortcut creation (`.desktop` for Linux, `.lnk` for Windows)
+- Team selection with sport-specific team rosters and color themes
+- 8-bit retro visual theme with sport-specific color schemes
+
+[v2026.02]: https://github.com/bilbilivo/championship-squares/compare/v2026.01...v2026.02
+[v2026.01]: https://github.com/bilbilivo/championship-squares/releases/tag/v2026.01

@@ -369,22 +369,16 @@ function highlightWinner(winnerData) {
     d3.selectAll('.square').classed('winner-square', false);
 
     if (!winnerData) {
-        console.log('No winner to highlight (tie or no bets)');
         return; // No winner to highlight
     }
 
     // Convert to array if single winner
     const winners = Array.isArray(winnerData) ? winnerData : [winnerData];
 
-    console.log(`Highlighting ${winners.length} winner(s)`);
-
     // Process each winner
     winners.forEach((winner, index) => {
-        console.log(`  Winner ${index + 1}: ${winner.player} at (${winner.square.row},${winner.square.col}), distance=${winner.distance}`);
-
         // Highlight the path squares
         if (winner.path && winner.path.length > 0) {
-            console.log(`    Highlighting ${winner.path.length} path squares`);
             winner.path.forEach(square => {
                 const element = d3.select(`rect[data-row="${square.row}"][data-col="${square.col}"]`);
                 element.classed('winner-path', true);
@@ -1486,7 +1480,7 @@ function showCelebration(standings, winningTeam) {
         return `
             <div class="podium-entry ${isWinner ? 'winner' : 'other'}">
                 <span class="podium-rank">${currentRank}.</span>
-                <span class="podium-name">${playerName}</span>
+                <span class="podium-name" data-player-name="${playerName.replace(/"/g, '&quot;')}"></span>
                 <span class="podium-multiplier">${multiplierText}</span>
                 <span class="podium-score">${scoreText}</span>
                 <span class="podium-distance">${distanceText}</span>
@@ -1505,7 +1499,7 @@ function showCelebration(standings, winningTeam) {
             <div class="celebration-trophy"><img src="/static/trophy3.png" alt="Trophy"></div>
             <div class="celebration-winner-banner">
                 <div class="winner-label">WINNER</div>
-                <div class="winner-name">${winnerNames}</div>
+                <div class="winner-name" id="celebrationWinnerName"></div>
             </div>
             <div class="celebration-final-score">
                 <span class="final-score-team">${leftTeamCode}</span>
@@ -1526,6 +1520,12 @@ function showCelebration(standings, winningTeam) {
     `;
 
     document.body.appendChild(overlay);
+
+    // Set player names via textContent to prevent XSS
+    overlay.querySelector('#celebrationWinnerName').textContent = winnerNames;
+    overlay.querySelectorAll('.podium-name[data-player-name]').forEach(el => {
+        el.textContent = el.dataset.playerName;
+    });
 
     // Add confetti and fireworks - only winning team colors
     if (isLiteMode) {
