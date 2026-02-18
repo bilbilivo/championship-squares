@@ -1879,7 +1879,16 @@ function resetGame(isNewGame = false) {
                         document.body.appendChild(loadingOverlay);
 
                         try {
-                            // First update the sport
+                            // First reset the game (clears all state)
+                            const resetResponse = await fetch('/api/reset', {
+                                method: 'POST'
+                            });
+                            const resetData = await resetResponse.json();
+                            if (!resetData.success) {
+                                throw new Error('Failed to reset game');
+                            }
+
+                            // Then set the chosen sport (rebuilds grid, assigns tokens)
                             const sportResponse = await fetch('/api/sport', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1890,17 +1899,14 @@ function resetGame(isNewGame = false) {
                                 throw new Error('Failed to update sport');
                             }
 
-                            // Then reset the game
-                            const resetResponse = await fetch('/api/reset', {
-                                method: 'POST'
-                            });
-                            const resetData = await resetResponse.json();
-                            if (!resetData.success) {
-                                throw new Error('Failed to reset game');
-                            }
-
-                            // Update UI after both operations complete successfully
-                            setSportTheme(sport);
+                            // Update UI — skip the API call since we already set the sport above
+                            maxScore = sportData.max_score;
+                            availableMultipliers = sportData.available_multipliers || [1];
+                            multiplierLabels = sportData.multiplier_labels || [];
+                            tokensPerPlayer = sportData.tokens_per_player || 40;
+                            currentMultiplier = 1;
+                            setSportTheme(sport, true);
+                            updateMultiplierButtons();
                             players = {};
                             updatePlayerList();
                             document.getElementById('leftScore').textContent = '0';
