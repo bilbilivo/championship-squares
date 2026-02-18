@@ -6,7 +6,7 @@ Small web app to run a Championship Squares game. Works on Linux, macOS, and Win
 - Clone the repo and run the launcher. It creates the virtual environment and installs dependencies automatically on first run.
 
 **Requirements**
-- Python 3.7+
+- Python 3.10 or later
 - Web browser with JavaScript enabled
 
 Installation

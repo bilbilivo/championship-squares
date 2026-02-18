@@ -25,9 +25,17 @@ Championship Squares includes a test setup script (`test_setup.py`) that populat
 
 ### Prerequisites
 
-1. Server running: `python app.py` (or via launcher script)
-2. Python 3.7+ installed
-3. `requests` module installed (included in requirements.txt)
+1. **Virtual environment activated** (REQUIRED):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # Linux/macOS
+   # or
+   venv\Scripts\activate     # Windows
+   ```
+
+2. Server running: `python app.py` (or via launcher script)
+3. Python 3.10+ installed
+4. Test script will use the `requests` module from requirements-dev.txt
 
 ### Running the Script
 

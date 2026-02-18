@@ -4,6 +4,8 @@
 
 Championship Squares configuration is managed through `config.py`. Modify settings in this file to customize game parameters, sports, and server behavior.
 
+**Before modifying:** Ensure you're working in an activated virtual environment (see DEVELOPER_GUIDE.md for setup instructions).
+
 ---
 
 ## Server Configuration

@@ -9,13 +9,13 @@ Championship Squares is a lightweight Python Flask application suitable for runn
 ## System Requirements
 
 ### Minimum
-- Python 3.7+
+- Python 3.10 or later
 - 512 MB RAM
 - Single CPU core
 - 100 MB disk space
 
 ### Recommended
-- Python 3.9+
+- Python 3.10+
 - 2 GB RAM
 - 2+ CPU cores
 - 500 MB disk space (logs)
@@ -37,7 +37,7 @@ Championship Squares is a lightweight Python Flask application suitable for runn
    cd championship-squares
    ```
 
-2. **Create virtual environment:**
+2. **Create and activate virtual environment** (REQUIRED):
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # Linux/macOS
@@ -56,6 +56,8 @@ Championship Squares is a lightweight Python Flask application suitable for runn
    ```
 
 Server starts on `http://localhost:8080` (Windows/macOS) or network-accessible on Linux.
+
+**Important:** Always use a virtual environment to isolate project dependencies from your system Python. Never install dependencies globally with `pip install` directly on your system.
 
 ### Launcher Scripts
 

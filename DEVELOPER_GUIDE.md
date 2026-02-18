@@ -262,17 +262,23 @@ Tables:
 
 ## Development Workflow
 
-### Local Setup
+### Local Setup (Using Virtual Environment)
 1. Clone repository
-2. Create Python virtual environment
-3. Install dependencies: `pip install -r requirements.txt`
-4. Run server: `python app.py` or use launcher script
+2. Create Python virtual environment: `python3 -m venv venv`
+3. Activate virtual environment:
+   - **Linux/macOS:** `source venv/bin/activate`
+   - **Windows:** `venv\Scripts\activate`
+4. Install dependencies: `pip install -r requirements-dev.txt` (for development) or `pip install -r requirements.txt` (for production)
+5. Run server: `python app.py` or use launcher script
+
+**Important:** Always develop within the virtual environment. This isolates project dependencies from your system Python.
 
 ### Making Changes
-1. Edit relevant file (app.py, config.py, database.py, or index.html)
-2. Server auto-reloads on file changes (debug mode)
-3. Test via browser UI or API calls
-4. Verify state persistence
+1. Ensure virtual environment is activated (see Local Setup above)
+2. Edit relevant file (app.py, config.py, database.py, or index.html)
+3. Server auto-reloads on file changes (debug mode)
+4. Test via browser UI or API calls
+5. Verify state persistence
 
 ### Debugging
 - Check browser console (F12) for JavaScript errors
