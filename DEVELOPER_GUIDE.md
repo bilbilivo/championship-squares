@@ -155,6 +155,22 @@ In `templates/index.html`, add CSS variables for the new sport in the theme sect
 
 ---
 
+## Release Procedure
+
+Championship Squares follows a two-step release procedure:
+
+1. **Update the CHANGELOG.md**:
+   - Add a new entry summarizing the version, date, and major changes.
+   - Document the comparison link.
+2. **Create a Git tag** for the new version:
+   - Use `git tag -a vYYYY.MM -m "release notes"` for annotated tags
+   - Push the tag with `git push origin vYYYY.MM`
+3. **Publish a GitHub Release**:
+   - Use GitHub UI or `gh release create` to turn the tag into a release
+   - Attach detailed notes summarizing changes and provide comparison links (see CHANGELOG.md)
+
+---
+
 ## API Development
 
 ### Adding a New Endpoint

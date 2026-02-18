@@ -4,6 +4,30 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.03] - 2026-02-18
+
+### Changed
+- Raised minimum Python version from 3.7+ to 3.10+ across all documentation and CI
+- Updated development dependencies to latest versions:
+  - pytest: ^7.4.0
+  - pytest-cov: ^4.1.0
+  - flake8: ^6.1.0
+  - pip-audit: ^2.6.1
+- Updated GitHub Actions CI matrix to test on Python 3.10 and 3.12 (removed EOL Python 3.8 support)
+- Enhanced documentation:
+  - README.md, DEVELOPER_GUIDE.md, DEPLOYMENT.md, TESTING.md, CONFIGURATION.md with venv usage and Python 3.10+ requirement
+
+### Quality & Testing
+- All 93 unit tests passing
+- Code coverage: 86%
+- Linting passes flake8 checks
+- No security vulnerabilities detected via pip-audit
+
+### Release Procedure
+- Releases are created in two steps:
+  1. Create a git tag for the release (e.g. v2026.03)
+  2. Publish a GitHub Release from the tag, including release notes and comparison links
+
 ## [v2026.02] - 2026-02-18
 
 ### Added
@@ -54,5 +78,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.03]: https://github.com/bilbilivo/championship-squares/compare/v2026.02...v2026.03
 [v2026.02]: https://github.com/bilbilivo/championship-squares/compare/v2026.01...v2026.02
 [v2026.01]: https://github.com/bilbilivo/championship-squares/releases/tag/v2026.01
