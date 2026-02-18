@@ -5,9 +5,9 @@ Creates a fully loaded game with multiple players and random bets.
 
 Usage:
   python generate_fake_game.py              # defaults to NFL
-  python generate_fake_game.py nfl          # NFL game (12 players)
+  python generate_fake_game.py nfl          # NFL game (8 players)
   python generate_fake_game.py nhl          # NHL game (8 players)
-  python generate_fake_game.py mlb          # MLB game (10 players)
+  python generate_fake_game.py mlb          # MLB game (8 players)
   python generate_fake_game.py olym         # Olympics game (8 players)
 
 Each player gets a sport-specific token allocation distributed across multiplier tiers.
@@ -27,11 +27,11 @@ BASE_URL = "http://localhost:8080"
 # Token math: sum(bet_distribution[i] * multipliers[i]) must equal tokens_per_player
 SPORT_CONFIG = {
     'nfl': {
-        'players': 12,
+        'players': 8,
         'max_score': 70,
         'multipliers': [1, 2, 4, 8],
         'tokens_per_player': 40,
-        'bet_distribution': [26, 1, 1, 1],  # 26*1 + 1*2 + 1*4 + 1*8 = 40 tokens
+        'bet_distribution': [12, 6, 2, 1],  # 12*1 + 6*2 + 2*4 + 1*8 = 40 tokens
     },
     'nhl': {
         'players': 8,
@@ -41,11 +41,11 @@ SPORT_CONFIG = {
         'bet_distribution': [4, 2, 1],       # 4*1 + 2*2 + 1*4 = 12 tokens
     },
     'mlb': {
-        'players': 10,
+        'players': 8,
         'max_score': 30,
         'multipliers': [1, 2, 4, 8],
-        'tokens_per_player': 16,
-        'bet_distribution': [8, 2, 1, 0],    # 8*1 + 2*2 + 1*4 + 0*8 = 16 tokens
+        'tokens_per_player': 20,
+        'bet_distribution': [6, 1, 1, 1],    # 6*1 + 1*2 + 1*4 + 1*8 = 20 tokens
     },
     'olym': {
         'players': 8,

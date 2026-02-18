@@ -47,7 +47,7 @@ class Config:
             'nfl': 40,
             'nhl': 12,
             'nba': 48,
-            'mlb': 16,
+            'mlb': 20,
             'olym': 12,
             'fifa': 8
         }
