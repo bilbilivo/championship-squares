@@ -57,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File .\start_server.ps1 status
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 stop
 ```
 
-Both launchers support `--lite` / `--no-lite` flags to toggle reduced visual effects, and a `setup` action to create a desktop shortcut for double-click launching:
+Both launchers allow toggling reduced visual effects with the `--lite` or `--no-lite` flags. You can also use the `setup` action to create a desktop shortcut for easy launching.
 
 ```bash
 ./start_server.sh setup                                              # Unix / macOS
@@ -72,7 +72,7 @@ Files of interest
 - `config.py` — platform-aware configuration
 - `start_server.sh` — Unix/macOS launcher
 - `start_server.ps1` — Windows launcher
-- `requirements.txt` — Python dependencies
+- `pyproject.toml` — project metadata and dependencies
 
 License
 -------

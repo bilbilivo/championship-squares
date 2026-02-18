@@ -4,6 +4,23 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.04] - 2026-02-18
+
+### Changed
+- Migrated from `requirements.txt` / `requirements-dev.txt` to modern `pyproject.toml` for dependency management
+- Updated launchers (`start_server.sh` and `start_server.ps1`) to install from `pyproject.toml`
+- Updated README.md to reflect new project structure and remove references to deleted requirements files
+
+### Removed
+- `requirements.txt` — replaced by `pyproject.toml` project dependencies
+- `requirements-dev.txt` — replaced by `pyproject.toml` optional dev dependencies
+
+### Quality & Testing
+- All 93 unit tests passing
+- Code coverage: 86%
+- Linting passes flake8 checks
+- No security vulnerabilities detected via pip-audit
+
 ## [v2026.03] - 2026-02-18
 
 ### Changed
@@ -78,6 +95,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.04]: https://github.com/bilbilivo/championship-squares/compare/v2026.03...v2026.04
 [v2026.03]: https://github.com/bilbilivo/championship-squares/compare/v2026.02...v2026.03
 [v2026.02]: https://github.com/bilbilivo/championship-squares/compare/v2026.01...v2026.02
 [v2026.01]: https://github.com/bilbilivo/championship-squares/releases/tag/v2026.01
