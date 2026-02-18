@@ -1,7 +1,5 @@
-from flask import Flask, render_template, jsonify, request, send_from_directory
-import json
+from flask import Flask, render_template, jsonify, request
 import os
-from pathlib import Path
 from config import config
 from database import save_game_state as db_save_state, load_game_state as db_load_state, init_db
 
@@ -289,10 +287,17 @@ def update_scores():
         left_score = data.get('left', 0)
         right_score = data.get('right', 0)
         
-        # Validate scores
+        # Validate scores are integers
         if not (isinstance(left_score, int) and isinstance(right_score, int)):
             return jsonify({'error': 'Invalid score values'}), 400
-            
+
+        # Validate scores are within allowed range
+        max_score = config.config['max_score']
+        if left_score < 0 or left_score > max_score:
+            return jsonify({'error': f'Left score must be between 0 and {max_score}'}), 400
+        if right_score < 0 or right_score > max_score:
+            return jsonify({'error': f'Right score must be between 0 and {max_score}'}), 400
+
         # Update score state
         game_state.scores['left'] = left_score
         game_state.scores['right'] = right_score
@@ -462,6 +467,14 @@ def add_player():
         if not initial or not name:
             return jsonify({'error': 'Initial and name are required'}), 400
 
+        # Validate initial is exactly 1 alphabetic character
+        if len(initial) != 1 or not initial.isalpha():
+            return jsonify({'error': 'Initial must be a single letter (A-Z)'}), 400
+
+        # Validate name length
+        if len(name) > 8:
+            return jsonify({'error': 'Name must be 8 characters or less'}), 400
+
         if initial in game_state.players:
             return jsonify({'error': 'Initial already taken'}), 400
 
@@ -470,7 +483,7 @@ def add_player():
             
         try:
             player_index = game_state.get_next_player_index()
-        except Exception as e:
+        except Exception:
             return jsonify({'error': 'No more player slots available'}), 400
 
         # Get tokens per player for current sport

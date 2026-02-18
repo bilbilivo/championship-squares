@@ -68,10 +68,6 @@ class Config:
             'max_score': self.max_scores['nfl']
         }
 
-    def get_config(self):
-        """Get the current configuration"""
-        return self.config
-   
     def update_sport(self, sport):
         """Update max score based on selected sport"""
         if sport in self.max_scores:

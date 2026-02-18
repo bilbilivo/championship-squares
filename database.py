@@ -1,5 +1,4 @@
 import sqlite3
-from pathlib import Path
 from config import config
 
 DB_PATH = config.base_dir / 'game_state.db'
