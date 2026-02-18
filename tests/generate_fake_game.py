@@ -4,11 +4,11 @@ Test setup script for Championship Squares.
 Creates a fully loaded game with multiple players and random bets.
 
 Usage:
-  python test_setup.py              # defaults to NFL
-  python test_setup.py nfl          # NFL game (12 players)
-  python test_setup.py nhl          # NHL game (8 players)
-  python test_setup.py mlb          # MLB game (10 players)
-  python test_setup.py olym         # Olympics game (8 players)
+  python generate_fake_game.py              # defaults to NFL
+  python generate_fake_game.py nfl          # NFL game (12 players)
+  python generate_fake_game.py nhl          # NHL game (8 players)
+  python generate_fake_game.py mlb          # MLB game (10 players)
+  python generate_fake_game.py olym         # Olympics game (8 players)
 
 Each player gets a sport-specific token allocation distributed across multiplier tiers.
 Square placement biases toward lower scores using an expanding-range loop.
