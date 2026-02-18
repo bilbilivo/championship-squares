@@ -11,7 +11,7 @@ Usage:
   python generate_fake_game.py olym         # Olympics game (8 players)
 
 Each player gets a sport-specific token allocation distributed across multiplier tiers.
-Square placement biases toward lower scores using an expanding-range loop.
+Square placement is uniformly random from 0 up to the sport's typical high score (SCORE_RANGES max).
 """
 
 import requests
@@ -150,17 +150,12 @@ def set_teams(sport="nfl"):
 
 def set_final_scores(sport="nfl"):
     """Set non-equal final scores within typical ranges for the sport."""
-    # Define typical score ranges by sport
-    score_ranges = {
-        'nfl': (17, 35),      # Typical NFL final scores
-        'nhl': (2, 6),        # Typical hockey final scores
-        'mlb': (3, 8),        # Typical baseball final scores
-        'olym': (2, 6),       # Olympic hockey final scores
-    }
+    # Use module-level SCORE_RANGES for consistency
+    min_score, max_typical = SCORE_RANGES.get(sport, (3, SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])['max_score'] // 3))
 
     sport_cfg = SPORT_CONFIG.get(sport, SPORT_CONFIG['nfl'])
     max_score = sport_cfg['max_score']
-    min_score, max_typical = score_ranges.get(sport, (3, max_score // 3))
+
 
     # Generate two different scores within typical range
     left_score = random.randint(min_score, max_typical)
@@ -240,45 +235,17 @@ def place_bet(player_id, row, col):
     return response.status_code == 200
 
 
-def generate_biased_squares(max_score):
-    """Generate a list of squares biased toward lower scores.
-    
-    Uses an expanding-range loop: iterates x from 0 to max_score.
-    At each value of x, picks multiple random squares within the
-    (0..x, 0..x) range. Since x starts low and grows, early squares
-    cluster around low scores. As x increases the eligible area grows
-    and higher scores gradually appear.
-    """
-    squares = []
-    used = set()
-    total_available = (max_score + 1) * (max_score + 1)
 
-    # At each step x, try to place several squares within [0..x, 0..x].
-    # picks scales with x so we generate enough biased squares even on small grids.
-    for x in range(max_score + 1):
-        picks = max(3, x + 1)
-        for _ in range(picks):
-            attempts = 0
-            while attempts < 20:
-                r = random.randint(0, x)
-                c = random.randint(0, x)
-                if (r, c) not in used:
-                    squares.append((r, c))
-                    used.add((r, c))
-                    break
-                attempts += 1
 
-            if len(used) >= total_available:
-                return squares
 
-    # Fill any remaining squares in random order
-    remaining = [(r, c) for r in range(max_score + 1)
-                 for c in range(max_score + 1) if (r, c) not in used]
-    random.shuffle(remaining)
-    squares.extend(remaining)
 
-    return squares
-
+# Typical score ranges for all sports (module-level, shareable)
+SCORE_RANGES = {
+    'nfl': (17, 35),      # Typical NFL final scores
+    'nhl': (2, 6),        # Typical hockey final scores
+    'mlb': (3, 8),        # Typical baseball final scores
+    'olym': (2, 6),       # Olympic hockey final scores
+}
 
 def place_bets_for_players(players, sport="nfl"):
     """Place bets using a draft-style round-robin: cycle through players
@@ -290,12 +257,29 @@ def place_bets_for_players(players, sport="nfl"):
     multipliers = sport_cfg['multipliers']
     bet_distribution = sport_cfg['bet_distribution']
 
-    # Generate squares biased toward lower scores
-    all_squares = generate_biased_squares(max_score)
-
-    square_index = 0
+    # Use upper bound from SCORE_RANGES (if defined), else fall back to max_score
+    _, score_max = SCORE_RANGES.get(sport, (0, max_score))
+    squares_needed = sum(bet_distribution) * len(players)
+    # Generate Phase 1 (realistic range) unique squares
+    phase1_squares = [(r, c) for r in range(0, score_max + 1) for c in range(0, score_max + 1)]
+    random.shuffle(phase1_squares)
+    phase1_bucket = list(phase1_squares)
+    
+    # Generate Phase 2 (full grid) unique squares
+    phase2_squares = [(r, c) for r in range(0, max_score + 1) for c in range(0, max_score + 1)]
+    random.shuffle(phase2_squares)
+    phase2_bucket = list(phase2_squares)
+    
+    phase1_available = len(phase1_bucket)
+    phase2_available = len(phase2_bucket)
+    
+    # Track which squares have been claimed to avoid re-requesting them
+    claimed_squares = set()
+    
     # Track per-player bet counts at each multiplier level
     bet_counts = {pid: [0] * len(multipliers) for pid in players}
+    phase1_bets = 0
+    phase2_bets = 0
 
     # Outer loop: multipliers from lowest to highest
     for mult_idx, (multiplier, num_squares) in enumerate(zip(multipliers, bet_distribution)):
@@ -310,13 +294,45 @@ def place_bets_for_players(players, sport="nfl"):
         # Each player places one square per round, cycling through all players
         for round_num in range(num_squares):
             for player_id in players:
-                if square_index < len(all_squares):
-                    row, col = all_squares[square_index]
-                    if place_bet(player_id, row, col):
-                        square_index += 1
-                        bet_counts[player_id][mult_idx] += 1
+                # Keep retrying until this player gets their bet placed
+                placed = False
+                retries = 0
+                max_retries = 50
+                
+                while not placed and retries < max_retries:
+                    # Get a square: phase1 first, then phase2, then allow repeats
+                    if phase1_bucket:
+                        row, col = phase1_bucket.pop()
+                        this_phase = 1
+                    elif phase2_bucket:
+                        row, col = phase2_bucket.pop()
+                        this_phase = 2
                     else:
-                        print(f"    Failed to place {multiplier}x bet for {player_id} at ({row}, {col})")
+                        # All unique squares exhausted; allow repeats from full grid
+                        row = random.randint(0, max_score)
+                        col = random.randint(0, max_score)
+                        this_phase = 3  # Phase 3 = repeats
+                    
+                    # Skip if already claimed (to avoid re-requesting)
+                    square_key = (row, col)
+                    if square_key in claimed_squares:
+                        retries += 1
+                        continue
+                    
+                    # Try to place it
+                    if place_bet(player_id, row, col):
+                        claimed_squares.add(square_key)
+                        bet_counts[player_id][mult_idx] += 1
+                        if this_phase == 1:
+                            phase1_bets += 1
+                        else:
+                            phase2_bets += 1
+                        placed = True
+                    else:
+                        retries += 1
+                
+                if not placed:
+                    print(f"    ERROR: Could not place {multiplier}x bet for {player_id} after {max_retries} retries")
 
     # Print per-player summaries
     for player_id in players:
@@ -328,7 +344,10 @@ def place_bets_for_players(players, sport="nfl"):
         total_squares = sum(bet_counts[player_id])
         print(f"    {player_id}: {' + '.join(bet_parts)} = {total_squares} squares ({total_tokens} tokens)")
 
-    print(f"  Total squares filled: {square_index}")
+    print(f"  Total squares filled: {phase1_bets + phase2_bets} (Phase1: {phase1_bets}, Phase2: {phase2_bets})")
+    total_bets_expected = sum(bet_distribution) * len(players)
+    if (phase1_bets + phase2_bets) < total_bets_expected:
+        print(f"  WARNING: Only {phase1_bets + phase2_bets} of {total_bets_expected} bets placed!")
 
 
 def main(sport="nfl"):
@@ -379,7 +398,7 @@ def main(sport="nfl"):
     if len(players) < sport_cfg['players']:
         print(f"Warning: Only added {len(players)} players")
 
-    # Step 5: Place bets (biased toward lower scores)
+    # Step 5: Place bets (uniform random from 0 to SCORE_RANGES max)
     place_bets_for_players(players, sport)
 
     # Step 6: Set final scores (non-equal, within typical range)
@@ -391,6 +410,16 @@ def main(sport="nfl"):
     total_tokens_per_player = sum(sport_cfg['bet_distribution'][i] * sport_cfg['multipliers'][i]
                                   for i in range(len(sport_cfg['multipliers'])))
 
+    # Fetch teams from server for summary
+    try:
+        resp = requests.get(f"{BASE_URL}/api/state", timeout=3)
+        teams = resp.json().get('teams', {}) if resp.status_code == 200 else {}
+        left_team = teams.get('left', 'AWAY') or 'AWAY'
+        right_team = teams.get('right', 'HOME') or 'HOME'
+    except Exception:
+        left_team = 'AWAY'
+        right_team = 'HOME'
+
     print()
     print("=" * 50)
     print("Test setup complete!")
@@ -401,7 +430,7 @@ def main(sport="nfl"):
     print(f"  - Tokens per player: {total_tokens_per_player} / {sport_cfg['tokens_per_player']}")
     print(f"  - Total bets: {len(players) * total_squares} squares")
     if left_score and right_score:
-        print(f"  - Final score: {left_score} - {right_score}")
+        print(f"  - Final score: {left_team} {left_score} - {right_score} {right_team}")
     print("=" * 50)
 
 
