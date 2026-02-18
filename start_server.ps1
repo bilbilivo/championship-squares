@@ -57,7 +57,7 @@ function Ensure-Venv {
     }
     $venvPython = Join-Path $VenvDir "Scripts" "python.exe"
     Write-Host "Installing dependencies..."
-    & $venvPython -m pip install -r (Join-Path $ScriptDir "requirements.txt")
+    & $venvPython -m pip install $ScriptDir
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Failed to install dependencies."
         exit 1

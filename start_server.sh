@@ -75,7 +75,7 @@ activate_venv() {
         fi
 
         echo "Installing dependencies..."
-        if ! "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+        if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
             echo "ERROR: Failed to install dependencies."
             echo "Check your internet connection and try again."
             exit 1
@@ -103,7 +103,7 @@ activate_venv() {
         # Check if Flask is installed, reinstall dependencies if missing
         if ! "$PYTHON" -c "import flask" 2>/dev/null; then
             echo "Dependencies missing or incomplete. Reinstalling..."
-            if ! "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+            if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
                 echo "ERROR: Failed to install dependencies."
                 echo "Try removing the venv folder and running again: rm -rf venv"
                 exit 1
@@ -206,7 +206,7 @@ start() {
                 fi
             fi
 
-            if "$PYTHON" -m pip install -r "$SCRIPT_DIR/requirements.txt"; then
+            if "$PYTHON" -m pip install "$SCRIPT_DIR"; then
                 echo "Dependencies reinstalled. Retrying server start..."
 
                 # Retry starting the server
