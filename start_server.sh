@@ -12,10 +12,11 @@ fi
 set -euo pipefail
 
 # start_server.sh - simple launcher that activates the repository venv
-# Usage: ./start_server.sh [--lite|--no-lite] {start|stop|status|restart|setup}
-#        --lite     Enable lite mode (reduced visual effects for better performance)
-#        --no-lite  Disable lite mode
-#        setup      Create a desktop shortcut (.desktop) in this folder
+# Usage: ./start_server.sh [--lite|--no-lite] {start|stop|status|restart|install|uninstall}
+#        --lite      Enable lite mode (reduced visual effects for better performance)
+#        --no-lite   Disable lite mode
+#        install     Create a desktop shortcut (.desktop) and install to Applications menu
+#        uninstall   Remove the desktop shortcut from this folder and Applications menu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR" || exit 1
@@ -81,9 +82,9 @@ activate_venv() {
             exit 1
         fi
 
-        # Run setup automatically on first run
+        # Run install automatically on first run
         echo "Creating desktop shortcut..."
-        setup
+        install
     elif [ -f "$VENV_DIR/bin/activate" ]; then
         # shellcheck disable=SC1090
         . "$VENV_DIR/bin/activate"
@@ -281,7 +282,7 @@ status() {
     fi
 }
 
-setup() {
+install() {
     DESKTOP_FILE="$SCRIPT_DIR/championship-squares.desktop"
     ICON_FILE="$SCRIPT_DIR/icon.png"
     APPS_DIR="$HOME/.local/share/applications"
@@ -316,6 +317,34 @@ EOF
     fi
 }
 
+uninstall() {
+    DESKTOP_FILE="$SCRIPT_DIR/championship-squares.desktop"
+    APPS_DIR="$HOME/.local/share/applications"
+    APPS_DESKTOP="$APPS_DIR/championship-squares.desktop"
+    local removed=0
+
+    if [ -f "$APPS_DESKTOP" ]; then
+        rm -f "$APPS_DESKTOP"
+        echo "Removed from Applications menu: $APPS_DESKTOP"
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database "$APPS_DIR" 2>/dev/null || true
+        fi
+        removed=1
+    fi
+
+    if [ -f "$DESKTOP_FILE" ]; then
+        rm -f "$DESKTOP_FILE"
+        echo "Removed local shortcut: $DESKTOP_FILE"
+        removed=1
+    fi
+
+    if [ "$removed" -eq 0 ]; then
+        echo "No desktop shortcut found to remove."
+    else
+        echo "✓ Championship Squares has been removed from your Applications menu."
+    fi
+}
+
 ACTION="${1:-start}"
 case "$ACTION" in
     start)
@@ -335,14 +364,18 @@ case "$ACTION" in
         stop || true
         start
         ;;
-    setup)
-        setup
+    install)
+        install
+        ;;
+    uninstall)
+        uninstall
         ;;
     *)
-        echo "Usage: $0 [--lite|--no-lite] {start|stop|status|restart|setup}"
-        echo "       --lite     Enable lite mode (reduced visual effects)"
-        echo "       --no-lite  Disable lite mode (full visual effects)"
-        echo "       setup      Create a desktop shortcut (.desktop) in this folder"
+        echo "Usage: $0 [--lite|--no-lite] {start|stop|status|restart|install|uninstall}"
+        echo "       --lite      Enable lite mode (reduced visual effects)"
+        echo "       --no-lite   Disable lite mode (full visual effects)"
+        echo "       install     Create a desktop shortcut (.desktop) and install to Applications menu"
+        echo "       uninstall   Remove the desktop shortcut from this folder and Applications menu"
         exit 2
         ;;
 esac

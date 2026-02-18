@@ -35,7 +35,7 @@ Championship Squares includes a test setup script (`test_setup.py`) that populat
 
 2. Server running: `python app.py` (or via launcher script)
 3. Python 3.10+ installed
-4. Test script will use the `requests` module from requirements-dev.txt
+4. Test script will use the `requests` module from the `dev` extras in `pyproject.toml`
 
 ### Running the Script
 

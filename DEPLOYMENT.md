@@ -47,7 +47,7 @@ Championship Squares is a lightweight Python Flask application suitable for runn
 
 3. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install .
    ```
 
 4. **Run server:**
@@ -124,7 +124,7 @@ The provided launcher scripts handle virtual environment setup, dependency insta
 
 These scripts:
 - Create virtual environment if needed
-- Install dependencies from requirements.txt
+- Install dependencies from pyproject.toml
 - Activate virtual environment
 - Start Flask server on port 8080
 
@@ -198,12 +198,12 @@ Certbot automatically updates nginx config with SSL.
 Create `Dockerfile` in project root:
 
 ```dockerfile
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
 COPY . .
 
@@ -268,7 +268,7 @@ docker-compose up -d
 ### AWS EC2
 
 1. Launch Ubuntu 20.04 instance
-2. Install Python 3.9+
+2. Install Python 3.10+
 3. Clone repository
 4. Run launcher script: `./start_server.sh`
 5. Attach security group allowing ports 80, 443, 8080

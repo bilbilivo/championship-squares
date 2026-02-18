@@ -1,8 +1,9 @@
 # start_server.ps1 - Windows launcher for Championship Squares
-# Usage: powershell -ExecutionPolicy Bypass -File .\start_server.ps1 [--lite|--no-lite] {start|stop|status|restart|setup}
-#        --lite     Enable lite mode (reduced visual effects for better performance)
-#        --no-lite  Disable lite mode
-#        setup      Create a desktop shortcut (.lnk) in this folder
+# Usage: powershell -ExecutionPolicy Bypass -File .\start_server.ps1 [--lite|--no-lite] {start|stop|status|restart|install|uninstall}
+#        --lite      Enable lite mode (reduced visual effects for better performance)
+#        --no-lite   Disable lite mode
+#        install     Create a desktop shortcut (.lnk) in this folder
+#        uninstall   Remove the desktop shortcut from this folder
 
 # ---------------------------------------------------------------------------
 # Argument parsing  (no param() block so that $args is populated)
@@ -155,7 +156,7 @@ function Get-Status {
     Write-Host "Not running."
 }
 
-function New-Shortcut {
+function Install-Shortcut {
     $lnkPath  = Join-Path $ScriptDir "championship-squares.lnk"
     $pngPath  = Join-Path $ScriptDir "icon.png"
     $icoPath  = Join-Path $ScriptDir "icon.ico"
@@ -186,19 +187,44 @@ function New-Shortcut {
     Write-Host "Double-click it from this folder to launch the game."
 }
 
+function Uninstall-Shortcut {
+    $lnkPath = Join-Path $ScriptDir "championship-squares.lnk"
+    $icoPath = Join-Path $ScriptDir "icon.ico"
+    $removed = $false
+
+    if (Test-Path $lnkPath) {
+        Remove-Item -Path $lnkPath -Force
+        Write-Host "Removed shortcut: $lnkPath"
+        $removed = $true
+    }
+
+    if (Test-Path $icoPath) {
+        Remove-Item -Path $icoPath -Force
+        Write-Host "Removed icon cache: $icoPath"
+    }
+
+    if (-not $removed) {
+        Write-Host "No shortcut found to remove."
+    } else {
+        Write-Host "✓ Championship Squares shortcut has been removed."
+    }
+}
+
 # ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 switch ($Action) {
-    "start"   { Start-Server }
-    "stop"    { Stop-Server }
-    "status"  { Get-Status }
-    "restart" { Stop-Server; Start-Server }
-    "setup"   { New-Shortcut }
-    default   {
-        Write-Host "Usage: powershell -ExecutionPolicy Bypass -File .\start_server.ps1 [--lite|--no-lite] {start|stop|status|restart|setup}"
-        Write-Host "       --lite     Enable lite mode (reduced visual effects)"
-        Write-Host "       --no-lite  Disable lite mode (full visual effects)"
-        Write-Host "       setup      Create a desktop shortcut (.lnk) in this folder"
+    "start"     { Start-Server }
+    "stop"      { Stop-Server }
+    "status"    { Get-Status }
+    "restart"   { Stop-Server; Start-Server }
+    "install"   { Install-Shortcut }
+    "uninstall" { Uninstall-Shortcut }
+    default     {
+        Write-Host "Usage: powershell -ExecutionPolicy Bypass -File .\start_server.ps1 [--lite|--no-lite] {start|stop|status|restart|install|uninstall}"
+        Write-Host "       --lite      Enable lite mode (reduced visual effects)"
+        Write-Host "       --no-lite   Disable lite mode (full visual effects)"
+        Write-Host "       install     Create a desktop shortcut (.lnk) in this folder"
+        Write-Host "       uninstall   Remove the desktop shortcut from this folder"
     }
 }

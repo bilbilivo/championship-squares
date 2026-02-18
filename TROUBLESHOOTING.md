@@ -676,8 +676,8 @@ free -h  # or 'top' on macOS
 
 **To avoid most issues:**
 
-1. ✓ Use Python 3.7+ (stated requirement)
-2. ✓ Install all dependencies from requirements.txt
+1. ✓ Use Python 3.10+ (stated requirement)
+2. ✓ Install all dependencies via `pip install .` (or `pip install ".[dev]"` for dev)
 3. ✓ Run server before opening browser
 4. ✓ Use one browser tab at a time
 5. ✓ Refresh browser after making changes

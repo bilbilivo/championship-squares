@@ -47,6 +47,7 @@ Unix / macOS:
 ./start_server.sh start
 ./start_server.sh status
 ./start_server.sh stop
+./start_server.sh restart
 ```
 
 Windows (PowerShell):
@@ -55,16 +56,43 @@ Windows (PowerShell):
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 start
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 status
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 stop
-```
-
-Both launchers allow toggling reduced visual effects with the `--lite` or `--no-lite` flags. You can also use the `setup` action to create a desktop shortcut for easy launching.
-
-```bash
-./start_server.sh setup                                              # Unix / macOS
-powershell -ExecutionPolicy Bypass -File .\start_server.ps1 setup    # Windows
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 restart
 ```
 
 The app opens `http://localhost:8080` in your default browser automatically on start.
+
+Pass `--lite` to enable reduced visual effects (useful on slower machines), or `--no-lite` to
+explicitly disable it. The setting is persisted across restarts.
+
+```bash
+./start_server.sh --lite start
+```
+
+Desktop shortcut (install / uninstall)
+---------------------------------------
+
+The `install` action creates a desktop shortcut for one-click launching.
+
+**Unix / macOS** — creates a `.desktop` file in the project folder and installs it to
+`~/.local/share/applications` so the app appears in your Applications menu:
+
+```bash
+./start_server.sh install
+./start_server.sh uninstall
+```
+
+On first run the launcher runs `install` automatically, so the shortcut is created without
+having to call it manually.
+
+**Windows** — creates a `.lnk` shortcut in the project folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 install
+powershell -ExecutionPolicy Bypass -File .\start_server.ps1 uninstall
+```
+
+`uninstall` removes the shortcut (and, on Linux, the Applications menu entry). It does not
+remove the virtual environment or any game data.
 
 Files of interest
 -----------------

@@ -16,7 +16,7 @@ Championship Squares uses a modern client-server architecture:
 app.py                 # Main Flask application with API endpoints
 config.py              # Configuration and sport settings
 database.py            # Database access layer
-requirements.txt       # Python dependencies
+pyproject.toml         # Project metadata and dependencies
 templates/index.html   # Single-page HTML template with embedded CSS/JS
 static/               # Frontend assets (D3.js, fonts, images)
 logs/                 # Runtime logs
@@ -284,7 +284,7 @@ Tables:
 3. Activate virtual environment:
    - **Linux/macOS:** `source venv/bin/activate`
    - **Windows:** `venv\Scripts\activate`
-4. Install dependencies: `pip install -r requirements-dev.txt` (for development) or `pip install -r requirements.txt` (for production)
+4. Install dependencies: `pip install ".[dev]"` (for development) or `pip install .` (for production)
 5. Run server: `python app.py` or use launcher script
 
 **Important:** Always develop within the virtual environment. This isolates project dependencies from your system Python.
