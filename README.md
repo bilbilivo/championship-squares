@@ -106,6 +106,11 @@ License
 -------
 MIT
 
+Trademark Notice
+----------------
+Team names, league names, and related trademarks are the property of their respective owners.
+This project is not affiliated with or endorsed by any professional sports league or team.
+
 Contributing
 ------------
 Contributions welcome. Please open issues or submit pull requests.

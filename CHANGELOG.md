@@ -4,6 +4,51 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.06] - 2026-02-28
+
+### Added
+- Trademark notice to README.md clarifying no affiliation with professional sports leagues
+- Third-party license files: SIL OFL for Press Start 2P font (`static/fonts/OFL.txt`) and ISC for D3.js (`static/LICENSE-d3.txt`)
+- `THIRD_PARTY_NOTICES.md` documenting all third-party assets (D3.js, font, AI-generated images, Python dependencies)
+- SPDX license headers to all source files (`app.py`, `config.py`, `database.py`, `game.js`, `style.css`)
+
+### Fixed
+- Outdated MLB team names: "CLEVELAND INDIANS" → "CLEVELAND GUARDIANS", "FLORIDA MARLINS" → "MIAMI MARLINS"
+- Outdated NFL team name: "WASHINGTON REDSKINS" → "WASHINGTON COMMANDERS"
+
+### Changed
+- Bumped version to `2026.06`
+- Updated `.gitignore`: removed stale entries from another project, added `.claude/` and `logs/`
+- Rewrote git history to remove corporate email address from all commits and tags
+
+### Removed
+- Dead code: unused Python imports in `conftest.py` and `generate_fake_game.py`
+- Unused CSS classes (~130 lines): `.team-vs`, `.tokens-display`, `.base-overlay`, `.generic-prompt`, `.overlay-*`, `.axis-label`, `.team-name.vertical`, duplicate `.square` rule
+- Commented-out JavaScript code in `game.js`
+- Stale remote and local branches (`copilot/update-change-log-md`, `feature/multiplier-max-bets`, `winner`)
+
+### Quality & Testing
+- All 93 unit tests passing
+- Code coverage: 86%
+- Linting passes flake8 checks
+- No security vulnerabilities detected via pip-audit
+
+## [v2026.05] - 2026-02-22
+
+### Added
+- Desktop shortcut install/uninstall support documented in README.md for both Unix/macOS and Windows
+
+### Changed
+- Updated README.md with full install/uninstall details and platform-specific launcher instructions
+- Refactored square placement logic to use uniform randomness; introduced `SCORE_RANGES` for sport-specific typical scores
+- Aligned MLB token allocation to 20; standardized test setup to 8 players
+
+### Quality & Testing
+- All 93 unit tests passing
+- Code coverage: 86%
+- Linting passes flake8 checks
+- No security vulnerabilities detected via pip-audit
+
 ## [v2026.04] - 2026-02-18
 
 ### Changed
@@ -95,6 +140,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.06]: https://github.com/bilbilivo/championship-squares/compare/v2026.05...v2026.06
+[v2026.05]: https://github.com/bilbilivo/championship-squares/compare/v2026.04...v2026.05
 [v2026.04]: https://github.com/bilbilivo/championship-squares/compare/v2026.03...v2026.04
 [v2026.03]: https://github.com/bilbilivo/championship-squares/compare/v2026.02...v2026.03
 [v2026.02]: https://github.com/bilbilivo/championship-squares/compare/v2026.01...v2026.02
