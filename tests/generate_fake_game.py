@@ -18,7 +18,6 @@ import requests
 import random
 import string
 import sys
-import time
 
 BASE_URL = "http://localhost:8080"
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2025 Stephane Belliveau
+
 // Initialize variables
 let zoomLevel = 1;
 const baseSize = 40;
@@ -21,9 +24,6 @@ const height = gridContainer.clientHeight;
 
 // Get color from index using d3's color scale
 const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-// const playerColorScale = d3.scaleOrdinal(d3.schemeObservable10);
-// const playerColorScale = d3.scaleOrdinal(d3.schemeTableau10);
-// const playerColorScale = d3.scaleOrdinal(d3.schemePaired);
 
 // Modify the setSportTheme function to have an option to skip the API call
 function setSportTheme(sport, skipAPICall = false) {
@@ -225,8 +225,7 @@ const zoom = d3.zoom()
         updateAxesPositions(clampedTransform);
         zoomLevel = transform.k;
         
-        // Update all text sizes
-        // updateTextSizes(transform.k);
+        // Update all text sizes (reserved for future use)
     });
 svg.call(zoom);
 
@@ -324,12 +323,8 @@ function populateTeamSelects() {
     leftSelect.innerHTML = '<option value="">SELECT AWAY TEAM</option>';
     rightSelect.innerHTML = '<option value="">SELECT HOME TEAM</option>';
     
-	// Get all teams and sort alphabetically
-    // const allTeams = Object.entries(getCurrentTeams())
-    //     .sort((a, b) => a[1].name.localeCompare(b[1].name));
-    
 	const allTeams = Object.entries(getCurrentTeams())
-    .sort((a, b) => a[0] - b[0]); // Sort by numeric team ID
+        .sort((a, b) => a[0] - b[0]); // Sort by numeric team ID
 
 	
     // Add all teams to both selects
@@ -566,7 +561,7 @@ const NFL_TEAMS = {
     "SF": { name: "SAN FRANCISCO 49ERS", colors: ["#AA0000", "#B3995D"] },
     "TB": { name: "TAMPA BAY BUCCANEERS", colors: ["#D50A0A", "#34302B"] },
     "TEN": { name: "TENNESSEE TITANS", colors: ["#0C2340", "#4B92DB"] },
-    "WAS": { name: "WASHINGTON REDSKINS", colors: ["#773141", "#FFB612"] }
+    "WAS": { name: "WASHINGTON COMMANDERS", colors: ["#773141", "#FFB612"] }
 };
 
 // NHL Teams with primary and secondary colors

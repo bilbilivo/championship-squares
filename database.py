@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Stephane Belliveau
 import sqlite3
 from config import config
 

@@ -5,9 +5,7 @@ Provides a fresh Flask test client and isolated GameState for each test,
 using a temporary database so tests never touch production data.
 """
 
-import os
 import sys
-import tempfile
 import pytest
 from pathlib import Path
 

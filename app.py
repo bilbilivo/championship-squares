@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Stephane Belliveau
 from flask import Flask, render_template, jsonify, request
 import os
 from config import config
