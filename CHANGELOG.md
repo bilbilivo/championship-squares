@@ -4,6 +4,18 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.08] - 2026-03-01
+
+### Fixed
+- Resolve `pyproject.toml` build errors: deprecated `license` TOML table syntax → modern SPDX string format
+- Add explicit package discovery config to prevent setuptools from auto-discovering `static/` and `templates/` as packages
+- Upgrade Flask 3.1.2 → 3.1.3 to resolve CVE-2026-27205
+- Bump setuptools requirement to >=77 for modern build configuration support
+
+### Quality & Testing
+- All 93 unit tests passing
+- CI pipeline fully green (lint, tests on Python 3.10/3.12, dependency audit)
+
 ## [v2026.07] - 2026-02-28
 
 ### Added
@@ -149,6 +161,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.08]: https://github.com/bilbilivo/championship-squares/compare/v2026.07...v2026.08
 [v2026.07]: https://github.com/bilbilivo/championship-squares/compare/v2026.06...v2026.07
 [v2026.06]: https://github.com/bilbilivo/championship-squares/compare/v2026.05...v2026.06
 [v2026.05]: https://github.com/bilbilivo/championship-squares/compare/v2026.04...v2026.05
