@@ -17,3 +17,5 @@ server.log
 championship-squares.desktop
 championship-squares.lnk
 icon.ico
+build/
+*.egg-info/
