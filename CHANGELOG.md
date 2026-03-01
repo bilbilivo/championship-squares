@@ -4,6 +4,15 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.07] - 2026-02-28
+
+### Added
+- GitHub Sponsor button via `.github/FUNDING.yml` (PayPal)
+- Support section with PayPal donate badge in README.md
+
+### Quality & Testing
+- All 93 unit tests passing
+
 ## [v2026.06] - 2026-02-28
 
 ### Added
@@ -140,6 +149,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.07]: https://github.com/bilbilivo/championship-squares/compare/v2026.06...v2026.07
 [v2026.06]: https://github.com/bilbilivo/championship-squares/compare/v2026.05...v2026.06
 [v2026.05]: https://github.com/bilbilivo/championship-squares/compare/v2026.04...v2026.05
 [v2026.04]: https://github.com/bilbilivo/championship-squares/compare/v2026.03...v2026.04
