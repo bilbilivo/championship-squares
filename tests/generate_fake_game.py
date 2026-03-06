@@ -83,12 +83,34 @@ TEAMS = {
     ]
 }
 
-# Random player names (8 chars max)
+# Random player names (8 chars max) — one per letter A-Z
 PLAYER_NAMES = [
-    "MIKE", "SARAH", "JOHN", "EMMA", "ALEX", "LISA",
-    "CHRIS", "KATE", "DAVE", "AMY", "NICK", "JESS",
-    "TOM", "ANNA", "STEVE", "MARY", "PAUL", "LUCY",
-    "MARK", "JANE", "PETE", "ROSE", "BILL", "NINA"
+    "ALEX",  # A
+    "BILL",  # B (requested)
+    "CHRIS", # C
+    "DAVE",  # D (requested)
+    "ERIC",  # E (requested)
+    "FRED",  # F (requested)
+    "GARY",  # G
+    "HANK",  # H
+    "IAN",   # I
+    "JAMES", # J 
+    "KATE",  # K
+    "LUCY",  # L
+    "MARK",  # M
+    "NICK",  # N
+    "OLI",   # O (requested)
+    "PETE",  # P (requested)
+    "QUINN", # Q
+    "ROSE",  # R
+    "STEPH", # S (requested)
+    "TOM",   # T
+    "UMA",   # U
+    "VICTOR",# V
+    "WILL",  # W
+    "XANDER",# X
+    "YVONNE",# Y
+    "ZACK"   # Z
 ]
 
 
@@ -179,22 +201,41 @@ def set_final_scores(sport="nfl"):
 
 
 def add_players(count=12):
-    """Add players with random IDs and names."""
+    """Add players with random IDs and names where the initial matches the name first letter."""
     print(f"Adding {count} players...")
 
-    # Get available letters for player IDs
+    # Prepare shuffled unique IDs (A-Z)
     available_ids = list(string.ascii_uppercase)
     random.shuffle(available_ids)
 
-    # Get random names
-    names = random.sample(PLAYER_NAMES, min(count, len(PLAYER_NAMES)))
-    if count > len(PLAYER_NAMES):
-        names.extend(random.choices(PLAYER_NAMES, k=count - len(PLAYER_NAMES)))
+    # Index names by their starting initial (uppercase)
+    names_by_initial = {}
+    for n in PLAYER_NAMES:
+        initial = n[0].upper()
+        names_by_initial.setdefault(initial, []).append(n)
 
+    used_names = set()
     players = []
+
     for i in range(count):
+        if i >= len(available_ids):
+            print("  ERROR: Not enough unique initials available for requested player count")
+            break
         player_id = available_ids[i]
-        player_name = names[i]
+
+        # Prefer an unused existing name that starts with the player's initial
+        candidate_list = names_by_initial.get(player_id, [])
+        player_name = None
+        for cand in candidate_list:
+            if cand not in used_names:
+                player_name = cand
+                break
+
+        # If no existing name available for this initial, synthesize one (max 8 chars)
+        if not player_name:
+            suffix_len = random.randint(2, 7)
+            suffix = ''.join(random.choices(string.ascii_lowercase, k=suffix_len)).upper()
+            player_name = (player_id + suffix)[:8]
 
         response = requests.post(f"{BASE_URL}/api/players", json={
             "initial": player_id,
@@ -204,6 +245,7 @@ def add_players(count=12):
         if response.status_code == 200:
             print(f"  Added player {player_id}: {player_name}")
             players.append(player_id)
+            used_names.add(player_name)
         else:
             print(f"  Failed to add player {player_id}: {response.text}")
 
