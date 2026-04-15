@@ -2,46 +2,54 @@
 
 Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
-**Quick overview**
-- Clone the repo and run the launcher. It creates the virtual environment and installs dependencies automatically on first run.
-
-**Requirements**
-- Python 3.10 or later
-- Web browser with JavaScript enabled
-
-Installation
-------------
-Install GitHub CLI if you don't have it:
-
-```bash
-# Ubuntu / Debian
-sudo apt install gh
-
-# macOS
-brew install gh
-
-# Other platforms: https://cli.github.com/
-```
+## Quick start
 
 Clone the repository:
 
 ```bash
-gh repo clone bilbilivo/championship-squares
+git clone https://github.com/bilbilivo/championship-squares.git
 cd championship-squares
 ```
 
-If you're on Ubuntu/Debian, install the required Python packages:
+On Ubuntu or Debian, install the Python venv support first:
 
 ```bash
-sudo apt install python3-venv python3-pip
+sudo apt install python3-venv
 ```
 
-The launchers handle virtual environment creation and dependency installation automatically on first run.
+If you are on a very minimal Python install and `python3 -m venv` still complains about missing
+`ensurepip`, install:
 
-Running the app
----------------
+```bash
+sudo apt install python3-full
+```
 
-Unix / macOS:
+Then start the app:
+
+```bash
+./start_server.sh start
+```
+
+On first run, the launcher will:
+
+- create a project-local virtual environment in `./venv`
+- install the app and its Python dependencies into that virtual environment
+- create a desktop shortcut
+- start the server and open `http://localhost:8080`
+
+You do not need to run `pip install` system-wide for this project. The launcher is designed to use
+its own virtual environment.
+
+## Requirements
+
+- Python 3.10 or later
+- Bash on Unix-like systems
+- PowerShell on Windows
+- A web browser with JavaScript enabled
+
+## Running the app
+
+Unix and macOS:
 
 ```bash
 ./start_server.sh start
@@ -50,7 +58,7 @@ Unix / macOS:
 ./start_server.sh restart
 ```
 
-Windows (PowerShell):
+Windows PowerShell:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 start
@@ -61,62 +69,90 @@ powershell -ExecutionPolicy Bypass -File .\start_server.ps1 restart
 
 The app opens `http://localhost:8080` in your default browser automatically on start.
 
-Pass `--lite` to enable reduced visual effects (useful on slower machines), or `--no-lite` to
-explicitly disable it. The setting is persisted across restarts.
+## Lite mode
+
+Use `--lite` to reduce visual effects on slower hardware. Use `--no-lite` to switch back.
+The setting is persisted across restarts.
 
 ```bash
 ./start_server.sh --lite start
+./start_server.sh restart
+./start_server.sh --no-lite restart
 ```
 
-Desktop shortcut (install / uninstall)
----------------------------------------
+## If setup was interrupted
+
+If you previously ended up with a partial or broken `venv`, the launcher should repair it
+automatically. If you still want to reset it manually, remove it and start again:
+
+```bash
+rm -rf venv
+./start_server.sh start
+```
+
+This is the safest fix for errors such as:
+
+- `ModuleNotFoundError: No module named 'flask'`
+- `externally-managed-environment`
+
+Those errors usually mean the launcher was not using the project virtual environment correctly, or
+that an earlier setup attempt left the virtual environment incomplete.
+
+## Desktop shortcut
 
 The `install` action creates a desktop shortcut for one-click launching.
 
-**Unix / macOS** — creates a `.desktop` file in the project folder and installs it to
-`~/.local/share/applications` so the app appears in your Applications menu:
+Unix and macOS:
 
 ```bash
 ./start_server.sh install
 ./start_server.sh uninstall
 ```
 
-On first run the launcher runs `install` automatically, so the shortcut is created without
-having to call it manually.
+On Linux, this creates a `.desktop` file in the project folder and installs it to
+`~/.local/share/applications` so the app appears in your Applications menu. The launcher also runs
+`install` automatically on first run.
 
-**Windows** — creates a `.lnk` shortcut in the project folder:
+Windows:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 install
 powershell -ExecutionPolicy Bypass -File .\start_server.ps1 uninstall
 ```
 
-`uninstall` removes the shortcut (and, on Linux, the Applications menu entry). It does not
-remove the virtual environment or any game data.
+`uninstall` removes the shortcut. It does not remove the virtual environment or game data.
 
-Files of interest
------------------
-- `app.py` — main application
-- `config.py` — platform-aware configuration
-- `start_server.sh` — Unix/macOS launcher
-- `start_server.ps1` — Windows launcher
-- `pyproject.toml` — project metadata and dependencies
+## Files of interest
 
-License
--------
+- `app.py` - main application
+- `config.py` - platform-aware configuration
+- `start_server.sh` - Unix and macOS launcher
+- `start_server.ps1` - Windows launcher
+- `pyproject.toml` - project metadata and dependencies
+
+## More documentation
+
+- `API_DOCUMENTATION.md`
+- `CONFIGURATION.md`
+- `DEPLOYMENT.md`
+- `TESTING.md`
+- `TROUBLESHOOTING.md`
+
+## License
+
 MIT
 
-Trademark Notice
-----------------
+## Trademark notice
+
 Team names, league names, and related trademarks are the property of their respective owners.
 This project is not affiliated with or endorsed by any professional sports league or team.
 
-Support
--------
+## Support
+
 If you find this project useful, consider supporting it:
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://paypal.me/bilbilivo)
 
-Contributing
-------------
+## Contributing
+
 Contributions welcome. Please open issues or submit pull requests.

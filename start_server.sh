@@ -53,28 +53,61 @@ mkdir -p "$LOG_DIR"
 
 activate_venv() {
     local FIRST_RUN=0
+    local BOOTSTRAP_PYTHON="$PYTHON"
+
+    if [ -d "$VENV_DIR" ] && { [ ! -f "$VENV_DIR/pyvenv.cfg" ] || [ ! -x "$VENV_DIR/bin/python" ]; }; then
+        echo "Existing virtual environment is incomplete. Recreating..."
+        rm -rf "$VENV_DIR"
+    fi
+
     if [ ! -d "$VENV_DIR" ]; then
         FIRST_RUN=1
         echo "First run — creating virtual environment..."
-        if ! "$PYTHON" -m venv "$VENV_DIR"; then
+        if ! "$BOOTSTRAP_PYTHON" -m venv "$VENV_DIR"; then
             echo "ERROR: Failed to create virtual environment."
             echo "Make sure python3-venv is installed: sudo apt install python3-venv"
             exit 1
         fi
-        # shellcheck disable=SC1090
-        . "$VENV_DIR/bin/activate"
         PYTHON="$VENV_DIR/bin/python"
+    else
+        PYTHON="$VENV_DIR/bin/python"
+    fi
 
-        # Ensure pip is available in the venv
-        if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
-            echo "pip not found in venv. Installing pip..."
+    if [ ! -x "$PYTHON" ]; then
+        echo "ERROR: Virtual environment is missing its Python executable."
+        echo "Try removing the venv folder and running again: rm -rf venv"
+        exit 1
+    fi
+
+    # Ensure pip is available in the venv
+    if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
+        echo "pip not found in venv. Installing pip..."
+        if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
+            if [ "$FIRST_RUN" -eq 0 ]; then
+                echo "Existing virtual environment cannot be repaired. Recreating..."
+                rm -rf "$VENV_DIR"
+                FIRST_RUN=1
+
+                echo "Creating virtual environment..."
+                if ! "$BOOTSTRAP_PYTHON" -m venv "$VENV_DIR"; then
+                    echo "ERROR: Failed to recreate virtual environment."
+                    echo "Make sure python3-venv is installed: sudo apt install python3-venv"
+                    exit 1
+                fi
+
+                PYTHON="$VENV_DIR/bin/python"
+            fi
+
             if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
                 echo "ERROR: Failed to install pip in virtual environment."
-                echo "Try: sudo apt install python3-pip python3-venv"
+                echo "Try: sudo apt install python3-venv"
+                echo "If your distro uses a minimal Python package, you may also need: sudo apt install python3-full"
                 exit 1
             fi
         fi
+    fi
 
+    if [ "$FIRST_RUN" -eq 1 ]; then
         echo "Installing dependencies..."
         if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
             echo "ERROR: Failed to install dependencies."
@@ -85,22 +118,7 @@ activate_venv() {
         # Run install automatically on first run
         echo "Creating desktop shortcut..."
         install
-    elif [ -f "$VENV_DIR/bin/activate" ]; then
-        # shellcheck disable=SC1090
-        . "$VENV_DIR/bin/activate"
-        PYTHON=${PYTHON:-"$VENV_DIR/bin/python"}
-
-        # Ensure pip is available in the venv
-        if ! "$PYTHON" -m pip --version >/dev/null 2>&1; then
-            echo "pip not found in venv. Installing pip..."
-            if ! "$PYTHON" -m ensurepip --upgrade 2>/dev/null; then
-                echo "ERROR: Failed to install pip in virtual environment."
-                echo "Recreating venv. Please run the script again after this completes."
-                rm -rf "$VENV_DIR"
-                exit 1
-            fi
-        fi
-
+    else
         # Check if Flask is installed, reinstall dependencies if missing
         if ! "$PYTHON" -c "import flask" 2>/dev/null; then
             echo "Dependencies missing or incomplete. Reinstalling..."
@@ -141,6 +159,9 @@ open_browser() {
 }
 
 start() {
+    local RECENT_LOG=""
+    local LOG_START_SIZE=0
+
     if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
         echo "Server already running (pid=$(cat "$PID_FILE"))."
         open_browser
@@ -149,6 +170,10 @@ start() {
 
     # Clean up old logs before starting
     cleanup_old_logs
+
+    if [ -f "$LOGFILE" ]; then
+        LOG_START_SIZE=$(wc -c < "$LOGFILE" 2>/dev/null || echo 0)
+    fi
 
     activate_venv
 
@@ -170,10 +195,18 @@ start() {
     sleep 1
     if ! kill -0 "$PID" 2>/dev/null; then
         echo "ERROR: Server failed to start. Check logs: $LOGFILE"
-        tail -n 20 "$LOGFILE"
+        if [ -f "$LOGFILE" ]; then
+            RECENT_LOG="$(tail -c +"$((LOG_START_SIZE + 1))" "$LOGFILE" 2>/dev/null || true)"
+            if [ -z "$RECENT_LOG" ]; then
+                RECENT_LOG="$(tail -n 50 "$LOGFILE" 2>/dev/null || true)"
+            fi
+        fi
+        if [ -n "$RECENT_LOG" ]; then
+            printf '%s\n' "$RECENT_LOG"
+        fi
 
         # Check if it's a port conflict error
-        if grep -q -E "Address already in use|port.*already.*in use" "$LOGFILE" 2>/dev/null; then
+        if printf '%s\n' "$RECENT_LOG" | grep -q -E "Address already in use|port.*already.*in use"; then
             echo ""
             echo "ERROR: Port 8080 is already in use by another program."
             echo ""
@@ -193,7 +226,7 @@ start() {
         fi
 
         # Check if it's a missing module error
-        if grep -q -E "ModuleNotFoundError|No module named" "$LOGFILE" 2>/dev/null; then
+        if printf '%s\n' "$RECENT_LOG" | grep -q -E "ModuleNotFoundError|No module named"; then
             echo ""
             echo "Detected missing Python module. Reinstalling dependencies..."
             rm -f "$PID_FILE"
