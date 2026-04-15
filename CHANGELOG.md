@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Repaired `start_server.sh` recovery logic so incomplete virtual environments are rebuilt instead of falling back to the system Python environment
 - Ensured launcher dependency checks and reinstalls always target the project-local `venv`
 - Limited startup error detection to fresh log output so stale `ModuleNotFoundError` entries do not trigger unnecessary reinstalls
+- Updated GitHub Actions workflow dependencies to Node 24-compatible major versions to address the latest runner deprecation warnings
 
 ### Changed
 - Reworked README setup instructions for Debian and Ubuntu to explain `python3-venv`, optional `python3-full`, and the project-local virtual environment flow
