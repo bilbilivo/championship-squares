@@ -157,17 +157,54 @@ In `templates/index.html`, add CSS variables for the new sport in the theme sect
 
 ## Release Procedure
 
-Championship Squares follows a two-step release procedure:
+Championship Squares follows a three-step release procedure:
 
-1. **Update the CHANGELOG.md**:
+1. **Prepare the release commit**:
+   - Update `pyproject.toml` to the new version.
    - Add a new entry summarizing the version, date, and major changes.
-   - Document the comparison link.
-2. **Create a Git tag** for the new version:
-   - Use `git tag -a vYYYY.MM -m "release notes"` for annotated tags
-   - Push the tag with `git push origin vYYYY.MM`
-3. **Publish a GitHub Release**:
-   - Use GitHub UI or `gh release create` to turn the tag into a release
+   - Update `CHANGELOG.md`, including the comparison link.
+   - Commit the release changes and push the release commit to `main`.
+2. **Create and push the Git tag**:
+   - A new version in `pyproject.toml` or `CHANGELOG.md` does **not** create a GitHub release by itself.
+   - GitHub releases in this project are tag-backed, so the release does not exist until the tag exists on GitHub.
+   - Local tags are not enough. The tag must be pushed to `origin`.
+   - Use `git tag -a vYYYY.MM -m "release: vYYYY.MM"` for annotated tags.
+   - Push the tag with `git push origin vYYYY.MM`.
+3. **Publish the GitHub Release from that tag**:
+   - Use GitHub UI or `gh release create` to publish the release for the already-pushed tag.
+   - Select the existing tag; do not rely on the version bump alone.
    - Attach detailed notes summarizing changes and provide comparison links (see CHANGELOG.md)
+
+### Recommended Command Sequence
+
+```bash
+# 1. Prepare and publish the release commit
+git add pyproject.toml CHANGELOG.md
+git commit -m "release: vYYYY.MM"
+git push origin main
+
+# 2. Create and publish the tag
+git tag -a vYYYY.MM -m "release: vYYYY.MM"
+git push origin vYYYY.MM
+
+# 3. Publish the GitHub Release from the pushed tag
+gh release create vYYYY.MM --title "vYYYY.MM"
+```
+
+If you use the GitHub web UI instead of `gh release create`, choose the existing `vYYYY.MM` tag after it has been pushed.
+
+### Release Checklist
+
+Before calling a version "released", confirm all of the following:
+
+1. `pyproject.toml` version is updated
+2. `CHANGELOG.md` entry is added
+3. Release commit is pushed to `main`
+4. Annotated tag `vYYYY.MM` is created and pushed to GitHub
+5. GitHub Release is published from that tag
+
+If step 4 is missing, there is no new release yet, even if the version number is already committed on `main`.
+If step 5 is missing, the tag exists but the GitHub Release page still has not been published.
 
 ---
 

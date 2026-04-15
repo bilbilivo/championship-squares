@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 - Reworked README setup instructions for Debian and Ubuntu to explain `python3-venv`, optional `python3-full`, and the project-local virtual environment flow
+- Clarified release documentation to state explicitly that a pushed Git tag is required before a new GitHub Release exists
+- Expanded release instructions with the exact commit, tag, push, and publish sequence so the release process is harder to misread
 
 ## [v2026.08] - 2026-03-01
 
@@ -118,9 +120,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - No security vulnerabilities detected via pip-audit
 
 ### Release Procedure
-- Releases are created in two steps:
-  1. Create a git tag for the release (e.g. v2026.03)
-  2. Publish a GitHub Release from the tag, including release notes and comparison links
+- Release publication is tag-backed:
+  1. Create and push a git tag for the release (e.g. `v2026.03`)
+  2. Publish a GitHub Release from that tag, including release notes and comparison links
+- A version bump in project files alone does not create a release; the tag must exist on GitHub first
 
 ## [v2026.02] - 2026-02-18
 
