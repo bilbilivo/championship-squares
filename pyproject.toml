@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "championship-squares"
-version = "2026.08"
+version = "2026.09"
 description = "Small web app to run a Championship Squares game"
 authors = [{name = "Stephane Belliveau"}]
 license = "MIT"

@@ -4,6 +4,16 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.09] - 2026-04-15
+
+### Fixed
+- Repaired `start_server.sh` recovery logic so incomplete virtual environments are rebuilt instead of falling back to the system Python environment
+- Ensured launcher dependency checks and reinstalls always target the project-local `venv`
+- Limited startup error detection to fresh log output so stale `ModuleNotFoundError` entries do not trigger unnecessary reinstalls
+
+### Changed
+- Reworked README setup instructions for Debian and Ubuntu to explain `python3-venv`, optional `python3-full`, and the project-local virtual environment flow
+
 ## [v2026.08] - 2026-03-01
 
 ### Fixed
@@ -161,6 +171,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.09]: https://github.com/bilbilivo/championship-squares/compare/v2026.08...v2026.09
 [v2026.08]: https://github.com/bilbilivo/championship-squares/compare/v2026.07...v2026.08
 [v2026.07]: https://github.com/bilbilivo/championship-squares/compare/v2026.06...v2026.07
 [v2026.06]: https://github.com/bilbilivo/championship-squares/compare/v2026.05...v2026.06
