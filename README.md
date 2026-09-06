@@ -3,6 +3,13 @@
 Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
 ## Gameplay
+
+Championship Squares is a sports-pool game where players use their available tokens to place bets on squares representing predicted final scores. Each row represents the away team's score, and each column represents the home team's score.
+
+The multiplier follows the game's stages: **1x before the game**, **2x before the second quarter**, **4x during halftime before the third quarter**, and **8x before the fourth quarter**. Other sports follow a similar progression around their periods, halves, or innings. Each new bet costs the current multiplier in tokens, so a square placed at 4x costs four tokens.
+
+Update the scores manually as points are scored during the game. At the end, the player with the eligible square closest to the final score wins. Only squares that predict the winning team qualify; closeness is the sum of the differences between the predicted and actual scores for both teams. Equally close squares share the win.
+
 ![Gameplay](static/gameplay.png)
 
 ## Quick start
