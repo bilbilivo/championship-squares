@@ -236,7 +236,9 @@
 
 2. **Try API directly:**
    ```bash
-   curl -X POST http://localhost:8080/api/scores \
+   curl -c /tmp/squares-cookies.txt http://localhost:8080/api/login \
+     -H "Content-Type: application/json" -d '{"role":"admin"}'
+   curl -b /tmp/squares-cookies.txt -X POST http://localhost:8080/api/scores \
      -H "Content-Type: application/json" \
      -d '{"left": 7, "right": 3}'
    ```
@@ -315,7 +317,7 @@
 
 3. **Run test setup:**
    ```bash
-   python test_setup.py
+   python tests/generate_fake_game.py
    ```
    Populates board with sample data, making winner likely
 
@@ -378,8 +380,10 @@
 
 2. **Use API directly:**
    ```bash
-   curl -X DELETE http://localhost:8080/api/players/AB
-   # Replace AB with player initials
+   curl -c /tmp/squares-cookies.txt http://localhost:8080/api/login \
+     -H "Content-Type: application/json" -d '{"role":"admin"}'
+   curl -b /tmp/squares-cookies.txt -X DELETE http://localhost:8080/api/players/A
+   # Replace A with the single-letter player initial
    ```
 
 3. **Check browser console:**
@@ -686,3 +690,12 @@ free -h  # or 'top' on macOS
 8. ✓ Use correct host setting for your OS
 9. ✓ Enable firewall access on Linux (ufw)
 10. ✓ Back up game_state.db regularly
+
+## Login and permission errors
+
+Choose ADMIN to edit teams, scores, multipliers, players, or game settings.
+PLAYER mode can only place/remove its selected player's tokens in the current game.
+For API writes, a 401 means login is missing; a 403 means the action is forbidden or
+the selected player session is stale. Retain the cookie returned by `/api/login`.
+If the admin deletes your player, resets the game, or restarts the server, select
+your player again. Use Change mode to return to mode selection.

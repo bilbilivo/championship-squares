@@ -12,6 +12,20 @@ Update the scores manually as points are scored during the game. At the end, the
 
 ![Gameplay](static/gameplay.png)
 
+## Login modes
+
+Choose **ADMIN** for the New Game / Load Game menu and full control of the game.
+Choose **PLAYER** to select an existing player or create one and join the current game.
+Players can tap an empty square to place their own token and tap their own square to
+remove it. Teams, scores, multipliers, game resets, and player management are admin-only.
+Use **Change mode** to sign out and select another mode. Player sessions must reselect
+their player if the admin deletes that player, resets the game, or restarts the server.
+
+Mode selection does not require a password: anyone can choose ADMIN or an existing
+player. Permissions apply to the selected session and are enforced by the server.
+API clients must POST `/api/login` with `{"role": "admin"}` or
+`{"role": "player", "initial": "A"}` and retain the session cookie before modifying a game.
+
 ## Quick start
 
 Clone the repository:
@@ -192,3 +206,5 @@ If you find this project useful, consider supporting it:
 ## Contributing
 
 Contributions welcome. Please open issues or submit pull requests.
+
+Player self-registration requires both teams to be selected by ADMIN first.

@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Stephane Belliveau
-from flask import Flask, Response, jsonify, render_template, request, stream_with_context, url_for
+from flask import Flask, Response, jsonify, render_template, request, session, stream_with_context, url_for
 from copy import deepcopy
 from functools import wraps
 import json
 import os
 import threading
 import socket
+import secrets
 from ipaddress import ip_address
 from urllib.parse import urlsplit, urlunsplit
 import qrcode
@@ -81,6 +82,17 @@ def synchronized_game(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         with game_state_lock:
+            if request.method != 'GET' and view.__name__ not in {'login', 'logout'}:
+                role = session.get('role')
+                if role not in {'admin', 'player'}:
+                    return jsonify({'error': 'Please select ADMIN or PLAYER mode'}), 401
+                if role == 'player':
+                    if view.__name__ != 'update_square':
+                        return jsonify({'error': 'This action requires ADMIN mode'}), 403
+                    initial = session.get('player')
+                    if (initial not in game_state.players or
+                            session.get('identity') != game_state.player_identities.get(initial)):
+                        return jsonify({'error': 'Please select your player again'}), 403
             previous = deepcopy(game_state.__dict__) if request.method != 'GET' else None
             try:
                 response = app.make_response(view(*args, **kwargs))
@@ -127,6 +139,7 @@ class GameState:
         self.squares = [['' for _ in range(max_score + 1)] for _ in range(max_score + 1)]
         self.square_multipliers = {}  # Track multiplier used for each square {(row,col): multiplier}
         self.players = {}
+        self.player_identities = {}
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
         self.available_indices = list(range(max_players))
@@ -426,6 +439,54 @@ def game_events_stream():
     response.headers['X-Accel-Buffering'] = 'no'
     return response
 
+@app.route('/api/session', methods=['GET'])
+@synchronized_game
+def get_session():
+    role = session.get('role')
+    initial = session.get('player')
+    if role == 'player' and (initial not in game_state.players or
+                            session.get('identity') != game_state.player_identities.get(initial)):
+        session.clear()
+        role = None
+        initial = None
+    return jsonify({'role': role, 'player': initial})
+
+
+@app.route('/api/login', methods=['POST'])
+@synchronized_game
+def login():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or data.get('role') not in ('admin', 'player'):
+        return jsonify({'error': 'Choose ADMIN or PLAYER mode'}), 400
+    role = data['role']
+    initial = None
+    if role == 'player':
+        if not isinstance(data.get('initial'), str) or not isinstance(data.get('name', ''), str):
+            return jsonify({'error': 'Enter a player initial and name'}), 400
+        initial = data['initial'].strip().upper()
+        if data.get('create') is True:
+            if not all(game_state.teams.get(side) for side in ('left', 'right')):
+                return jsonify({'error': 'Select both teams in ADMIN mode before creating a player'}), 403
+            # Reuse registration validation and persistence under the same lock.
+            response = app.make_response(add_player.__wrapped__())
+            if response.status_code >= 400:
+                return response
+        elif initial not in game_state.players:
+            return jsonify({'error': 'Player no longer exists. Choose or create a player.'}), 400
+    session.clear()
+    session['role'] = role
+    if initial:
+        session['player'] = initial
+        session['identity'] = game_state.player_identities.setdefault(initial, secrets.token_hex(16))
+    return jsonify({'role': role, 'player': initial})
+
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'success': True})
+
+
 @app.route('/api/reset', methods=['POST'])
 @synchronized_game
 def reset_game():
@@ -479,6 +540,7 @@ def get_state():
     try:
         winner_info = calculate_winner()
         return jsonify({
+            'session': get_session().get_json(),
             'squares': game_state.squares,
             'players': game_state.players,
             'teams': game_state.teams,
@@ -587,6 +649,11 @@ def update_square():
 
         # Get current value before update
         current_value = game_state.squares[row][col]
+        if session.get('role') == 'player':
+            initial = session['player']
+            if (current_value and current_value != initial) or (value and (
+                    not isinstance(value, str) or value.upper() != initial)):
+                return jsonify({'error': 'You can only control your own tokens'}), 403
         square_key = (row, col)
         if 'expected_value' in data and data['expected_value'] != current_value:
             return jsonify({'error': 'This square changed on another device. Please try again.'}), 409
@@ -707,6 +774,7 @@ def delete_player(initial):
             
             # Remove player from players dict
             del game_state.players[initial]
+            game_state.player_identities.pop(initial, None)
             persist_game_state()
             notify_game_change()
             return jsonify({'success': True})

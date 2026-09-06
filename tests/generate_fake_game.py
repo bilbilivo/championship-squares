@@ -10,16 +10,20 @@ Usage:
   python generate_fake_game.py mlb          # MLB game (8 players)
   python generate_fake_game.py olym         # Olympics game (8 players)
 
+Logs in as ADMIN and replaces the game at CHAMPIONSHIP_SQUARES_URL (default: http://localhost:8080).
 Each player gets a sport-specific token allocation distributed across multiplier tiers.
 Square placement is uniformly random from 0 up to the sport's typical high score (SCORE_RANGES max).
 """
 
+import os
 import requests
 import random
 import string
 import sys
 
-BASE_URL = "http://localhost:8080"
+BASE_URL = os.environ.get("CHAMPIONSHIP_SQUARES_URL", "http://localhost:8080").rstrip('/')
+# Preserve the ADMIN login cookie for every read and write in this run.
+http = requests.Session()
 
 # Sport-specific configuration
 # bet_distribution: number of squares at each multiplier level
@@ -117,24 +121,37 @@ PLAYER_NAMES = [
 def check_server():
     """Check if the server is running."""
     try:
-        response = requests.get(f"{BASE_URL}/api/state", timeout=2)
+        response = http.get(f"{BASE_URL}/api/state", timeout=2)
         return response.status_code == 200
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         return False
+
+
+def login_admin():
+    """Select ADMIN mode before any destructive setup steps."""
+    print("Logging in as ADMIN...")
+    try:
+        response = http.post(f"{BASE_URL}/api/login", json={"role": "admin"}, timeout=5)
+        if response.status_code == 200 and response.json().get('role') == 'admin':
+            return True
+        print(f"  ERROR: ADMIN login failed: {response.text}")
+    except (requests.exceptions.RequestException, ValueError) as error:
+        print(f"  ERROR: ADMIN login failed: {error}")
+    return False
 
 
 def reset_game():
     """Reset the game state."""
     print("Resetting game...")
     try:
-        response = requests.post(f"{BASE_URL}/api/reset")
+        response = http.post(f"{BASE_URL}/api/reset")
         if response.status_code == 200:
             print("  Game reset successfully")
         else:
             print(f"  Failed to reset game: {response.text}")
             return False
         return True
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.RequestException:
         print(f"  ERROR: Cannot connect to server at {BASE_URL}")
         print(f"  Make sure the server is running: python app.py")
         return False
@@ -143,7 +160,7 @@ def reset_game():
 def set_sport(sport="nfl"):
     """Set the sport."""
     print(f"Setting sport to {sport.upper()}...")
-    response = requests.post(f"{BASE_URL}/api/sport", json={"sport": sport})
+    response = http.post(f"{BASE_URL}/api/sport", json={"sport": sport})
     if response.status_code == 200:
         data = response.json()
         print(f"  Sport set to {sport.upper()}, max_score: {data.get('max_score')}")
@@ -157,7 +174,7 @@ def set_teams(sport="nfl"):
     """Set two random teams based on sport."""
     teams = random.sample(TEAMS[sport], 2)
     print(f"Setting teams: {teams[0]} vs {teams[1]}...")
-    response = requests.post(f"{BASE_URL}/api/teams", json={
+    response = http.post(f"{BASE_URL}/api/teams", json={
         "left": teams[0],
         "right": teams[1]
     })
@@ -187,7 +204,7 @@ def set_final_scores(sport="nfl"):
         right_score = random.randint(min_score, max_typical)
 
     print(f"Setting final scores: {left_score} - {right_score}...")
-    response = requests.post(f"{BASE_URL}/api/scores", json={
+    response = http.post(f"{BASE_URL}/api/scores", json={
         "left": left_score,
         "right": right_score
     })
@@ -237,7 +254,7 @@ def add_players(count=12):
             suffix = ''.join(random.choices(string.ascii_lowercase, k=suffix_len)).upper()
             player_name = (player_id + suffix)[:8]
 
-        response = requests.post(f"{BASE_URL}/api/players", json={
+        response = http.post(f"{BASE_URL}/api/players", json={
             "initial": player_id,
             "name": player_name
         })
@@ -254,7 +271,7 @@ def add_players(count=12):
 
 def set_multiplier(multiplier, verbose=False):
     """Set the current betting multiplier."""
-    response = requests.post(f"{BASE_URL}/api/multiplier", json={
+    response = http.post(f"{BASE_URL}/api/multiplier", json={
         "multiplier": multiplier
     })
     success = response.status_code == 200
@@ -268,7 +285,7 @@ def set_multiplier(multiplier, verbose=False):
 
 def place_bet(player_id, row, col):
     """Place a bet for a player at a specific square."""
-    response = requests.post(f"{BASE_URL}/api/squares", json={
+    response = http.post(f"{BASE_URL}/api/squares", json={
         "row": row,
         "col": col,
         "value": player_id
@@ -422,6 +439,9 @@ def main(sport="nfl"):
     print("  Server is running")
     print()
 
+    if not login_admin():
+        sys.exit(1)
+
     # Step 1: Reset game first (clears everything, resets to NFL defaults)
     if not reset_game():
         return
@@ -453,7 +473,7 @@ def main(sport="nfl"):
 
     # Fetch teams from server for summary
     try:
-        resp = requests.get(f"{BASE_URL}/api/state", timeout=3)
+        resp = http.get(f"{BASE_URL}/api/state", timeout=3)
         teams = resp.json().get('teams', {}) if resp.status_code == 200 else {}
         left_team = teams.get('left', 'AWAY') or 'AWAY'
         right_team = teams.get('right', 'HOME') or 'HOME'

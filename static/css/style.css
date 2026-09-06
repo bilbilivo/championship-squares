@@ -2,7 +2,7 @@
 /* Copyright (c) 2025 Stephane Belliveau */
 
 /* Network join control stays available on the landing screen and game board. */
-.join-game-btn {
+.join-game-btn, .mode-btn {
     position: fixed;
     top: max(8px, env(safe-area-inset-top));
     right: max(8px, env(safe-area-inset-right));
@@ -32,7 +32,7 @@
 .join-game-dialog h2 { font-size: 18px; line-height: 1.6; margin: 0 0 12px; }
 .join-game-dialog p { font-size: 11px; line-height: 1.8; }
 .join-game-qr { display: block; width: min(100%, 280px); height: auto; margin: 16px auto; background: white; }
-.join-game-link { display: block; color: var(--retro-light); font: 16px/1.5 monospace; overflow-wrap: anywhere; margin: 12px 0 18px; }
+.join-game-link { display: block; color: var(--retro-light); font: 12px/1.8 'Press Start 2P', monospace; text-transform: uppercase; overflow-wrap: anywhere; margin: 12px 0 18px; }
 .join-game-dialog [hidden] { display: none; }
 
 /* Local font */
@@ -1611,14 +1611,108 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         min-height: 44px;
         justify-content: center;
         padding: 6px;
-        color: #fff;
-        background: var(--retro-dark);
+        color: var(--retro-dark);
+        background: var(--retro-primary);
         border: 2px solid var(--retro-light);
     }
     .game-header .join-game-btn svg { width: 28px; height: 28px; }
     .game-header .join-game-btn:hover { transform: none; }
     .game-header .join-game-btn:active {
-        background: var(--retro-bg);
-        border-color: #fff;
+        background: var(--retro-light);
+        border-color: var(--retro-dark);
     }
 }
+
+/* Mode selection and player permissions. */
+[hidden] { display: none !important; }
+#playerLoginPanel { margin-top: 24px; }
+#playerLoginPanel form { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 16px 0; }
+#playerLoginPanel input, #playerLoginPanel select { padding: 12px; max-width: 100%; min-width: 0; }
+#createPlayerForm input {
+    background: var(--retro-dark);
+    color: var(--retro-primary);
+    border: var(--pixel-border);
+    border-radius: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    min-height: 44px;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    caret-color: var(--retro-primary);
+}
+#createPlayerForm input::placeholder { color: var(--retro-primary); opacity: 0.7; }
+#loginInitial { width: 64px; text-align: center; }
+#loginName { width: 180px; }
+#loginStatus { line-height: 1.7; }
+#sessionLabel { font-size: 10px; line-height: 1.6; }
+.current-player { outline: 2px solid var(--retro-primary); }
+button:disabled, select:disabled { cursor: default; opacity: 0.65; }
+.landing-content { max-height: 95dvh; overflow-y: auto; }
+
+/* Keep MODE and the identity together so fixed controls cannot cover the name. */
+.session-controls {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.session-controls .mode-btn {
+    position: static;
+    flex: 0 0 auto;
+    min-width: 60px;
+    justify-content: center;
+}
+#sessionLabel { white-space: nowrap; }
+@media (max-width: 600px) {
+    .session-controls {
+        position: static;
+        flex: 0 0 auto;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .game-header .mode-btn {
+        min-height: 44px;
+        padding: 6px 8px;
+        font-size: 9px;
+    }
+}
+
+@media (min-width: 768px) {
+    #loginPanel > .landing-buttons {
+        flex-direction: row;
+        justify-content: center;
+    }
+    #playerLoginPanel #existingPlayerForm {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        max-width: 600px;
+        margin-inline: auto;
+    }
+    #existingPlayerForm label { grid-column: 1 / -1; }
+    #existingPlayerForm .landing-btn { width: auto; }
+}
+
+#existingPlayer:disabled, #startPlayerBtn:disabled {
+    color: #888;
+    border-color: #666;
+    background: var(--retro-dark);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+}
+
+#createPlayerForm input:disabled, #createPlayerBtn:disabled {
+    color: #888;
+    border-color: #666;
+    background: var(--retro-dark);
+    box-shadow: none;
+    transform: none;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+#createPlayerForm input:disabled::placeholder { color: #888; }
+#teamSetupHelp { font-size: 12px; line-height: 1.8; }

@@ -10,7 +10,7 @@
 <body>
     <dialog id="joinGameDialog" class="join-game-dialog" aria-labelledby="joinGameTitle" aria-describedby="joinGameHelp">
         <h2 id="joinGameTitle">SCAN TO PLAY</h2>
-        <p id="joinGameHelp">Connect to the same Wi-Fi or local network, then scan with your camera.</p>
+        <p id="joinGameHelp">CONNECT TO SAME NETWORK<br>SCAN WITH CAMERA</p>
         <p id="joinGameStatus" role="status">Loading QR code…</p>
         <img id="joinGameQr" class="join-game-qr" alt="Scan to open Championship Squares" hidden>
         <a id="joinGameLink" class="join-game-link" hidden></a>
@@ -19,9 +19,32 @@
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
 			<h1 class="landing-title" id="gameTitleLanding">CHAMPIONSHIP SQUARES</h1>
-			<div class="landing-buttons" id="mainButtons">
+			<div id="loginPanel">
+                <p>SELECT MODE</p>
+                <div class="landing-buttons">
+                    <button id="adminLoginBtn" class="landing-btn">ADMIN</button>
+                    <button id="playerLoginBtn" class="landing-btn">PLAYER</button>
+                </div>
+                <div id="playerLoginPanel" hidden>
+                    <form id="existingPlayerForm">
+                        <label for="existingPlayer">SELECT PLAYER</label>
+                        <select id="existingPlayer" required></select>
+                        <button id="startPlayerBtn" class="landing-btn">JOIN</button>
+                    </form>
+                    <p>NEW</p>
+                    <p id="teamSetupHelp" hidden>SELECT BOTH TEAMS IN ADMIN MODE FIRST.</p>
+                    <form id="createPlayerForm">
+                        <input id="loginInitial" aria-label="New player initial" placeholder="ID" maxlength="1" pattern="[A-Za-z]" required>
+                        <input id="loginName" aria-label="New player name" placeholder="NAME" maxlength="8" required>
+                        <button id="createPlayerBtn" class="landing-btn">CREATE</button>
+                    </form>
+                </div>
+            </div>
+            <p id="loginStatus" role="status"></p>
+            <div class="landing-buttons" id="mainButtons" style="display: none;">
 				<button id="newGameBtn" class="landing-btn">New Game</button>
 				<button id="loadGameBtn" class="landing-btn">Load Game</button>
+                <button id="landingLogoutBtn" class="landing-btn">Change mode</button>
 			</div>
 			<div class="sport-selection" style="display: none;">
 				<div class="sport-grid">
@@ -61,6 +84,10 @@
 	</div>
 	<div class="container">
         <header class="game-header">
+        <div class="session-controls">
+            <button type="button" id="logoutBtn" class="mode-btn" aria-label="Change mode" hidden>MODE</button>
+            <span id="sessionLabel"></span>
+        </div>
         <h1 class="title" id="gameTitle">CHAMPIONSHIP SQUARES</h1>
     <button type="button" id="joinGameBtn" class="join-game-btn" aria-label="Show QR code to join game" aria-haspopup="dialog" title="Scan to join">
         <svg viewBox="0 0 21 21" aria-hidden="true" shape-rendering="crispEdges">
@@ -144,6 +171,7 @@
     <script src="{{ asset_url('js/board-text.js') }}"></script>
     <script src="{{ asset_url('js/game-sync.js') }}"></script>
     <script src="{{ asset_url('js/celebration-effects.js') }}"></script>
+    <script src="{{ asset_url('js/login.js') }}"></script>
     <script src="{{ asset_url('js/game.js') }}"></script>
     <script src="{{ asset_url('js/join-game.js') }}"></script>
 </body>

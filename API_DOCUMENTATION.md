@@ -12,6 +12,49 @@ http://localhost:8080
 
 ---
 
+## Sessions and permissions
+
+Mode selection has no passwords: anyone can choose ADMIN or an existing player.
+All game mutations require a session cookie. Read-only game endpoints remain public.
+
+| Action | ADMIN | PLAYER |
+| --- | --- | --- |
+| Read current game | Yes | Yes |
+| Place/remove selected player's tokens | Yes | Yes |
+| Change other players' squares | Yes | No |
+| Change scores, teams, sport, multiplier, or reset | Yes | No |
+| Add/delete players via `/api/players` | Yes | No |
+
+**POST `/api/login`** selects a mode and returns `{"role": "admin", "player": null}`
+or `{"role": "player", "player": "A"}`. Send one of:
+
+```json
+{"role": "admin"}
+```
+```json
+{"role": "player", "initial": "A"}
+```
+```json
+{"role": "player", "initial": "A", "name": "ALICE", "create": true}
+```
+
+Creating a player joins the current game; it does not reset or change the sport.
+**GET `/api/session`** returns the selected role/player, or null values when signed out.
+**POST `/api/logout`** clears the session. Deleted/reset players and server restarts
+require players to select their identity again.
+
+Retain cookies for subsequent requests:
+
+```bash
+curl -c /tmp/squares-cookies.txt http://localhost:8080/api/login \
+  -H 'Content-Type: application/json' -d '{"role":"admin"}'
+curl -b /tmp/squares-cookies.txt -X POST http://localhost:8080/api/scores \
+  -H 'Content-Type: application/json' -d '{"left":7,"right":3}'
+```
+
+Missing login returns **401**; a forbidden player action or stale player identity
+returns **403**. A square with a mismatched `expected_value` returns **409**.
+
 ## Endpoints
 
 ### Get Current Game State
@@ -26,7 +69,7 @@ Returns all game data including squares, players, scores, and settings.
 - `scores`: Current team scores
 - `sport`: Current sport setting
 - `current_multiplier`: Active betting multiplier
-- `available_indices`: Available player slots
+- `session`: Current session role and player (null when signed out)
 
 ---
 
@@ -121,25 +164,18 @@ Returns all players ranked by winnings and bet status.
 ### Update Square Assignment
 **POST** `/api/squares`
 
-Claims or updates a square with a player and multiplier.
+Claims or removes a square using the current game multiplier. PLAYER mode can only
+assign its own initial to an empty/owned square or remove its own assignment.
+Use an empty `value` to remove a token. `expected_value` optionally checks for concurrent edits.
 
 **Request Body:**
 ```json
-{
-  "row": 7,
-  "col": 3,
-  "player": "JD",
-  "multiplier": 2
-}
+{"row": 7, "col": 3, "value": "A", "expected_value": ""}
 ```
 
 **Response:**
 ```json
-{
-  "success": true,
-  "square": {"row": 7, "col": 3, "player": "JD", "multiplier": 2},
-  "player": {"tokens": 8, "bets": 32}
-}
+{"success": true, "updated_players": {"A": 38}}
 ```
 
 ---
@@ -147,27 +183,16 @@ Claims or updates a square with a player and multiplier.
 ### Add Player
 **POST** `/api/players`
 
-Creates a new player and assigns them a slot.
+Creates a new player and assigns a slot (ADMIN only). PLAYER registration uses `/api/login`.
 
 **Request Body:**
 ```json
-{
-  "name": "John Doe"
-}
+{"initial": "A", "name": "ALICE"}
 ```
 
 **Response:**
 ```json
-{
-  "success": true,
-  "player": {
-    "initial": "JD",
-    "name": "John Doe",
-    "playerIndex": 0,
-    "tokens": 40,
-    "bets": 0
-  }
-}
+{"success": true, "playerIndex": 0}
 ```
 
 ---
@@ -311,3 +336,5 @@ Increases bet value on a square. Available multipliers depend on sport (1x, 2x, 
 
 ## State Persistence
 All changes are automatically saved to `game_state.db`. Game state persists between server restarts.
+
+Player self-registration requires both teams to be selected by ADMIN first.
