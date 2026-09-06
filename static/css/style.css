@@ -32,7 +32,7 @@
 .join-game-dialog h2 { font-size: 18px; line-height: 1.6; margin: 0 0 12px; }
 .join-game-dialog p { font-size: 11px; line-height: 1.8; }
 .join-game-qr { display: block; width: min(100%, 280px); height: auto; margin: 16px auto; background: white; }
-.join-game-link { display: block; color: var(--retro-light); font: 12px/1.8 'Press Start 2P', monospace; text-transform: uppercase; overflow-wrap: anywhere; margin: 12px 0 18px; }
+.join-game-link { display: block; color: var(--retro-light); font: 8px/1.5 'Press Start 2P', monospace; text-transform: uppercase; white-space: nowrap; overflow-x: auto; margin: 12px 0 18px; }
 .join-game-dialog [hidden] { display: none; }
 
 /* Local font */
