@@ -2,7 +2,7 @@
 
 ## Responsive board regression checks
 
-Run the board, text alignment, live sync, and celebration tests with Node.js 18 or later (no npm dependencies):
+Run the board, text alignment, live sync, celebration, and login tests with Node.js 18 or later (no npm dependencies):
 
 ```bash
 node --test tests/*.test.cjs
@@ -24,9 +24,18 @@ with 12 players, loaded claims, long team names, prompts, and a final celebratio
 - Desktop player lists scroll independently; narrow-screen controls and dialog actions remain reachable.
 - Check keyboard pan/zoom, touch drag/pinch, and normal, lite, and reduced-motion rendering. End-game fireworks always start automatically; other effects retain their motion settings.
 
+## Login regression checks
+
+- ADMIN sees New Game / Load Game and retains all controls.
+- PLAYER selects or creates a player and enters the current game directly.
+- Players can place/remove only their own tokens; other players and admin settings stay protected.
+- Change mode signs out; refresh restores the selected session.
+- Deleting a player or resetting the game invalidates that player's session.
+- `tests/test_generate_fake_game.py` runs the generator against isolated Flask clients for every sport.
+
 ## Overview
 
-Championship Squares includes a test setup script (`test_setup.py`) that populates a complete game with sample data. This guide covers testing procedures and data generation.
+Championship Squares includes a test setup script (`tests/generate_fake_game.py`) that populates a complete game with sample data. This guide covers testing procedures and data generation.
 
 ---
 
@@ -34,18 +43,13 @@ Championship Squares includes a test setup script (`test_setup.py`) that populat
 
 ### What It Does
 
-`test_setup.py` creates a fully loaded NFL game:
-- 12 random players
-- 2 random NFL teams
-- 29 bets per player (40 tokens distributed across 1x, 2x, 4x, 8x multipliers)
-- Game board 95% filled
+`tests/generate_fake_game.py` logs in as ADMIN and replaces the target game with
+8 players, two teams, scores, and random bets. NFL is the default; pass `nhl`, `mlb`,
+or `olym` to select another sport. Set `CHAMPIONSHIP_SQUARES_URL` to target a disposable
+instance instead of the default `http://localhost:8080`.
 
-**Distribution per player:**
-- 26 squares at 1x (26 tokens)
-- 1 square at 2x (2 tokens)
-- 1 square at 4x (4 tokens)
-- 1 square at 8x (8 tokens)
-- **Total: 40 tokens**
+NFL gives each player 40 tokens: 12 squares at 1x, 6 at 2x, 2 at 4x, and 1 at 8x
+(21 squares per player, 168 total). Login failure stops setup before resetting data.
 
 ### Prerequisites
 
@@ -66,47 +70,17 @@ Championship Squares includes a test setup script (`test_setup.py`) that populat
 From the project directory:
 
 ```bash
-python test_setup.py
+python tests/generate_fake_game.py
 ```
 
-**Output example:**
-```
-==================================================
-Championship Squares - Test Setup
-==================================================
-
-Checking server at http://localhost:8080...
-  Server is running
-
-Setting sport to NFL...
-  Sport set to NFL, max_score: 70
-Setting teams: MIN vs GB...
-  Teams set: MIN (away) vs GB (home)
-Adding 12 players...
-  Added player A: MIKE
-  Added player B: SARAH
-  ...
-Placing bets for all players...
-  Placing bets for player A...
-    A: 26@1x + 1@2x + 1@4x + 1@8x = 29 squares (40 tokens)
-  ...
-==================================================
-Test setup complete!
-  - Sport: NFL
-  - Players: 12
-  - Total bets: 348 squares (480 tokens)
-==================================================
-```
-
----
 
 ## Testing Scenarios
 
 ### Scenario 1: Basic Game Flow
 
-1. Run `python test_setup.py` to populate game
+1. Run `python tests/generate_fake_game.py` to populate game
 2. Open browser to `http://localhost:8080`
-3. Verify board shows 12 players with initials
+3. Select ADMIN → Load Game and verify board shows 8 players with initials
 4. Update team scores: "MIN 14, GB 17"
 5. Verify winner displays (if closest square exists)
 6. Click Reset to clear game
@@ -122,7 +96,7 @@ Test setup complete!
 
 ### Scenario 2: Winner Calculation
 
-1. Load test game with `python test_setup.py`
+1. Load test game with `python tests/generate_fake_game.py`
 2. Open developer console (F12)
 3. Manually call winner endpoint:
    ```javascript
@@ -211,7 +185,12 @@ Test setup complete!
 
 ### Using curl
 
-Test endpoints directly without UI:
+Test endpoints directly without UI. First log in and save the session cookie:
+
+```bash
+curl -c /tmp/squares-cookies.txt http://localhost:8080/api/login \
+  -H "Content-Type: application/json" -d '{"role":"admin"}'
+```
 
 **Get game state:**
 ```bash
@@ -220,7 +199,7 @@ curl http://localhost:8080/api/state
 
 **Update scores:**
 ```bash
-curl -X POST http://localhost:8080/api/scores \
+curl -b /tmp/squares-cookies.txt -X POST http://localhost:8080/api/scores \
   -H "Content-Type: application/json" \
   -d '{"left": 21, "right": 17}'
 ```
@@ -232,19 +211,20 @@ curl http://localhost:8080/api/winner
 
 **Reset game:**
 ```bash
-curl -X POST http://localhost:8080/api/reset
+curl -b /tmp/squares-cookies.txt -X POST http://localhost:8080/api/reset
 ```
 
 ### Using Postman/Insomnia
 
 Import Championship Squares API for comprehensive testing:
 1. Import `API_DOCUMENTATION.md` endpoints
-2. Create test collections for each scenario
+2. POST `/api/login` with `{"role":"admin"}` and retain its cookie. Create test collections for each scenario
 3. Save responses for regression testing
 
 ### Using Browser Console
 
-Quick testing from browser (F12 console):
+Select ADMIN in the page first, then test from its browser console (F12).
+Fetch uses the browser session cookie automatically:
 
 ```javascript
 // Get state
@@ -268,22 +248,24 @@ fetch('/api/reset', {method: 'POST'}).then(r => r.json()).then(console.log)
 
 ## Customizing Test Data
 
-### Modifying test_setup.py
+### Modifying tests/generate_fake_game.py
 
 Edit the script to change test parameters:
 
-**Change player count:**
-```python
-players = add_players(20)  # Instead of 12
-```
+**Change player count or token distribution:**
+Edit the selected sport's `players` and `bet_distribution` entries in `SPORT_CONFIG`.
+Keep the count within the app's player limit and the total token cost within
+`tokens_per_player`.
 
 **Change sport:**
-```python
-if not set_sport("nba"):  # Instead of "nfl"
+```bash
+python tests/generate_fake_game.py nhl
 ```
 
-**Change bet distribution:**
-Modify `place_bets_for_players()` to use different multiplier distributions.
+**Target a disposable test server:**
+```bash
+CHAMPIONSHIP_SQUARES_URL=http://localhost:5059 python tests/generate_fake_game.py nfl
+```
 
 ---
 
@@ -292,7 +274,7 @@ Modify `place_bets_for_players()` to use different multiplier distributions.
 ### Test: Maximum Players
 
 ```bash
-# Modify test_setup.py
+# Modify tests/generate_fake_game.py
 add_players(12)  # Change to max_players value in config.py
 ```
 
@@ -418,7 +400,7 @@ See `DEVELOPER_GUIDE.md` for architecture details on testable components.
 
 **Script fails to connect:**
 - Verify server running: `python app.py`
-- Check BASE_URL in test_setup.py matches server
+- Check BASE_URL in tests/generate_fake_game.py matches server
 - On Linux, may need to wait for server startup
 
 **Bet placement fails:**

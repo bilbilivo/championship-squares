@@ -42,7 +42,9 @@ def app():
 @pytest.fixture()
 def client(app):
     """Flask test client — no running server needed."""
-    return app.test_client()
+    client = app.test_client()
+    client.post('/api/login', json={'role': 'admin'})
+    return client
 
 
 @pytest.fixture()

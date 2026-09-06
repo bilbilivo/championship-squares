@@ -38,7 +38,7 @@ function setSportTheme(sport, skipAPICall = false) {
     root.style.setProperty('--retro-logo-secondary', `var(--${sport}-logo-secondary)`);
 
     // Only make the API call if not skipped
-    if (!skipAPICall) {
+    if (!skipAPICall && isAdmin()) {
         gameSync.mutate(() => fetch('/api/sport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -114,6 +114,7 @@ function updateMultiplierButtons() {
 
         button.appendChild(multiplierText);
         button.appendChild(labelText);
+        button.disabled = !isAdmin();
         button.onclick = () => selectMultiplier(multiplier);
 
         if (multiplier === currentMultiplier) {
@@ -126,6 +127,7 @@ function updateMultiplierButtons() {
 
 // Function to select a multiplier
 function selectMultiplier(multiplier) {
+    if (!isAdmin()) return;
     currentMultiplier = multiplier;
 
     // Update button states - remove active from all, then add to the selected one
@@ -306,6 +308,7 @@ let currentRightScore = 0;
 
 // Update score validation to use dynamic maxScore
 function updateScore(team) {
+    if (!isAdmin()) return;
     const teamSelect = document.getElementById(team === 'left' ? 'teamLeft' : 'teamRight');
     const teamCode = teamSelect.value;
     const teamName = teamCode ? getCurrentTeams()[teamCode].name : (team === 'left' ? 'Left' : 'Right') + ' Team';
@@ -790,6 +793,7 @@ const FIFA_TEAMS = {
 };
 
 function addPlayer() {
+    if (!isAdmin()) return;
     const initialInput = document.getElementById('playerInitial');
     const nameInput = document.getElementById('playerName');
     const initial = initialInput.value.toUpperCase();
@@ -885,6 +889,7 @@ function getContrastRatio(color1, color2) {
 
 // Add function to save team selections
 function saveTeams() {
+    if (!isAdmin()) return;
     const leftTeam = document.getElementById('teamLeft').value;
     const rightTeam = document.getElementById('teamRight').value;
     
@@ -1056,13 +1061,15 @@ function updatePlayerList() {
         
         playerItem.appendChild(colorDot);
         playerItem.appendChild(playerInfo);
-        playerItem.appendChild(deleteBtn);
+        if (isAdmin()) playerItem.appendChild(deleteBtn);
+        if (loginSession.player === initial) playerItem.classList.add('current-player');
         playerList.appendChild(playerItem);
     });
 }
 
 
 function deletePlayer(initial) {
+    if (!isAdmin()) return;
     const playerName = players[initial]?.name || 'Unknown Player';
     
     showAlert(
@@ -1111,6 +1118,33 @@ function deletePlayer(initial) {
 function handleSquareClick(row, col) {
     if (row === col) return; // Prevent tie square interaction
 
+    if (loginSession.role === 'player') {
+        const value = d3.select(`text[data-row='${row}'][data-col='${col}']`).text();
+        if (value === loginSession.player) return handleSquareDelete(row, col);
+        if (value) return showAlert(`Owned by ${value}`, 'Square taken');
+        const leftTeam = document.getElementById('teamLeft').value || 'Away';
+        const rightTeam = document.getElementById('teamRight').value || 'Home';
+        showAlert(
+            `${leftTeam}: ${row} - ${rightTeam}: ${col}`,
+            'Claim square?',
+            true,
+            (confirmed) => {
+                if (!confirmed) return;
+                gameSync.mutate(async () => {
+                    try {
+                        const response = await fetch('/api/squares', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ row, col, value: loginSession.player, expected_value: '' })
+                        });
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error);
+                    } catch (error) { showAlert(error.message || 'Failed to place token'); }
+                });
+            }
+        );
+        return;
+    }
+    if (!isAdmin()) return;
     // Check if any players exist
     if (Object.keys(players).length === 0) {
         showAlert('Please add players before claiming squares', 'No players');
@@ -1326,6 +1360,7 @@ function handleSquareDelete(row, col) {
     
     const currentValue = d3.select(`text[data-row='${row}'][data-col='${col}']`).text();
     if (!currentValue) return; // No need to confirm if square is empty
+    if (!isAdmin() && currentValue !== loginSession.player) return;
     
     const playerName = players[currentValue]?.name || 'Unknown Player';
     showAlert(
@@ -1394,6 +1429,7 @@ function resetZoom() {
 
 // End Game celebration function
 function endGame() {
+    if (!isAdmin()) return;
     showAlert(
         'Are you sure?',
         'End Game',
@@ -1794,6 +1830,7 @@ function createStaticDecorations(container, teamColors) {
 }
 
 function resetGame(isNewGame = false) {
+    if (!isAdmin()) return;
     showAlert(
         'All data will be erased. Continue?',
         isNewGame ? 'New Game' : 'Reset Game',
@@ -1906,6 +1943,11 @@ function applyGameState(data, { focusScore = false } = {}) {
         !data.sport || !Number.isInteger(data.max_score)) {
         throw new Error('Invalid or incomplete game state');
     }
+    if (loginSession.role === 'player' && data.session?.role !== 'player') {
+        gameSync.stop();
+        window.location.reload();
+        return;
+    }
     const sportChanged = currentSport !== data.sport;
     const rebuild = maxScore !== data.max_score || mainGroup.select('.square').empty();
     const playersChanged = JSON.stringify(players) !== JSON.stringify(data.players);
@@ -1943,6 +1985,11 @@ function applyGameState(data, { focusScore = false } = {}) {
     });
     highlightCurrentScore();
     highlightWinner(data.winner);
+    applyModeControls();
+    if (loginSession.role === 'player' && !players[loginSession.player]) {
+        gameSync.stop();
+        window.location.reload();
+    }
     // Focus only when entering/rebuilding a game; live updates preserve the user's view.
     if (focusScore || rebuild) goToScore();
 }
@@ -1991,6 +2038,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Update loadGameBtn click handler to handle max score
 	loadGameBtn.addEventListener('click', () => {
+        if (!isAdmin()) return;
 		// Temporarily enable lite-mode to reduce animation load during loading
 		const wasLiteMode = document.body.classList.contains('lite-mode');
 		document.body.classList.add('lite-mode');

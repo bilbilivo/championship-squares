@@ -376,7 +376,7 @@ Disables visual effects for testing on slower machines.
 
 ## Future Enhancement Ideas
 
-- User authentication and multi-session support
+- Password-protected authentication (ADMIN/PLAYER sessions currently use open mode selection)
 - Database backend (SQLite/PostgreSQL)
 - Undo/redo functionality
 - Game history and statistics

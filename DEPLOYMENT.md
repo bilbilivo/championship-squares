@@ -442,7 +442,8 @@ location /static/ {
 
 ### Port 8080 Only
 
-Application has no built-in authentication. Deploy with:
+The application has session-based ADMIN/PLAYER permissions, but mode selection has
+no password or identity verification: anyone can select ADMIN. Deploy with:
 - Reverse proxy (nginx with auth)
 - VPN/firewall (restrict IP access)
 - Local network only (trusted users)

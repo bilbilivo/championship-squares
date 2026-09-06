@@ -101,6 +101,7 @@ def test_simultaneous_claims_cannot_overwrite_each_other(app, client, events):
 
     def claim(initial):
         with app.test_client() as device:
+            device.post('/api/login', json={'role': 'admin'})
             barrier.wait(timeout=2)
             return device.post('/api/squares', json={
                 'row': 2, 'col': 1, 'value': initial, 'expected_value': ''
@@ -123,6 +124,7 @@ def test_simultaneous_claims_do_not_overspend_tokens(app, client, events):
 
     def claim(row):
         with app.test_client() as device:
+            device.post('/api/login', json={'role': 'admin'})
             barrier.wait(timeout=2)
             return device.post('/api/squares', json={
                 'row': row, 'col': 1, 'value': 'A', 'expected_value': ''
