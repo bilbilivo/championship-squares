@@ -2,6 +2,9 @@
 
 Small web app to run a Championship Squares game. Works on Linux, macOS, and Windows.
 
+## Gameplay
+![Gameplay](static/gameplay.png)
+
 ## Quick start
 
 Clone the repository:
@@ -155,6 +158,9 @@ powershell -ExecutionPolicy Bypass -File .\start_server.ps1 uninstall
 - `DEPLOYMENT.md`
 - `TESTING.md`
 - `TROUBLESHOOTING.md`
+
+## End Game
+![End](static/winner.png)
 
 ## License
 
