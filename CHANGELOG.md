@@ -4,6 +4,16 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.11] - 2026-09-06
+
+### Added
+- QR game-join dialog with a locally generated, scannable network URL
+- ADMIN and PLAYER modes: players can select or create their identity and may only place or remove their own tokens
+- Session-aware API protection, login regression coverage, and updated deployment and usage documentation
+
+### Changed
+- Kept the QR URL compact and on one line in the join dialog
+
 ## [v2026.10] - 2026-09-06
 
 ### Added
@@ -196,6 +206,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.11]: https://github.com/bilbilivo/championship-squares/compare/v2026.10...v2026.11
 [v2026.10]: https://github.com/bilbilivo/championship-squares/compare/v2026.09...v2026.10
 [v2026.09]: https://github.com/bilbilivo/championship-squares/compare/v2026.08...v2026.09
 [v2026.08]: https://github.com/bilbilivo/championship-squares/compare/v2026.07...v2026.08
