@@ -48,7 +48,28 @@ const BoardGeometry = (() => {
         return Math.max(viewport.fit, Math.min(viewport.max, current * factor));
     }
 
-    return { metrics, layout, constrain, centered, center, zoomScale };
+    function scoreView(squares, viewport) {
+        const firstRow = Math.min(...squares.map(square => square.row));
+        const firstCol = Math.min(...squares.map(square => square.col));
+        const lastRow = Math.max(...squares.map(square => square.row));
+        const lastCol = Math.max(...squares.map(square => square.col));
+        // Include the pinned score header plus at least 15 playable cells.
+        // Expand further when the score and winning squares are farther apart.
+        const rows = Math.max(15, lastRow - firstRow + 1);
+        const cols = Math.max(15, lastCol - firstCol + 1);
+        const k = zoomScale(Math.min(
+            viewport.width / ((cols + 1) * viewport.cellSize),
+            viewport.height / ((rows + 1) * viewport.cellSize)
+        ), 1, viewport);
+        const { header } = layout(viewport, k);
+        return constrain({
+            x: header - firstCol * viewport.cellSize * k,
+            y: header - firstRow * viewport.cellSize * k,
+            k
+        }, viewport);
+    }
+
+    return { metrics, layout, constrain, centered, center, zoomScale, scoreView };
 })();
 
 if (typeof module !== 'undefined') module.exports = BoardGeometry;

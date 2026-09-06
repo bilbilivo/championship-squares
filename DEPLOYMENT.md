@@ -140,7 +140,18 @@ This starts the server with configuration from `config.py` (port 8080, debug dis
 
 ### Running Behind Reverse Proxy (nginx)
 
-For production with SSL and multiple servers, use nginx as a reverse proxy:
+For SSL, use nginx as a reverse proxy to the game server:
+
+Multi-device play uses `/api/events` (server-sent events). Each active browser
+keeps one connection open and fetches state when a saved change is announced.
+Reconnections and returning to a hidden tab refresh state automatically; polling
+every five seconds is used only when the event connection is unavailable.
+
+Run **one server process with threading enabled** (the `python app.py` launcher
+does this). Game state and notifications are shared in memory between its threads.
+Do not use multiple worker processes or replicas with this implementation. A WSGI
+server needs enough threads for the connected browsers plus ordinary API requests.
+Multiple workers would require shared state and a shared notification broker.
 
 **Nginx config** `/etc/nginx/sites-available/championship-squares`:
 
@@ -166,6 +177,8 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_read_timeout 60s;
     }
 }
 ```

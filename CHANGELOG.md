@@ -4,6 +4,27 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.10] - 2026-09-06
+
+### Added
+- Live multi-device updates through server-sent events, with coalesced state reads, reconnect recovery, and fallback polling when push is unavailable
+- Regression coverage for concurrent claims, failed saves, reconnects, board geometry, text alignment, and firework lifecycle; JavaScript checks now run in CI
+
+### Fixed
+- Serialized game-state access and rolled back failed mutations to protect player tokens and prevent conflicting square claims from overwriting each other
+- Prevented slow event subscribers from blocking saves and versioned frontend assets so browsers load updated scripts and styles
+- Centered visible score digits and player initials horizontally and vertically, including after font loading and while zooming
+- Removed the raised hover state from board navigation buttons
+- Started end-game fireworks automatically, including in Brave, lite mode, and reduced-motion mode; kept effects running until close with bounded particle counts and cleanup
+- Kept desktop top-five entries on single lines, removed nested celebration scrolling, and gave the mobile trophy room to bounce without clipping
+
+### Changed
+- Refined the responsive board, pinned score axes, touch interactions, and keyboard navigation
+- Matched new-game and loaded-game views to Go to score: roughly 15 squares along the shorter viewport dimension, anchored to the current score and winning area
+- Increased grid-axis team names to 16px with automatic fitting for long names
+- Documented the single-process, threaded deployment requirement and reverse-proxy settings for live synchronization
+- Updated Requests and pytest development dependencies to address dependency-audit findings
+
 ## [v2026.09] - 2026-04-15
 
 ### Fixed
@@ -175,6 +196,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.10]: https://github.com/bilbilivo/championship-squares/compare/v2026.09...v2026.10
 [v2026.09]: https://github.com/bilbilivo/championship-squares/compare/v2026.08...v2026.09
 [v2026.08]: https://github.com/bilbilivo/championship-squares/compare/v2026.07...v2026.08
 [v2026.07]: https://github.com/bilbilivo/championship-squares/compare/v2026.06...v2026.07

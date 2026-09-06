@@ -2,10 +2,10 @@
 
 ## Responsive board regression checks
 
-Run the geometry tests with Node.js 18 or later (no npm dependencies):
+Run the board, text alignment, live sync, and celebration tests with Node.js 18 or later (no npm dependencies):
 
 ```bash
-node tests/board-geometry.test.cjs
+node --test tests/*.test.cjs
 ```
 
 Run application regressions with `venv/bin/python -m pytest -q`. The pytest fixtures
@@ -16,13 +16,13 @@ Check 1366×768, 1920×1080, 2560×1440, 3440×1440, 768×1024, 390×844,
 and 844×390 viewports. Exercise NFL, MLB, NHL, and Olympics with no players and
 with 12 players, loaded claims, long team names, prompts, and a final celebration.
 
-- The initial view covers the board viewport; panning stops at all four edges.
+- New and loaded games use the Go to score view: roughly 15 cells along the shorter viewport dimension, including the score and winning squares. Panning stops at all four edges.
 - Score headers remain visible and aligned; the final row and column are reachable.
 - Zooming out fully shows the entire board, flush with the top and left score axes. Zooming out, panning, and resizing must never introduce a gap between either axis and the grid. Selecting a cell smaller than 24px navigates without claiming it.
 - Resize while zoomed and verify the same region remains visible unless an edge requires clamping.
 - Go to score locates both low and maximum scores. Navigation sends no game-state writes.
 - Desktop player lists scroll independently; narrow-screen controls and dialog actions remain reachable.
-- Check keyboard pan/zoom, touch drag/pinch, and normal, lite, and reduced-motion rendering.
+- Check keyboard pan/zoom, touch drag/pinch, and normal, lite, and reduced-motion rendering. End-game fireworks always start automatically; other effects retain their motion settings.
 
 ## Overview
 
@@ -197,7 +197,7 @@ Test setup complete!
 1. Load test game
 2. Open same game in 2 browser tabs
 3. Update score in Tab 1
-4. Refresh Tab 2
+4. Verify Tab 2 updates without refreshing, then disconnect and reconnect it
 5. Verify both see same state
 
 **Checks:**
@@ -429,4 +429,4 @@ See `DEVELOPER_GUIDE.md` for architecture details on testable components.
 **Inconsistent scores:**
 - Refresh browser before checking
 - Check browser cache (Ctrl+Shift+Delete)
-- Verify not using multiple browser tabs simultaneously
+- Confirm all devices use the same server and that only one threaded server process is running

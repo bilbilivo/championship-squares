@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>CHAMPIONSHIP SQUARES</title>
     <script src="/static/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="{{ asset_url('css/style.css') }}">
 </head>
 <body>
     <div id="landing-overlay" class="landing-overlay">
@@ -123,7 +123,10 @@
         </div>
     </div>
 
-    <script src="/static/js/board-geometry.js"></script>
-    <script src="/static/js/game.js"></script>
+    <script src="{{ asset_url('js/board-geometry.js') }}"></script>
+    <script src="{{ asset_url('js/board-text.js') }}"></script>
+    <script src="{{ asset_url('js/game-sync.js') }}"></script>
+    <script src="{{ asset_url('js/celebration-effects.js') }}"></script>
+    <script src="{{ asset_url('js/game.js') }}"></script>
 </body>
 </html>

@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Stephane Belliveau
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, Response, jsonify, render_template, request, stream_with_context, url_for
+from copy import deepcopy
+from functools import wraps
+import json
 import os
+import threading
 from config import config
 from database import save_game_state as db_save_state, load_game_state as db_load_state, init_db
 
@@ -14,10 +18,94 @@ app = Flask(__name__,
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 
 
+@app.context_processor
+def versioned_assets():
+    def asset_url(filename):
+        version = os.stat(os.path.join(app.static_folder, filename)).st_mtime_ns
+        return url_for('static', filename=filename, v=version)
+    return {'asset_url': asset_url}
+
+
+class GameEventStream:
+    """In-process revision broadcaster for browsers viewing the same game."""
+
+    def __init__(self):
+        self._condition = threading.Condition()
+        self._revision = 0
+        self._origin = None
+
+    def snapshot(self):
+        with self._condition:
+            return self._revision
+
+    def publish(self, origin=None):
+        with self._condition:
+            self._revision += 1
+            self._origin = origin
+            self._condition.notify_all()
+            return self._revision
+
+    def stream(self):
+        revision = self.snapshot()
+        yield self._message(revision, None)
+        while True:
+            with self._condition:
+                changed = self._condition.wait_for(
+                    lambda: self._revision != revision, timeout=20
+                )
+                if changed:
+                    revision = self._revision
+                    origin = self._origin
+                    message = self._message(revision, origin)
+                else:
+                    message = ': keepalive\n\n'
+            # A slow client must never hold the broadcaster lock while sending.
+            yield message
+
+    @staticmethod
+    def _message(revision, origin):
+        return f"event: game-updated\ndata: {json.dumps({'revision': revision, 'origin': origin})}\n\n"
+
+
+game_events = GameEventStream()
+game_state_lock = threading.RLock()
+
+
+def synchronized_game(view):
+    """Serialize state access and roll back rejected or failed mutations."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        with game_state_lock:
+            previous = deepcopy(game_state.__dict__) if request.method != 'GET' else None
+            try:
+                response = app.make_response(view(*args, **kwargs))
+                if response.status_code < 400:
+                    previous = None
+                return response
+            finally:
+                if previous is not None:
+                    game_state.__dict__.update(previous)
+                    config.update_sport(game_state.sport)
+    return wrapped
+
+
+def persist_game_state():
+    if not game_state.save_state():
+        raise RuntimeError('Failed to save game state')
+    return True
+
+
+def notify_game_change():
+    """Tell other connected browsers to reload state after a successful save."""
+    return game_events.publish(request.headers.get('X-Game-Client'))
+
+
 @app.after_request
 def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    if request.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store'
     return response
 
 class GameState:
@@ -276,14 +364,27 @@ def index():
         print(f"Error loading template: {e}")
         return "Error loading page", 500
 
+
+@app.route('/api/events')
+def game_events_stream():
+    response = Response(
+        stream_with_context(game_events.stream()),
+        mimetype='text/event-stream',
+    )
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response
+
 @app.route('/api/reset', methods=['POST'])
+@synchronized_game
 def reset_game():
     try:
         # Reset the game state to initial values
         game_state.reset_state()
         
         # Save the fresh state
-        if game_state.save_state():
+        if persist_game_state():
+            notify_game_change()
             return jsonify({'success': True})
         else:
             return jsonify({'error': 'Failed to save game state'}), 500
@@ -292,6 +393,7 @@ def reset_game():
 
 # Add new route for updating scores
 @app.route('/api/scores', methods=['POST'])
+@synchronized_game
 def update_scores():
     try:
         data = request.json
@@ -312,7 +414,8 @@ def update_scores():
         # Update score state
         game_state.scores['left'] = left_score
         game_state.scores['right'] = right_score
-        game_state.save_state()
+        persist_game_state()
+        notify_game_change()
         
         return jsonify({'success': True})
     except Exception as e:
@@ -320,6 +423,7 @@ def update_scores():
 
 # Update the state endpoint to include max_score
 @app.route('/api/state', methods=['GET'])
+@synchronized_game
 def get_state():
     try:
         winner_info = calculate_winner()
@@ -340,6 +444,7 @@ def get_state():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/winner', methods=['GET'])
+@synchronized_game
 def get_winner():
     """Get the current winner information"""
     try:
@@ -352,6 +457,7 @@ def get_winner():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/standings', methods=['GET'])
+@synchronized_game
 def get_standings():
     """Get all players ranked by distance from current score"""
     try:
@@ -413,6 +519,7 @@ def get_standings():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/squares', methods=['POST'])
+@synchronized_game
 def update_square():
     try:
         data = request.json
@@ -430,6 +537,10 @@ def update_square():
         # Get current value before update
         current_value = game_state.squares[row][col]
         square_key = (row, col)
+        if 'expected_value' in data and data['expected_value'] != current_value:
+            return jsonify({'error': 'This square changed on another device. Please try again.'}), 409
+        if value and (not isinstance(value, str) or value.upper() not in game_state.players):
+            return jsonify({'error': 'Player not found'}), 400
 
         # Calculate token cost with current multiplier
         token_cost = game_state.current_multiplier
@@ -464,7 +575,8 @@ def update_square():
 
         # Update square
         game_state.squares[row][col] = new_value
-        game_state.save_state()  # Save state after update
+        persist_game_state()  # Save state after update
+        notify_game_change()
         return jsonify({
             'success': True,
             'updated_players': updated_players  # Return all players whose tokens changed
@@ -473,6 +585,7 @@ def update_square():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/players', methods=['POST'])
+@synchronized_game
 def add_player():
     try:
         data = request.json
@@ -511,7 +624,8 @@ def add_player():
             'tokens': tokens_per_player  # Each player starts with full token allocation
         }
         
-        game_state.save_state()
+        persist_game_state()
+        notify_game_change()
         
         return jsonify({
             'success': True, 
@@ -521,6 +635,7 @@ def add_player():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/players/<initial>', methods=['DELETE'])
+@synchronized_game
 def delete_player(initial):
     try:
         initial = initial.upper()
@@ -541,7 +656,8 @@ def delete_player(initial):
             
             # Remove player from players dict
             del game_state.players[initial]
-            game_state.save_state()
+            persist_game_state()
+            notify_game_change()
             return jsonify({'success': True})
         return jsonify({'error': 'Player not found'}), 404
     except Exception as e:
@@ -549,6 +665,7 @@ def delete_player(initial):
 
 # Add new route to handle team updates
 @app.route('/api/teams', methods=['POST'])
+@synchronized_game
 def update_teams():
     try:
         data = request.json
@@ -558,7 +675,8 @@ def update_teams():
         # Update team state
         game_state.teams['left'] = left_team
         game_state.teams['right'] = right_team
-        game_state.save_state()
+        persist_game_state()
+        notify_game_change()
         
         return jsonify({'success': True})
     except Exception as e:
@@ -566,6 +684,7 @@ def update_teams():
 
 # Update sport selection endpoint to include max score
 @app.route('/api/sport', methods=['POST'])
+@synchronized_game
 def update_sport():
     try:
         data = request.json
@@ -595,7 +714,8 @@ def update_sport():
                 game_state.players[player_initial]['bets'] = 0
                 game_state.players[player_initial]['tokens'] = tokens_per_player
 
-            game_state.save_state()
+            persist_game_state()
+            notify_game_change()
 
             # Return success with new max score and multiplier info
             return jsonify({
@@ -613,6 +733,7 @@ def update_sport():
 
 # Add new endpoint for updating multiplier
 @app.route('/api/multiplier', methods=['POST'])
+@synchronized_game
 def update_multiplier():
     try:
         data = request.json
@@ -625,7 +746,8 @@ def update_multiplier():
 
         # Update current multiplier
         game_state.current_multiplier = multiplier
-        game_state.save_state()
+        persist_game_state()
+        notify_game_change()
 
         return jsonify({
             'success': True,
@@ -649,5 +771,6 @@ if __name__ == '__main__':
     app.run(
         host=config.config['host'],
         port=config.config['port'],
-        debug=config.config['debug']
+        debug=config.config['debug'],
+        threaded=True
     )

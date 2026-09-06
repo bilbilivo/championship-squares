@@ -88,13 +88,61 @@ test('Go to score keeps corner scores visible after clamping', () => {
     for (const row of [0, 70]) {
         for (const col of [0, 70]) {
             const point = [(col + 0.5) * 40, (row + 0.5) * 40];
-            const t = geometry.centered(point, v.play, v);
+            const t = geometry.scoreView([{ row, col }], v);
             const { header, plotWidth, plotHeight } = geometry.layout(v, t.k);
             const x = t.x + point[0] * t.k;
             const y = t.y + point[1] * t.k;
             assert.ok(x >= header && x <= header + plotWidth);
             assert.ok(y >= header && y <= header + plotHeight);
         }
+    }
+});
+
+test('Go to score shows 15 cells on the shorter dimension and anchors the score top-left', () => {
+    for (const [width, height] of [[640, 640], [1200, 600], [350, 650]]) {
+        for (const touch of [true, false]) {
+            const v = geometry.metrics(width, height, 71, 40, touch);
+            const t = geometry.scoreView([{ row: 20, col: 15 }], v);
+            const { header, plotWidth, plotHeight } = geometry.layout(v, t.k);
+            near(Math.min(plotWidth, plotHeight) / (40 * t.k), 15);
+            near(t.x + 15 * 40 * t.k, header);
+            near(t.y + 20 * 40 * t.k, header);
+        }
+    }
+});
+
+test('Go to score anchors the bounds of the score and all winning squares', () => {
+    const v = geometry.metrics(640, 640, 71);
+    const squares = [{ row: 20, col: 15 }, { row: 17, col: 13 }, { row: 18, col: 11 }];
+    const t = geometry.scoreView(squares, v);
+    const { header } = geometry.layout(v, t.k);
+    near(t.x + 11 * 40 * t.k, header);
+    near(t.y + 17 * 40 * t.k, header);
+    near(40 * t.k, 40);
+});
+
+test('Go to score widens enough to show distant winning squares in full', () => {
+    for (const [width, height] of [[1200, 600], [350, 650]]) {
+        const v = geometry.metrics(width, height, 71);
+        const squares = [{ row: 20, col: 15 }, { row: 2, col: 3 }, { row: 40, col: 45 }];
+        const t = geometry.scoreView(squares, v);
+        const { header } = geometry.layout(v, t.k);
+        for (const { row, col } of squares) {
+            assert.ok(t.x + col * 40 * t.k >= header - 1e-8);
+            assert.ok(t.y + row * 40 * t.k >= header - 1e-8);
+            assert.ok(t.x + (col + 1) * 40 * t.k <= width + 1e-8);
+            assert.ok(t.y + (row + 1) * 40 * t.k <= height + 1e-8);
+        }
+    }
+});
+
+test('Go to score fits smaller sports boards without exceeding zoom limits', () => {
+    for (const count of [11, 13]) {
+        const v = geometry.metrics(350, 650, count);
+        const t = geometry.scoreView([{ row: count - 1, col: 0 }], v);
+        near(t.k, v.fit);
+        near(t.x, geometry.layout(v, t.k).header);
+        near(t.y, geometry.layout(v, t.k).header);
     }
 });
 

@@ -17,6 +17,7 @@ let tokensPerPlayer = 40;  // Tokens each player gets for current sport
 
 // The board container determines the available drawing area.
 const gridContainer = document.querySelector('.grid-container');
+const boardText = BoardText.create(document.createElement('canvas').getContext('2d'));
 
 // Get color from index using d3's color scale
 const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -38,7 +39,7 @@ function setSportTheme(sport, skipAPICall = false) {
 
     // Only make the API call if not skipped
     if (!skipAPICall) {
-        fetch('/api/sport', {
+        gameSync.mutate(() => fetch('/api/sport', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sport: currentSport })
@@ -55,7 +56,7 @@ function setSportTheme(sport, skipAPICall = false) {
                 createGrid(); // Recreate grid with new max score
             }
         })
-        .catch(error => console.error('Error updating sport:', error));
+        .catch(error => console.error('Error updating sport:', error)));
     }
     
     // Update team selections
@@ -138,7 +139,7 @@ function selectMultiplier(multiplier) {
     });
 
     // Save multiplier to backend
-    fetch('/api/multiplier', {
+    gameSync.mutate(() => fetch('/api/multiplier', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ multiplier: multiplier })
@@ -149,7 +150,7 @@ function selectMultiplier(multiplier) {
             console.error('Failed to update multiplier:', data.error);
         }
     })
-    .catch(error => console.error('Error updating multiplier:', error));
+    .catch(error => console.error('Error updating multiplier:', error)));
 }
 
 
@@ -205,7 +206,7 @@ function updateAxesPositions(transform) {
             .attr('y', i => horizontal ? h / 2 : offset + (i + 0.5) * size)
             .attr('class', 'score-header-text')
             .style('font-size', scaledFontSize + 'px')
-            .text(i => i).raise();
+            .text(i => i).call(boardText.center).raise();
     }
 }
 
@@ -250,8 +251,7 @@ function measureBoard() {
     if (boardMeasured) {
         applyBoardTransform(BoardGeometry.centered(center, BoardGeometry.zoomScale(previous.k, 1, viewport), viewport));
     } else {
-        const h = BoardGeometry.layout(viewport, viewport.play).header;
-        applyBoardTransform({ x: h, y: h, k: viewport.play });
+        goToScore();
     }
     boardMeasured = true;
 }
@@ -270,7 +270,15 @@ function focusSquare(row, col) {
 }
 
 function goToScore() {
-    focusSquare(currentLeftScore, currentRightScore);
+    const squares = [{ row: currentLeftScore, col: currentRightScore }];
+    mainGroup.selectAll('rect.winner-square').each(function () {
+        squares.push({
+            row: Number(this.getAttribute('data-row')),
+            col: Number(this.getAttribute('data-col'))
+        });
+    });
+    updateZoomLimits();
+    applyBoardTransform(BoardGeometry.scoreView(squares, viewport));
 }
 
 function togglePlayers(button) {
@@ -335,7 +343,7 @@ function updateScore(team) {
                 document.getElementById('rightScore').textContent = currentRightScore;
             }
 
-            fetch('/api/scores', {
+            gameSync.mutate(() => fetch('/api/scores', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -354,7 +362,7 @@ function updateScore(team) {
             .catch(error => {
                 console.error('Error saving scores:', error);
                 showAlert('Failed to save scores');
-            });
+            }));
         }
     });
 }
@@ -429,7 +437,7 @@ function fitTeamLabels() {
         const label = document.querySelector(selector);
         const available = selector.endsWith('top') ? label.clientWidth : label.clientHeight;
         if (available > 0 && label.textContent) {
-            label.style.fontSize = Math.min(14, (available - 16) / label.textContent.length) + 'px';
+            label.style.fontSize = Math.min(18, (available - 18) / label.textContent.length) + 'px';
         }
     }
 }
@@ -468,18 +476,7 @@ function highlightWinner(winnerData) {
 
 // Function to update winner display
 function updateWinnerDisplay() {
-    fetch('/api/winner')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.winner) {
-                highlightWinner(data.winner);
-            } else {
-                highlightWinner(null);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching winner:', error);
-        });
+    gameSync.refresh();
 }
 
 // Update the createGrid function to add data attributes to the squares
@@ -520,8 +517,7 @@ function createGrid() {
         .attr("y", row * currentSize + currentSize / 2)
         .attr("data-row", row)
         .attr("data-col", col)
-        .style("font-size", "12px")
-        .text(isTieSquare ? row : '');
+        .text(isTieSquare ? row : '').call(boardText.center);
     }
   }
 
@@ -824,7 +820,7 @@ function addPlayer() {
     }
 
     // Add player via API
-    fetch('/api/players', {
+    gameSync.mutate(() => fetch('/api/players', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initial, name })
@@ -848,7 +844,7 @@ function addPlayer() {
     .catch(error => {
         console.error("Error adding player:", error);
         showAlert("Failed to add player");
-    });
+    }));
 }
 
 // Add these helper functions for contrast checking
@@ -892,7 +888,7 @@ function saveTeams() {
     const leftTeam = document.getElementById('teamLeft').value;
     const rightTeam = document.getElementById('teamRight').value;
     
-    fetch('/api/teams', {
+    gameSync.mutate(() => fetch('/api/teams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -908,7 +904,7 @@ function saveTeams() {
     })
     .catch(error => {
         console.error('Error saving teams:', error);
-    });
+    }));
 }
 
 
@@ -1076,7 +1072,7 @@ function deletePlayer(initial) {
         (confirmed) => {
             if (confirmed) {
                 // Delete player via API
-                fetch(`/api/players/${initial}`, {
+                gameSync.mutate(() => fetch(`/api/players/${initial}`, {
                     method: 'DELETE',
                 })
                 .then(response => response.json())
@@ -1105,7 +1101,7 @@ function deletePlayer(initial) {
                 .catch(error => {
                     console.error("Error deleting player:", error);
                     showAlert("Failed to delete player");
-                });
+                }));
             }
         }
     );
@@ -1158,10 +1154,10 @@ function handleSquareClick(row, col) {
             const initial = value.trim().toUpperCase();
 
             // Update square via API
-            fetch('/api/squares', {
+            gameSync.mutate(() => fetch('/api/squares', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ row, col, value: initial })
+                body: JSON.stringify({ row, col, value: initial, expected_value: '' })
             })
             .then(response => response.json())
             .then(data => {
@@ -1186,7 +1182,7 @@ function handleSquareClick(row, col) {
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('Failed to update square');
-            });
+            }));
         }
     });
 }
@@ -1337,10 +1333,10 @@ function handleSquareDelete(row, col) {
         true,
         (confirmed) => {
             if (confirmed) {
-                fetch('/api/squares', {
+                gameSync.mutate(() => fetch('/api/squares', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ row, col, value: '' })
+                    body: JSON.stringify({ row, col, value: '', expected_value: currentValue })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1365,7 +1361,7 @@ function handleSquareDelete(row, col) {
                 .catch(error => {
                     console.error("Error:", error);
                     showAlert("Failed to delete square");
-                });
+                }));
             }
         }
     );
@@ -1376,25 +1372,10 @@ function updateSquare(row, col, value) {
     const text = d3.select(`text[data-row='${row}'][data-col='${col}']`);
     if (text.empty()) return;
 
-    // Get current value before update
-    const currentValue = text.text();
-    
-    // Convert value to uppercase before display
     const displayValue = value ? value.toUpperCase() : '';
-    
-    // Update bet counts if needed
-    if (currentValue && players[currentValue]) {
-        // Decrement bet count for previous player
-        players[currentValue].bets = Math.max(0, (players[currentValue].bets || 0) - 1);
-    }
-    
-    if (displayValue && players[displayValue]) {
-        // Increment bet count for new player
-        players[displayValue].bets = (players[displayValue].bets || 0) + 1;
-    }
-    
+
     // Set text and color
-    text.text(displayValue);
+    text.text(displayValue).call(boardText.center);
     
     // Only apply color if there's a value and it belongs to a player
     if (displayValue && players[displayValue]) {
@@ -1403,8 +1384,6 @@ function updateSquare(row, col, value) {
         text.style("fill", "var(--retro-primary)");
     }
         
-    // Update player list to reflect new bet counts
-    updatePlayerList();
 }
 
 
@@ -1524,6 +1503,7 @@ function showCelebration(standings, winningTeam) {
     if (isLiteMode) overlay.classList.add('lite-mode');
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]} 0%, ${teamColors.winner[1]} 100%)`;
     overlay.innerHTML = `
+        <div class="celebration-confetti-layer" aria-hidden="true"></div>
         <div class="celebration-fireworks fireworks-left" id="fireworksLeft"></div>
         <div class="celebration-fireworks fireworks-right" id="fireworksRight"></div>
         <div class="celebration-content">
@@ -1558,27 +1538,27 @@ function showCelebration(standings, winningTeam) {
         el.textContent = el.dataset.playerName;
     });
 
-    // Add confetti and fireworks - only winning team colors
-    if (isLiteMode) {
-        // Lite mode: add static 8-bit decorations
-        createStaticDecorations(overlay, teamColors.winner);
-    } else {
-        // Normal mode: animated effects
-        createConfetti(overlay, teamColors.winner);
-        createFireworks(overlay.querySelector('#fireworksLeft'), teamColors.winner, 'left');
-        createFireworks(overlay.querySelector('#fireworksRight'), teamColors.winner, 'right');
+    const stopFireworks = CelebrationEffects.mount(overlay, teamColors.winner);
+    function closeCelebration() {
+        stopFireworks();
+        overlay.remove();
+    }
+
+    // Confetti is optional; fireworks always start when the celebration opens.
+    if (!isLiteMode) {
+        createConfetti(overlay.querySelector('.celebration-confetti-layer'), teamColors.winner);
     }
 
     // Add click handlers for buttons
     overlay.querySelector('#celebrationResetBtn').addEventListener('click', (e) => {
         e.stopPropagation();
-        document.body.removeChild(overlay);
+        closeCelebration();
         resetGame(true);
     });
 
     overlay.querySelector('#celebrationCancelBtn').addEventListener('click', (e) => {
         e.stopPropagation();
-        document.body.removeChild(overlay);
+        closeCelebration();
     });
 }
 
@@ -1592,6 +1572,7 @@ function createConfetti(container, teamColors = null) {
 
     for (let i = 0; i < 50; i++) {
         setTimeout(() => {
+            if (!container.isConnected) return;
             const confetti = document.createElement('div');
             confetti.className = 'celebration-confetti';
             confetti.style.left = Math.random() * 100 + '%';
@@ -1608,57 +1589,6 @@ function createConfetti(container, teamColors = null) {
             }, 5000);
         }, i * 100);
     }
-}
-
-// Create fireworks with team colors
-function createFireworks(container, teamColors, side = 'full') {
-    // Skip fireworks in lite mode
-    if (isLiteMode) return;
-
-    const colors = teamColors || ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'];
-
-    function launchFirework() {
-        const firework = document.createElement('div');
-        firework.className = 'firework';
-
-        // Random position within the container
-        const x = 10 + Math.random() * 80;
-        const y = 10 + Math.random() * 80;
-        firework.style.left = x + '%';
-        firework.style.top = y + '%';
-
-        // Create burst particles
-        const particleCount = 12;
-        for (let i = 0; i < particleCount; i++) {
-            const particle = document.createElement('div');
-            particle.className = 'firework-particle';
-            const angle = (i / particleCount) * 360;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.setProperty('--angle', angle + 'deg');
-            particle.style.backgroundColor = color;
-            particle.style.boxShadow = `0 0 6px ${color}, 0 0 12px ${color}`;
-            firework.appendChild(particle);
-        }
-
-        container.appendChild(firework);
-
-        // Remove after animation
-        setTimeout(() => {
-            if (firework.parentNode) {
-                firework.parentNode.removeChild(firework);
-            }
-        }, 1500);
-    }
-
-    // Launch fireworks periodically - stagger left and right
-    const delay = side === 'right' ? 200 : 0;
-    setTimeout(() => {
-        const fireworkInterval = setInterval(launchFirework, 700);
-        launchFirework(); // Initial firework
-
-        // Stop after 10 seconds
-        setTimeout(() => clearInterval(fireworkInterval), 10000);
-    }, delay);
 }
 
 // Create static 8-bit style decorations for lite mode
@@ -1909,6 +1839,7 @@ function resetGame(isNewGame = false) {
                         `;
                         document.body.appendChild(loadingOverlay);
 
+                        const finishMutation = gameSync.beginMutation();
                         try {
                             // First reset the game (clears all state)
                             const resetResponse = await fetch('/api/reset', {
@@ -1953,11 +1884,13 @@ function resetGame(isNewGame = false) {
                                 document.getElementById('landing-overlay').style.display = 'none';
                             }
                             
+                            gameSync.start();
                             showAlert(isNewGame ? 'Game started' : 'Reset completed');
                         } catch (error) {
                             console.error(`Error ${isNewGame ? 'starting' : 'resetting'} game:`, error);
                             showAlert(`Failed to ${isNewGame ? 'start' : 'reset'} game`);
                         } finally {
+                            finishMutation();
                             document.body.removeChild(loadingOverlay);
                         }
                     });
@@ -1967,7 +1900,65 @@ function resetGame(isNewGame = false) {
     );
 }
 
+// Apply authoritative state without rebuilding the board on ordinary updates.
+function applyGameState(data, { focusScore = false } = {}) {
+    if (!data?.squares || !data.players || !data.teams || !data.scores ||
+        !data.sport || !Number.isInteger(data.max_score)) {
+        throw new Error('Invalid or incomplete game state');
+    }
+    const sportChanged = currentSport !== data.sport;
+    const rebuild = maxScore !== data.max_score || mainGroup.select('.square').empty();
+    const playersChanged = JSON.stringify(players) !== JSON.stringify(data.players);
+    if (sportChanged || rebuild) setSportTheme(data.sport, true);
+    maxScore = data.max_score;
+    players = data.players;
+    currentMultiplier = data.current_multiplier || 1;
+    availableMultipliers = data.available_multipliers || [1];
+    multiplierLabels = data.multiplier_labels || [];
+    tokensPerPlayer = data.tokens_per_player || 40;
+    updateMultiplierButtons();
+    updatePlayerList();
+
+    const left = document.getElementById('teamLeft');
+    const right = document.getElementById('teamRight');
+    left.value = data.teams.left || '';
+    right.value = data.teams.right || '';
+    updateTeamColors(false);
+    currentLeftScore = data.scores.left;
+    currentRightScore = data.scores.right;
+    document.getElementById('leftScore').textContent = currentLeftScore;
+    document.getElementById('rightScore').textContent = currentRightScore;
+    if (rebuild) createGrid();
+
+    mainGroup.selectAll('text.square-text').each(function () {
+        const row = Number(this.getAttribute('data-row'));
+        const col = Number(this.getAttribute('data-col'));
+        if (row === col) return;
+        const value = data.squares[row]?.[col] || '';
+        if (this.textContent !== value || playersChanged || rebuild) {
+            d3.select(this).text(value).style('fill', value && players[value]
+                ? playerColorScale(players[value].playerIndex) : 'var(--retro-primary)')
+                .call(boardText.center);
+        }
+    });
+    highlightCurrentScore();
+    highlightWinner(data.winner);
+    // Focus only when entering/rebuilding a game; live updates preserve the user's view.
+    if (focusScore || rebuild) goToScore();
+}
+
+const gameSync = new GameSync(applyGameState);
+window.addEventListener('pagehide', () => gameSync.stop());
+window.addEventListener('pageshow', () => {
+    if (document.getElementById('landing-overlay').style.display === 'none') gameSync.start();
+});
+
 // Layout changes (including browser chrome and panel changes) update geometry.
+document.fonts.ready.then(() => {
+    // Discard fallback-font measurements once the bundled pixel font has loaded.
+    boardText.clear();
+    svg.selectAll('.square-text, .score-header-text').call(boardText.center);
+});
 const boardResizeObserver = new ResizeObserver(measureBoard);
 boardResizeObserver.observe(gridContainer);
 touchPointer.addEventListener('change', measureBoard);
@@ -2024,7 +2015,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.body.appendChild(loadingOverlay);
 
 		fetch('/api/state', {
-			method: 'GET'
+			method: 'GET', cache: 'no-store'
 		})
 		.then(response => {
 			if (!response.ok) {
@@ -2033,64 +2024,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			return response.json();
 		})
 		.then(data => {
-			// Validate required data
-			if (!data || !data.squares || !data.players ||
-				!data.teams || !data.scores || !data.sport ||
-				!data.max_score) {
-				throw new Error('Invalid or incomplete game state');
-			}
-
-			// Set sport theme first but skip the API call
-			setSportTheme(data.sport, true);
-			maxScore = data.max_score;
-
-			// Load multiplier data
-			currentMultiplier = data.current_multiplier || 1;
-			availableMultipliers = data.available_multipliers || [1];
-			multiplierLabels = data.multiplier_labels || [];
-			tokensPerPlayer = data.tokens_per_player || 40;
-			updateMultiplierButtons();
-
-			// Load players
-			players = data.players;
-			updatePlayerList();
-
-			// Load teams
-			const teamLeft = document.getElementById('teamLeft');
-			const teamRight = document.getElementById('teamRight');
-			
-			if (teamLeft && teamRight) {
-				teamLeft.value = data.teams.left || '';
-				teamRight.value = data.teams.right || '';
-				updateTeamColors(false); // Loaded state only needs visual updates
-			}
-
-			// Load scores
-			currentLeftScore = Math.min(data.scores.left, maxScore);
-			currentRightScore = Math.min(data.scores.right, maxScore);
-			document.getElementById('leftScore').textContent = currentLeftScore;
-			document.getElementById('rightScore').textContent = currentRightScore;
-
-			// Recreate grid with new maxScore
-			createGrid();
-
-			// Update squares data
-			for (let row = 0; row <= maxScore; row++) {
-				for (let col = 0; col <= maxScore; col++) {
-					if (row === col) continue; // Skip tie squares
-					const value = data.squares[row] && data.squares[row][col] ? 
-						data.squares[row][col] : '';
-					updateSquare(row, col, value);
-				}
-			}
-
-			// Update visual states
-			highlightCurrentScore();
-
-			// Update winner display if there's winner data
-			if (data.winner) {
-				highlightWinner(data.winner);
-			}
+			applyGameState(data, { focusScore: true });
+			gameSync.start();
 
 			// Hide overlays
 			document.getElementById('landing-overlay').style.display = 'none';

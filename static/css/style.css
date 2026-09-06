@@ -76,9 +76,10 @@
 
 /* ==========================================
    LITE MODE - Reduced visual effects
-   Disables animations, transitions, glows,
+   Reduces animations, transitions, glows,
    confetti, fireworks, and scanlines
-   while preserving all gameplay functionality
+   while preserving all gameplay functionality.
+   Celebrations control their bounded firework animation independently.
    ========================================== */
 
 /* Disable all animations in lite mode */
@@ -823,8 +824,18 @@ button:active {
     transform: translateY(-2px);
 }
 
+.celebration-confetti-layer {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
 .celebration-confetti {
     position: absolute;
+    top: 0;
+    pointer-events: none;
     width: 10px;
     height: 10px;
     animation: confettiFall linear forwards;
@@ -837,12 +848,12 @@ button:active {
 
 /* Fireworks */
 .celebration-fireworks {
-    position: absolute;
+    position: fixed;
     top: 0;
     width: 20%;
     height: 100%;
     pointer-events: none;
-    z-index: 100;
+    z-index: 1;
     overflow: hidden;
 }
 
@@ -918,12 +929,7 @@ button:active {
 
 /* Square Text */
 .square-text {
-    font-family: 'Press Start 2P', monospace;
     font-size: var(--board-score-font-size) !important;
-    fill: var(--retro-primary);
-    text-anchor: middle;
-    dominant-baseline: middle;
-    pointer-events: none;
 }
 
 /* Tooltip */
@@ -1332,13 +1338,14 @@ button:active {
 	fill: var(--retro-bg);
 }
 
-.square-text, .header-text, .tie-text {
+.square-text, .header-text, .tie-text, .score-header-text {
 	font-family: 'Press Start 2P', monospace;
+	font-weight: normal;
+	letter-spacing: normal;
 	fill: var(--retro-primary);
 	text-anchor: middle;
-	dominant-baseline: middle;
+	dominant-baseline: alphabetic;
 	pointer-events: none;
-	transition: font-size 0.3s ease;
 }
 
 /* Responsive arcade shell. The SVG and its geometry use the same measured box. */
@@ -1351,11 +1358,14 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
 .board-panel { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-width: 0; min-height: 0; }
 .board-toolbar { flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(44px, 0.3fr) minmax(44px, 0.3fr); width: 100%; gap: 4px; }
 .board-toolbar button { min-width: 0; width: 100%; font-size: 11px; padding: 6px 8px; }
+/* Keep navigation controls level after clicks and touch browsers' sticky hover. */
+.board-toolbar button:hover { transform: none; }
+.board-toolbar button:active { transform: translateY(2px); }
 .board-svg { position: absolute; left: 32px; top: 32px; width: calc(100% - 32px); height: calc(100% - 32px); display: block; touch-action: none; cursor: grab; }
 .board-svg:active { cursor: grabbing; }
 .score-header { fill: var(--retro-dark); stroke: var(--retro-primary); stroke-width: 1px; }
-.score-header-text { fill: var(--retro-primary); font-size: var(--board-score-font-size); text-anchor: middle; dominant-baseline: middle; pointer-events: none; }
-.team-name-top, .team-name-left { position: absolute; font-size: 14px; line-height: 32px; overflow: hidden; white-space: nowrap; text-align: center; }
+.score-header-text { font-size: var(--board-score-font-size); }
+.team-name-top, .team-name-left { position: absolute; font-size: 18px; line-height: 32px; overflow: hidden; white-space: nowrap; text-align: center; }
 .team-name-top { top: 0; left: 32px; width: calc(100% - 32px); height: 32px; }
 .team-name-left { top: 32px; left: 0; height: calc(100% - 32px); width: 32px; writing-mode: vertical-rl; transform: rotate(180deg); }
 .multiplier-label { font-size: 11px; }
@@ -1384,8 +1394,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
 .alert-btn { font-size: 12px; padding: 12px 16px; }
 .sport-grid { gap: 10px; }
 .sport-box { font-size: clamp(14px, 2vw, 22px); padding: 14px; }
-.celebration-content { width: min(100%, 800px); max-height: 100%; overflow: auto; padding: 12px; flex-shrink: 0; }
-.celebration-trophy img { height: clamp(64px, 18vh, 180px); }
+.celebration-overlay { justify-content: flex-start; overflow-x: hidden; }
+/* The overlay is the only scroller; leave room above the trophy for its bounce and glow. */
+.celebration-content { width: min(100%, 960px); max-height: none; overflow: visible; padding: 56px 16px 16px; margin-block: auto; flex-shrink: 0; }
+.celebration-trophy { flex-shrink: 0; }
+.celebration-trophy img { display: block; height: clamp(64px, 18vh, 180px); }
 .celebration-winner-banner .winner-label { font-size: clamp(18px, 3vw, 32px); }
 .celebration-winner-banner .winner-name { font-size: clamp(20px, 4vw, 44px); line-height: 1.5; overflow-wrap: anywhere; }
 .celebration-final-score { flex-wrap: wrap; gap: 10px; }
@@ -1396,6 +1409,42 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
 .podium-score { grid-column: 2; white-space: normal; text-align: left; line-height: 1.5; }
 .podium-distance { grid-column: 3; font-size: 10px; }
 .celebration-actions { margin-top: 12px; }
+
+@media (min-width: 768px) {
+    .celebration-content { padding: 40px 16px 12px; }
+    .celebration-trophy { margin-bottom: 8px; }
+    .celebration-trophy img { height: clamp(64px, 14dvh, 130px); }
+    .celebration-winner-banner .winner-label { font-size: 24px; margin-bottom: 6px; }
+    .celebration-winner-banner .winner-name { font-size: 32px; line-height: 1.25; }
+    .celebration-final-score { margin-bottom: 12px; }
+    .final-score-value { font-size: 28px; }
+    .celebration-title { font-size: 16px; margin-bottom: 8px; }
+    .celebration-podium { margin: 8px 0; }
+    .podium-entry, .podium-entry.winner {
+        grid-template-columns: 2ch minmax(8ch, 1fr) 3ch minmax(18ch, 2fr) 8ch;
+        gap: 10px;
+        padding: 8px 10px;
+        margin: 3px 0;
+        font-size: 12px;
+    }
+    .podium-entry > span {
+        grid-column: auto;
+        font-size: inherit;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+}
+
+@media (min-width: 768px) and (max-height: 700px) {
+    .celebration-trophy img { height: 60px; }
+    .celebration-winner-banner { margin-bottom: 6px; }
+    .celebration-winner-banner .winner-label { font-size: 18px; margin-bottom: 4px; }
+    .celebration-winner-banner .winner-name { font-size: 24px; }
+    .celebration-final-score { margin-bottom: 8px; }
+    .final-score-value { font-size: 24px; }
+    .podium-entry, .podium-entry.winner { padding-block: 6px; margin-block: 2px; }
+}
 
 @media (max-width: 1199px) {
     .team-selector { gap: 5px; }
@@ -1476,3 +1525,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     html:root .loading-dots span:nth-child(n) { animation: none !important; background: var(--retro-primary); }
     .grid-container::after, .celebration-confetti, .celebration-fireworks { display: none; }
 }
+
+/* End-game fireworks always play; the rest of the page retains its motion settings. */
+.celebration-overlay.fireworks-playing .celebration-fireworks,
+.celebration-overlay.fireworks-playing .firework,
+.celebration-overlay.fireworks-playing .firework-particle { display: block !important; }
+.celebration-overlay.fireworks-playing .firework-particle {
+    animation: fireworkBurst 1.5s ease-out forwards !important;
+}
+.celebration-overlay.fireworks-playing .static-decorations { display: none; }

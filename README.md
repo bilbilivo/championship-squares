@@ -72,6 +72,9 @@ The app opens `http://localhost:8080` in your default browser automatically on s
 ## Lite mode
 
 Use `--lite` to reduce visual effects on slower hardware. Use `--no-lite` to switch back.
+End-game fireworks start automatically and run until the celebration closes,
+including in lite mode and when the browser reports reduced motion. Other effects
+continue to respect those settings.
 The setting is persisted across restarts.
 
 ```bash
