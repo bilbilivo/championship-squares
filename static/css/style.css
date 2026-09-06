@@ -1,6 +1,40 @@
 /* SPDX-License-Identifier: MIT */
 /* Copyright (c) 2025 Stephane Belliveau */
 
+/* Network join control stays available on the landing screen and game board. */
+.join-game-btn {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 44px;
+    font-size: 9px;
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--retro-dark);
+}
+.join-game-btn svg { width: 26px; height: 26px; flex-shrink: 0; }
+.join-game-dialog {
+    width: min(420px, calc(100% - 24px));
+    max-height: calc(100dvh - 24px);
+    padding: 20px;
+    border: var(--pixel-border);
+    border-radius: 0;
+    color: var(--retro-light);
+    background: var(--retro-bg);
+    text-align: center;
+    box-shadow: 6px 6px 0 var(--retro-dark);
+    overflow: auto;
+}
+.join-game-dialog::backdrop { background: rgb(0 0 0 / 80%); }
+.join-game-dialog h2 { font-size: 18px; line-height: 1.6; margin: 0 0 12px; }
+.join-game-dialog p { font-size: 11px; line-height: 1.8; }
+.join-game-qr { display: block; width: min(100%, 280px); height: auto; margin: 16px auto; background: white; }
+.join-game-link { display: block; color: var(--retro-light); font: 16px/1.5 monospace; overflow-wrap: anywhere; margin: 12px 0 18px; }
+.join-game-dialog [hidden] { display: none; }
+
 /* Local font */
 @font-face {
     font-family: 'Press Start 2P';
@@ -320,6 +354,8 @@ body {
 }
 
 .title {
+    min-height: 44px;
+    padding: 6px 112px 0;
     text-align: center;
     color: var(--retro-primary);
     font-size: clamp(12px, 1.6vw, 24px);
@@ -1534,3 +1570,55 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     animation: fireworkBurst 1.5s ease-out forwards !important;
 }
 .celebration-overlay.fireworks-playing .static-decorations { display: none; }
+
+@media (max-width: 600px) {
+    .game-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    .join-game-btn span { display: none; }
+    .game-header .join-game-btn {
+        position: static;
+        flex: 0 0 auto;
+        width: 1.4em;
+        height: 1.4em;
+        min-height: 0;
+        padding: 0;
+        font-size: inherit;
+        border: 0;
+        box-shadow: none;
+        z-index: auto;
+    }
+    .join-game-btn svg { width: 100%; height: 100%; }
+    .game-header .title {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        padding: 0;
+        font-size: inherit;
+    }
+}
+
+/* A readable pixel icon and comfortable tap target on portrait phones. */
+@media (max-width: 600px) and (orientation: portrait) {
+    .game-header { align-items: center; }
+    .game-header .join-game-btn {
+        width: 44px;
+        height: 44px;
+        min-height: 44px;
+        justify-content: center;
+        padding: 6px;
+        color: #fff;
+        background: var(--retro-dark);
+        border: 2px solid var(--retro-light);
+    }
+    .game-header .join-game-btn svg { width: 28px; height: 28px; }
+    .game-header .join-game-btn:hover { transform: none; }
+    .game-header .join-game-btn:active {
+        background: var(--retro-bg);
+        border-color: #fff;
+    }
+}

@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="{{ asset_url('css/style.css') }}">
 </head>
 <body>
+    <dialog id="joinGameDialog" class="join-game-dialog" aria-labelledby="joinGameTitle" aria-describedby="joinGameHelp">
+        <h2 id="joinGameTitle">SCAN TO PLAY</h2>
+        <p id="joinGameHelp">Connect to the same Wi-Fi or local network, then scan with your camera.</p>
+        <p id="joinGameStatus" role="status">Loading QR code…</p>
+        <img id="joinGameQr" class="join-game-qr" alt="Scan to open Championship Squares" hidden>
+        <a id="joinGameLink" class="join-game-link" hidden></a>
+        <form method="dialog"><button autofocus>Close</button></form>
+    </dialog>
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
 			<h1 class="landing-title" id="gameTitleLanding">CHAMPIONSHIP SQUARES</h1>
@@ -52,7 +60,16 @@
 		</div>
 	</div>
 	<div class="container">
+        <header class="game-header">
         <h1 class="title" id="gameTitle">CHAMPIONSHIP SQUARES</h1>
+    <button type="button" id="joinGameBtn" class="join-game-btn" aria-label="Show QR code to join game" aria-haspopup="dialog" title="Scan to join">
+        <svg viewBox="0 0 21 21" aria-hidden="true" shape-rendering="crispEdges">
+            <path fill="currentColor" fill-rule="evenodd" d="M0 0h9v9H0z M2 2v5h5V2z M12 0h9v9h-9z M14 2v5h5V2z M0 12h9v9H0z M2 14v5h5v-5z"/>
+            <path fill="currentColor" d="M3 3h3v3H3z M15 3h3v3h-3z M3 15h3v3H3z M12 12h3v3h-3z M18 12h3v6h-3z M12 18h3v3h-3z M15 15h3v3h-3z M18 19h3v2h-3z"/>
+        </svg>
+        <span>QR CODE</span>
+    </button>
+        </header>
         <div class="controls">
 			<div class="team-selector">
 				<div class="team-selection">
@@ -128,5 +145,6 @@
     <script src="{{ asset_url('js/game-sync.js') }}"></script>
     <script src="{{ asset_url('js/celebration-effects.js') }}"></script>
     <script src="{{ asset_url('js/game.js') }}"></script>
+    <script src="{{ asset_url('js/join-game.js') }}"></script>
 </body>
 </html>

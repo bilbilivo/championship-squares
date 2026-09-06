@@ -79,6 +79,11 @@ powershell -ExecutionPolicy Bypass -File .\start_server.ps1 restart
 
 The app opens `http://localhost:8080` in your default browser automatically on start.
 
+Click **QR CODE** in the top-right corner to show a scannable game link. Connect
+other devices to the same Wi-Fi or local network and scan with their camera.
+When opened through localhost, the app detects the host PC's network address
+(for example, `http://192.168.1.175:8080/`). The QR code is generated locally.
+
 ## Lite mode
 
 Use `--lite` to reduce visual effects on slower hardware. Use `--no-lite` to switch back.

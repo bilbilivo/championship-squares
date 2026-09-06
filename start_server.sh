@@ -119,8 +119,8 @@ activate_venv() {
         echo "Creating desktop shortcut..."
         install
     else
-        # Check if Flask is installed, reinstall dependencies if missing
-        if ! "$PYTHON" -c "import flask" 2>/dev/null; then
+        # Check runtime dependencies, including upgrades to an existing install.
+        if ! "$PYTHON" -c "import flask, qrcode" 2>/dev/null; then
             echo "Dependencies missing or incomplete. Reinstalling..."
             if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
                 echo "ERROR: Failed to install dependencies."

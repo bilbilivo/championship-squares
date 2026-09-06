@@ -6,6 +6,11 @@ from functools import wraps
 import json
 import os
 import threading
+import socket
+from ipaddress import ip_address
+from urllib.parse import urlsplit, urlunsplit
+import qrcode
+from qrcode.image.svg import SvgPathImage
 from config import config
 from database import save_game_state as db_save_state, load_game_state as db_load_state, init_db
 
@@ -363,6 +368,52 @@ def index():
     except Exception as e:
         print(f"Error loading template: {e}")
         return "Error loading page", 500
+
+
+def network_join_url():
+    """Replace loopback URLs with the server's LAN address for nearby players."""
+    parts = urlsplit(request.host_url)
+    hostname = parts.hostname
+    try:
+        local_only = ip_address(hostname).is_loopback or ip_address(hostname).is_unspecified
+    except ValueError:
+        local_only = hostname == 'localhost' or hostname.endswith('.localhost')
+    if not local_only:
+        return request.host_url
+
+    candidates = []
+    try:
+        # UDP connect selects an outbound interface without sending any packets.
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(('8.8.8.8', 80))
+            candidates.append(probe.getsockname()[0])
+    except OSError:
+        pass
+    try:
+        candidates.extend(socket.gethostbyname_ex(socket.gethostname())[2])
+    except OSError:
+        pass
+    for address in candidates:
+        parsed = ip_address(address)
+        if not parsed.is_loopback and not parsed.is_unspecified and not parsed.is_link_local:
+            authority = f'{address}:{parts.port}' if parts.port else address
+            return urlunsplit((parts.scheme, authority, '/', '', ''))
+    raise RuntimeError('Open the game using this PC’s network IP address, then try again.')
+
+
+@app.route('/api/join')
+def join_game():
+    try:
+        join_url = network_join_url()
+    except RuntimeError as error:
+        return jsonify(error=str(error)), 503
+    code = qrcode.QRCode(box_size=8, border=4)
+    code.add_data(join_url)
+    code.make(fit=True)
+    svg = code.make_image(image_factory=SvgPathImage).to_string().decode('utf-8')
+    response = jsonify(url=join_url, svg=svg)
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @app.route('/api/events')

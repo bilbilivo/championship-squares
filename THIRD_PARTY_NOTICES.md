@@ -39,6 +39,7 @@ All Python runtime and development dependencies are open-source and MIT-compatib
 | Package | License |
 |---|---|
 | Flask 3.1.2 | BSD-3-Clause |
+| qrcode 8.2 | BSD-3-Clause |
 | pytest 9.0.2 | MIT |
 | pytest-cov 7.0.0 | MIT |
 | flake8 7.3.0 | MIT |
