@@ -1,5 +1,29 @@
 # Testing Guide
 
+## Responsive board regression checks
+
+Run the geometry tests with Node.js 18 or later (no npm dependencies):
+
+```bash
+node tests/board-geometry.test.cjs
+```
+
+Run application regressions with `venv/bin/python -m pytest -q`. The pytest fixtures
+use temporary databases; do not seed or reset a live game for visual testing.
+
+For browser verification, use a separate test instance with disposable game data.
+Check 1366×768, 1920×1080, 2560×1440, 3440×1440, 768×1024, 390×844,
+and 844×390 viewports. Exercise NFL, MLB, NHL, and Olympics with no players and
+with 12 players, loaded claims, long team names, prompts, and a final celebration.
+
+- The initial view covers the board viewport; panning stops at all four edges.
+- Score headers remain visible and aligned; the final row and column are reachable.
+- Zooming out fully shows the entire board, flush with the top and left score axes. Zooming out, panning, and resizing must never introduce a gap between either axis and the grid. Selecting a cell smaller than 24px navigates without claiming it.
+- Resize while zoomed and verify the same region remains visible unless an edge requires clamping.
+- Go to score locates both low and maximum scores. Navigation sends no game-state writes.
+- Desktop player lists scroll independently; narrow-screen controls and dialog actions remain reachable.
+- Check keyboard pan/zoom, touch drag/pinch, and normal, lite, and reduced-motion rendering.
+
 ## Overview
 
 Championship Squares includes a test setup script (`test_setup.py`) that populates a complete game with sample data. This guide covers testing procedures and data generation.

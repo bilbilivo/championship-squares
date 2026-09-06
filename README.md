@@ -98,6 +98,21 @@ This is the safest fix for errors such as:
 Those errors usually mean the launcher was not using the project virtual environment correctly, or
 that an earlier setup attempt left the virtual environment incomplete.
 
+## Visual design guideline
+
+Prioritize **more content, less empty space** while preserving the retro look. Use compact player rows, modest gaps and padding, and responsive layouts that make full use of the screen. Keep text readable and touch controls easy to use; avoid decorative whitespace that reduces room for the board or players.
+
+## Board navigation
+
+- The board starts with readable square cells. Drag to pan, scroll or pinch to zoom, or use the **− / +** buttons.
+- Zoom out as far as the full-board scale. The board stays flush with the top and left score axes; unused space remains on the right or bottom. Selecting a cell smaller than 24px zooms in before allowing a claim.
+- **Go to score** brings the current score into view at a readable size.
+- Player rows show an initial badge, name, and remaining/total allocation, such as **40/40**.
+- With the board focused, use arrow keys to pan and **+ / −** to zoom.
+- On smaller screens, scroll to the player controls and use **Players** to collapse or expand the panel.
+
+The layout adapts to the available window space while keeping the retro theme. System reduced-motion preferences are respected alongside the existing lite mode.
+
 ## Desktop shortcut
 
 The `install` action creates a desktop shortcut for one-click launching.

@@ -106,7 +106,7 @@ PLAYER_NAMES = [
     "STEPH", # S (requested)
     "TOM",   # T
     "UMA",   # U
-    "VICTOR",# V
+    "VERO",# V
     "WILL",  # W
     "XANDER",# X
     "YVONNE",# Y

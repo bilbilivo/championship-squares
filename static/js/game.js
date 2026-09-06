@@ -2,13 +2,12 @@
 // Copyright (c) 2025 Stephane Belliveau
 
 // Initialize variables
-let zoomLevel = 1;
 const baseSize = 40;
 let currentSize = baseSize;
 // Update maxScore variable to be dynamic
 let maxScore = 60; // Default NFL score, will be updated based on sport
 // Lite mode - detected from html class set by server
-const isLiteMode = document.documentElement.classList.contains('lite-mode');
+const isLiteMode = document.documentElement.classList.contains('lite-mode') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let players = {};  // Format: {'A': {'name': 'Alice', 'playerIndex': 0, 'bets': 0, 'tokens': 40}
 let currentSport = 'nfl';  // Default sport
 let currentMultiplier = 1;  // Current betting multiplier
@@ -16,11 +15,8 @@ let availableMultipliers = [1, 2, 4, 8];  // Available multipliers for current s
 let multiplierLabels = ['<Q1', '<Q2', '<Q3', '<Q4'];  // Labels for when to use each multiplier
 let tokensPerPlayer = 40;  // Tokens each player gets for current sport
 
-// Create SVG with modified margins for team names
-const margin = { top: 60, right: 140, bottom: 60, left: 140 };
+// The board container determines the available drawing area.
 const gridContainer = document.querySelector('.grid-container');
-const width = gridContainer.clientWidth;
-const height = gridContainer.clientHeight;
 
 // Get color from index using d3's color scale
 const playerColorScale = d3.scaleOrdinal(d3.schemeCategory10);
@@ -157,77 +153,145 @@ function selectMultiplier(multiplier) {
 }
 
 
-// Create main SVG element
-const svg = d3.select("#grid")
-    .append("svg")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("viewBox", [-margin.left, -margin.top, 
-        width + margin.left + margin.right, 
-        height + margin.top + margin.bottom])
-    .style("cursor", "grab");
-
-// Create main group for zoomable content
-const mainGroup = svg.append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-// Create separate groups for axes
+// A fixed header gutter surrounds a clipped, zoomable score plane.
+const svg = d3.select("#grid").append("svg")
+    .attr("class", "board-svg").attr("tabindex", 0)
+    .attr("role", "group")
+    .attr("aria-label", "Score grid. Arrow keys pan; plus and minus zoom. Use Go to score to locate the current score.");
+const defs = svg.append("defs");
+const boardClip = defs.append("clipPath").attr("id", "board-clip").append("rect");
+const topClip = defs.append("clipPath").attr("id", "top-clip").append("rect");
+const leftClip = defs.append("clipPath").attr("id", "left-clip").append("rect");
+const mainGroup = svg.append("g").attr("clip-path", "url(#board-clip)").append("g");
+const scoreMarker = svg.append('g').attr('clip-path', 'url(#board-clip)')
+    .attr('pointer-events', 'none').attr('aria-hidden', 'true');
+scoreMarker.append('rect').attr('class', 'current-score-halo');
+scoreMarker.append('rect').attr('class', 'current-score-border');
 const axesGroups = {
-    top: svg.append("g").attr("class", "axis top"),
-    bottom: svg.append("g").attr("class", "axis bottom"),
-    left: svg.append("g").attr("class", "axis left"),
-    right: svg.append("g").attr("class", "axis right")
+    top: svg.append("g").attr("clip-path", "url(#top-clip)"),
+    left: svg.append("g").attr("clip-path", "url(#left-clip)")
 };
-
-// Create tooltip
-const tooltip = d3.select("body")
-    .append("div")
-    .attr("class", "tooltip");
-
-// Cache team input elements to avoid DOM lookups on every hover
+const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 const teamLeftInput = document.getElementById('teamLeft');
 const teamRightInput = document.getElementById('teamRight');
+let viewport = BoardGeometry.metrics(1, 1, maxScore + 1);
+let boardMeasured = false;
+const touchPointer = window.matchMedia('(pointer: coarse)');
 
-// Enhanced pan constraints
-const getPanBounds = (transform) => {
-    const gridWidth = (maxScore + 2) * currentSize;
-    const gridHeight = (maxScore + 2) * currentSize;
-    
-    return {
-        minX: Math.min(margin.left, width - gridWidth * transform.k - margin.right),
-        maxX: margin.left,
-        minY: Math.min(margin.top, height - gridHeight * transform.k - margin.bottom),
-        maxY: margin.top
-    };
-};
-
-function updateAxesPositions(transform) {
-    Object.values(axesGroups).forEach(group => {
-        group.attr("transform", `translate(${transform.x}, ${transform.y}) scale(${transform.k})`);
-    });
+function d3Transform(value) {
+    return d3.zoomIdentity.translate(value.x, value.y).scale(value.k);
 }
 
-// Zoom behavior
+function updateAxesPositions(transform) {
+    const { header: h, plotWidth, plotHeight } = BoardGeometry.layout(viewport, transform.k);
+    const size = currentSize * transform.k;
+    // Header cells and text use exactly the same scale as the score plane.
+    const baseFontSize = parseFloat(getComputedStyle(gridContainer).getPropertyValue('--board-score-font-size'));
+    const scaledFontSize = baseFontSize * transform.k;
+    for (const [side, group] of Object.entries(axesGroups)) {
+        const horizontal = side === 'top';
+        const offset = horizontal ? transform.x : transform.y;
+        const available = horizontal ? plotWidth : plotHeight;
+        const first = Math.max(0, Math.floor((h - offset) / size));
+        const last = Math.min(maxScore, Math.ceil((h + available - offset) / size));
+        const values = d3.range(first, last + 1);
+        group.selectAll('rect').data(values).join('rect')
+            .attr('x', i => horizontal ? offset + i * size : 0)
+            .attr('y', i => horizontal ? 0 : offset + i * size)
+            .attr('width', horizontal ? size : h).attr('height', horizontal ? h : size)
+            .attr('class', 'score-header').style('stroke-width', 2 * transform.k);
+        group.selectAll('text').data(values).join('text')
+            .attr('x', i => horizontal ? offset + (i + 0.5) * size : h / 2)
+            .attr('y', i => horizontal ? h / 2 : offset + (i + 0.5) * size)
+            .attr('class', 'score-header-text')
+            .style('font-size', scaledFontSize + 'px')
+            .text(i => i).raise();
+    }
+}
+
 const zoom = d3.zoom()
-    .scaleExtent([0.1, 4])
-    .on("zoom", (event) => {
-        const transform = event.transform;
-        const bounds = getPanBounds(transform);
-        
-        const clampedX = Math.min(bounds.maxX, Math.max(bounds.minX, transform.x));
-        const clampedY = Math.min(bounds.maxY, Math.max(bounds.minY, transform.y));
-        
-        const clampedTransform = d3.zoomIdentity
-            .translate(clampedX, clampedY)
-            .scale(transform.k);
-        
-        mainGroup.attr("transform", clampedTransform);
-        updateAxesPositions(clampedTransform);
-        zoomLevel = transform.k;
-        
-        // Update all text sizes (reserved for future use)
+    .clickDistance(6)
+    .constrain(transform => d3Transform(BoardGeometry.constrain(transform, viewport)))
+    .on('zoom', event => {
+        updateBoardClips(event.transform.k);
+        mainGroup.attr('transform', event.transform);
+        updateAxesPositions(event.transform);
+        updateScoreMarker(event.transform);
+        tooltip.style('opacity', 0);
     });
-svg.call(zoom);
+svg.call(zoom).on('dblclick.zoom', null);
+
+function updateZoomLimits() {
+    zoom.extent([[0, 0], [viewport.width, viewport.height]])
+        .scaleExtent([viewport.fit, viewport.max]);
+
+}
+
+function applyBoardTransform(value) {
+    svg.interrupt().call(zoom.transform, d3Transform(BoardGeometry.constrain(value, viewport)));
+}
+
+function updateBoardClips(k) {
+    const { header: h, plotWidth, plotHeight } = BoardGeometry.layout(viewport, k);
+    boardClip.attr('x', h).attr('y', h).attr('width', plotWidth).attr('height', plotHeight);
+    topClip.attr('x', h).attr('y', 0).attr('width', plotWidth).attr('height', h);
+    leftClip.attr('x', 0).attr('y', h).attr('width', h).attr('height', plotHeight);
+}
+
+function measureBoard() {
+    fitTeamLabels();
+    const bounds = svg.node().getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
+    const previous = d3.zoomTransform(svg.node());
+    const center = BoardGeometry.center(previous, viewport);
+    viewport = BoardGeometry.metrics(bounds.width, bounds.height, maxScore + 1, currentSize, touchPointer.matches);
+    svg.attr('viewBox', [0, 0, bounds.width, bounds.height]);
+    updateZoomLimits();
+    if (boardMeasured) {
+        applyBoardTransform(BoardGeometry.centered(center, BoardGeometry.zoomScale(previous.k, 1, viewport), viewport));
+    } else {
+        const h = BoardGeometry.layout(viewport, viewport.play).header;
+        applyBoardTransform({ x: h, y: h, k: viewport.play });
+    }
+    boardMeasured = true;
+}
+
+function zoomBoard(factor) {
+    const transform = d3.zoomTransform(svg.node());
+    const center = BoardGeometry.center(transform, viewport);
+    updateZoomLimits();
+    const k = BoardGeometry.zoomScale(transform.k, factor, viewport);
+    applyBoardTransform(BoardGeometry.centered(center, k, viewport));
+}
+
+function focusSquare(row, col) {
+    updateZoomLimits();
+    applyBoardTransform(BoardGeometry.centered([(col + 0.5) * currentSize, (row + 0.5) * currentSize], viewport.play, viewport));
+}
+
+function goToScore() {
+    focusSquare(currentLeftScore, currentRightScore);
+}
+
+function togglePlayers(button) {
+    const expanded = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', expanded);
+    button.textContent = expanded ? 'Players ▾' : 'Players ▸';
+    document.getElementById('playersPanel').classList.toggle('collapsed', !expanded);
+}
+
+svg.on('keydown', event => {
+    const directions = { ArrowLeft: [80, 0], ArrowRight: [-80, 0], ArrowUp: [0, 80], ArrowDown: [0, -80] };
+    if (directions[event.key]) {
+        event.preventDefault();
+        const transform = d3.zoomTransform(svg.node());
+        const [x, y] = directions[event.key];
+        applyBoardTransform({ x: transform.x + x, y: transform.y + y, k: transform.k });
+    } else if (['+', '=', '-'].includes(event.key)) {
+        event.preventDefault();
+        zoomBoard(event.key === '-' ? 0.8 : 1.25);
+    }
+});
 
 let currentLeftScore = 0;
 let currentRightScore = 0;
@@ -345,15 +409,29 @@ function populateTeamSelects() {
     });
 }
 
-// Update the highlight function to work with all squares including tie squares
-function highlightCurrentScore() {
-    // Remove highlight from all squares
-    d3.selectAll('.square').classed('highlight', false);
+// Draw above the score plane so neighboring cells and winner paths cannot cover it.
+function updateScoreMarker(transform = d3.zoomTransform(svg.node())) {
+    const size = currentSize * transform.k;
+    const inset = Math.min(3, size / 4);
+    scoreMarker.selectAll('rect')
+        .attr('x', transform.x + currentRightScore * size + inset)
+        .attr('y', transform.y + currentLeftScore * size + inset)
+        .attr('width', Math.max(1, size - 2 * inset))
+        .attr('height', Math.max(1, size - 2 * inset));
+}
 
-    // Add highlight to current score square
-    // This will work for both regular squares and tie squares
-    d3.select(`rect[data-row="${currentLeftScore}"][data-col="${currentRightScore}"]`)
-        .classed('highlight', true);
+function highlightCurrentScore() {
+    updateScoreMarker();
+}
+
+function fitTeamLabels() {
+    for (const selector of ['.team-name-top', '.team-name-left']) {
+        const label = document.querySelector(selector);
+        const available = selector.endsWith('top') ? label.clientWidth : label.clientHeight;
+        if (available > 0 && label.textContent) {
+            label.style.fontSize = Math.min(14, (available - 16) / label.textContent.length) + 'px';
+        }
+    }
 }
 
 // Function to highlight winner and path
@@ -412,58 +490,6 @@ function createGrid() {
 
   const squaresGroup = mainGroup.append("g");
 
-  // Create scales for grid positioning
-  const xScale = d3.scaleLinear()
-    .domain([0, maxScore])
-    .range([0, maxScore * currentSize]);
-
-  const yScale = d3.scaleLinear()
-    .domain([0, maxScore])
-    .range([0, maxScore * currentSize]);
-
-  // Create header cells for scores (0-9)
-  // Top header (horizontal)
-  for (let i = 0; i <= maxScore; i++) {
-    squaresGroup.append("rect")
-      .attr("class", "square header-square")
-      .attr("x", i * currentSize)
-      .attr("y", -currentSize) // Position above main grid
-      .attr("width", currentSize)
-      .attr("height", currentSize)
-      .attr("fill", "var(--retro-bg)")
-      .attr("stroke", "var(--retro-primary)");
-    squaresGroup.append("text")
-      .attr("class", "square-text header-text")
-      .attr("x", i * currentSize + currentSize / 2)
-      .attr("y", -currentSize / 2)
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .style("fill", "var(--retro-primary)")
-      .style("font-size", "12px")
-      .text(i);
-  }
-
-  // Left header (vertical)
-  for (let i = 0; i <= maxScore; i++) {
-    squaresGroup.append("rect")
-      .attr("class", "square header-square")
-      .attr("x", -currentSize) // Position left of main grid
-      .attr("y", i * currentSize)
-      .attr("width", currentSize)
-      .attr("height", currentSize)
-      .attr("fill", "var(--retro-bg)")
-      .attr("stroke", "var(--retro-primary)");
-    squaresGroup.append("text")
-      .attr("class", "square-text header-text")
-      .attr("x", -currentSize / 2)
-      .attr("y", i * currentSize + currentSize / 2)
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .style("fill", "var(--retro-primary)")
-      .style("font-size", "12px")
-      .text(i);
-  }
-
   // Create main grid squares
   for (let row = 0; row <= maxScore; row++) {
     for (let col = 0; col <= maxScore; col++) {
@@ -478,10 +504,13 @@ function createGrid() {
         .attr("height", currentSize)
         .attr("data-row", row)
         .attr("data-col", col)
-        .on("click", () => !isTieSquare && handleSquareClick(row, col))
+        .on("click", () => {
+          if (currentSize * d3.zoomTransform(svg.node()).k < 24) focusSquare(row, col);
+          else if (!isTieSquare) handleSquareClick(row, col);
+        })
         .on("contextmenu", (event) => {
           event.preventDefault();
-          if (!isTieSquare) handleSquareDelete(row, col);
+          if (currentSize * d3.zoomTransform(svg.node()).k >= 24 && !isTieSquare) handleSquareDelete(row, col);
         });
 
       // Add text for squares
@@ -510,10 +539,10 @@ function createGrid() {
         const text = isTie
           ? `TIE: ${row} - ${col}`
           : `${teamLeftInput.value}: ${row} - ${teamRightInput.value}: ${col}`;
-        tooltip.style("opacity", 1)
-          .text(text)
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 10) + "px");
+        tooltip.style("opacity", 1).text(text);
+        const box = tooltip.node().getBoundingClientRect();
+        tooltip.style('left', Math.max(8, Math.min(event.clientX + 12, window.innerWidth - box.width - 8)) + 'px')
+          .style('top', Math.max(8, Math.min(event.clientY + 12, window.innerHeight - box.height - 8)) + 'px');
       }
     })
     .on("mouseout", (event) => {
@@ -523,8 +552,8 @@ function createGrid() {
     });
 
   // Update team names with adjusted positioning
-  const teamNameOffset = currentSize * 1.5; // Increased offset to account for score cells
   resetZoom();
+  updateTeamColors(false);
   // Add this line at the end of the function
   setTimeout(highlightCurrentScore, 100); // Small delay to ensure DOM is updated
 }
@@ -885,7 +914,7 @@ function saveTeams() {
 
 
 // Update team colors and visuals with new helmet colors
-function updateTeamColors() {
+function updateTeamColors(persist = true) {
     const leftSelect = document.getElementById('teamLeft');
     const rightSelect = document.getElementById('teamRight');
     const leftTeam = leftSelect.value;
@@ -929,6 +958,7 @@ function updateTeamColors() {
 
     if (leftTeam && getCurrentTeams()[leftTeam]) {
         leftNameDisplay.textContent = getCurrentTeams()[leftTeam].name;
+        leftNameDisplay.title = getCurrentTeams()[leftTeam].name;
         const leftColors = getCurrentTeams()[leftTeam].colors;
         // Determine which color is brighter for text
         const leftTextColor = getContrastRatio(leftColors[0], '#000000') > 
@@ -938,14 +968,16 @@ function updateTeamColors() {
         leftNameDisplay.style.color = leftTextColor;
         leftNameDisplay.style.backgroundColor = leftBgColor;
         leftNameDisplay.style.display = 'block';
-        leftNameDisplay.style.padding = '10px';
-        leftNameDisplay.style.borderRadius = '4px';
     } else {
-        leftNameDisplay.style.display = 'none';
+        leftNameDisplay.textContent = 'AWAY';
+        leftNameDisplay.removeAttribute('title');
+        leftNameDisplay.style.removeProperty('color');
+        leftNameDisplay.style.removeProperty('background-color');
     }
 
     if (rightTeam && getCurrentTeams()[rightTeam]) {
         topNameDisplay.textContent = getCurrentTeams()[rightTeam].name;
+        topNameDisplay.title = getCurrentTeams()[rightTeam].name;
         const rightColors = getCurrentTeams()[rightTeam].colors;
         // Determine which color is brighter for text
         const rightTextColor = getContrastRatio(rightColors[0], '#000000') > 
@@ -955,16 +987,19 @@ function updateTeamColors() {
         topNameDisplay.style.color = rightTextColor;
         topNameDisplay.style.backgroundColor = rightBgColor;
         topNameDisplay.style.display = 'block';
-        topNameDisplay.style.padding = '10px';
-        topNameDisplay.style.borderRadius = '4px';
     } else {
-        topNameDisplay.style.display = 'none';
+        topNameDisplay.textContent = 'HOME';
+        topNameDisplay.removeAttribute('title');
+        topNameDisplay.style.removeProperty('color');
+        topNameDisplay.style.removeProperty('background-color');
     }
+
+    fitTeamLabels();
 
     // Update team backgrounds
     updateTeamBackgrounds(leftTeam, rightTeam);
 	// Save team selections
-    saveTeams();
+    if (persist) saveTeams();
 }
 
 // Update team backgrounds
@@ -1001,22 +1036,26 @@ function updatePlayerList() {
         
         const colorDot = document.createElement('div');
         colorDot.className = 'color-dot';
-        colorDot.style.backgroundColor = playerColorScale(info.playerIndex); 
+        colorDot.style.backgroundColor = playerColorScale(info.playerIndex);
+        colorDot.textContent = initial;
+        colorDot.title = `Player ${initial}`;
         
         const playerInfo = document.createElement('div');
         playerInfo.className = 'player-info';
-        playerInfo.style.fontSize = '12px';
-        playerInfo.style.whiteSpace = 'nowrap';
-        playerInfo.style.overflow = 'hidden';
-        playerInfo.style.textOverflow = 'ellipsis';
-        playerInfo.style.maxWidth = '200px';
-        playerInfo.textContent = `${initial}-${info.name}-${info.tokens || 0}`;
+        const identity = document.createElement('span');
+        identity.className = 'player-identity';
+        identity.textContent = info.name;
+        identity.title = info.name;
+        const tokens = document.createElement('span');
+        tokens.className = 'player-tokens';
+        tokens.textContent = `${info.tokens ?? 0}/${tokensPerPlayer}`;
+        tokens.setAttribute('aria-label', `${info.tokens ?? 0} of ${tokensPerPlayer} tokens remaining`);
+        playerInfo.append(identity, tokens);
         
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'X';
-        deleteBtn.style.fontSize = '12px';
-        deleteBtn.style.padding = '2px 4px';
+        deleteBtn.setAttribute('aria-label', `Remove ${info.name}`);
         deleteBtn.onclick = () => deletePlayer(initial);
         
         playerItem.appendChild(colorDot);
@@ -1370,12 +1409,8 @@ function updateSquare(row, col, value) {
 
 
 function resetZoom() {
-    svg.transition()
-        .duration(250)
-        .call(zoom.transform, d3.zoomIdentity);
-
-    zoomLevel = 1;  // Reset zoom level
-    updateTeamColors();  // Ensure colors are correctly applied after reset
+    boardMeasured = false;
+    measureBoard();
 }
 
 // End Game celebration function
@@ -1486,6 +1521,7 @@ function showCelebration(standings, winningTeam) {
     // Create celebration overlay with winning team color gradient background
     const overlay = document.createElement('div');
     overlay.className = 'celebration-overlay';
+    if (isLiteMode) overlay.classList.add('lite-mode');
     overlay.style.background = `linear-gradient(135deg, ${teamColors.winner[0]} 0%, ${teamColors.winner[1]} 100%)`;
     overlay.innerHTML = `
         <div class="celebration-fireworks fireworks-left" id="fireworksLeft"></div>
@@ -1931,15 +1967,10 @@ function resetGame(isNewGame = false) {
     );
 }
 
-// Handle window resize
-window.addEventListener('resize', () => {
-    const newWidth = gridContainer.clientWidth;
-    const newHeight = gridContainer.clientHeight;
-    svg.attr("viewBox", [-margin.left, -margin.top, 
-        newWidth + margin.left + margin.right, 
-        newHeight + margin.top + margin.bottom]);
-});
-
+// Layout changes (including browser chrome and panel changes) update geometry.
+const boardResizeObserver = new ResizeObserver(measureBoard);
+boardResizeObserver.observe(gridContainer);
+touchPointer.addEventListener('change', measureBoard);
 
 document.addEventListener('DOMContentLoaded', () => {
     // Get references to elements
@@ -2031,7 +2062,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (teamLeft && teamRight) {
 				teamLeft.value = data.teams.left || '';
 				teamRight.value = data.teams.right || '';
-				updateTeamColors(); // Update team visuals
+				updateTeamColors(false); // Loaded state only needs visual updates
 			}
 
 			// Load scores
