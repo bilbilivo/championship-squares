@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Stephane Belliveau
 import sqlite3
+import hashlib
 from config import config
 
 DB_PATH = config.base_dir / 'game_state.db'
@@ -39,9 +40,57 @@ def init_db():
     c.execute('''CREATE TABLE IF NOT EXISTS available_indices (
                     player_index INTEGER PRIMARY KEY
                 )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS player_invites (
+                    initial TEXT PRIMARY KEY,
+                    token_hash TEXT NOT NULL,
+                    invite_key TEXT
+                )''')
+    columns = {row['name'] for row in c.execute('PRAGMA table_info(player_invites)')}
+    if 'invite_key' not in columns:
+        c.execute('ALTER TABLE player_invites ADD COLUMN invite_key TEXT')
 
     conn.commit()
     conn.close()
+
+
+def save_player_invite(initial, invite_key, token):
+    """Store a non-secret invite key and a hash of its derived URL token."""
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT OR REPLACE INTO player_invites (initial, token_hash, invite_key) VALUES (?, ?, ?)',
+            (initial, hashlib.sha256(token.encode()).hexdigest(), invite_key),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def invite_key_for_player(initial):
+    conn = get_db()
+    try:
+        row = conn.execute('SELECT invite_key FROM player_invites WHERE initial = ?', (initial,)).fetchone()
+        return row['invite_key'] if row else None
+    finally:
+        conn.close()
+
+
+def delete_player_invite(initial):
+    conn = get_db()
+    try:
+        conn.execute('DELETE FROM player_invites WHERE initial = ?', (initial,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_all_player_invites():
+    conn = get_db()
+    try:
+        conn.execute('DELETE FROM player_invites')
+        conn.commit()
+    finally:
+        conn.close()
 
 def save_game_state(state):
     conn = get_db()

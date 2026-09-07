@@ -17,11 +17,12 @@ def seeder_transport(app, monkeypatch):
     def request(session, method, url, **kwargs):
         client = clients.setdefault(session, app.test_client())
         path = urlsplit(url).path
-        result = client.open(path, method=method, json=kwargs.get('json'))
+        result = client.open(path, method=method, json=kwargs.get('json'), headers=dict(session.headers))
         response = requests.Response()
         response.status_code = result.status_code
         response._content = result.data
         response.url = url
+        response.headers.update(result.headers)
         calls.append((method.upper(), path, response.status_code))
         return response
 

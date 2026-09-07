@@ -131,8 +131,12 @@ def login_admin():
     """Select ADMIN mode before any destructive setup steps."""
     print("Logging in as ADMIN...")
     try:
+        bootstrap = http.get(f"{BASE_URL}/api/csrf", timeout=5)
+        bootstrap.raise_for_status()
+        http.headers['X-CSRF-Token'] = bootstrap.json()['csrf_token']
         response = http.post(f"{BASE_URL}/api/login", json={"role": "admin"}, timeout=5)
         if response.status_code == 200 and response.json().get('role') == 'admin':
+            http.headers['X-CSRF-Token'] = response.headers['X-CSRF-Token']
             return True
         print(f"  ERROR: ADMIN login failed: {response.text}")
     except (requests.exceptions.RequestException, ValueError) as error:

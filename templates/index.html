@@ -1,25 +1,43 @@
 <!DOCTYPE html>
-<html lang="en" class="{% if lite_mode %}lite-mode{% endif %}">
+<html data-public="{{ public_connection | tojson }}" lang="en" class="{% if lite_mode %}lite-mode{% endif %}">
 <head>
     <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset_url('js/request-security.js') }}"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>CHAMPIONSHIP SQUARES</title>
     <script src="/static/d3.v7.min.js"></script>
     <link rel="stylesheet" href="{{ asset_url('css/style.css') }}">
 </head>
 <body>
+    <dialog id="playerModeDialog" class="join-game-dialog" aria-labelledby="playerModeTitle">
+        <h2 id="playerModeTitle">PLAYER MODE</h2>
+        <button type="button" id="switchToAdminBtn" hidden>CHANGE MODE</button>
+        <form method="dialog"><button autofocus>BACK TO GAME</button></form>
+    </dialog>
     <dialog id="joinGameDialog" class="join-game-dialog" aria-labelledby="joinGameTitle" aria-describedby="joinGameHelp">
-        <h2 id="joinGameTitle">SCAN TO PLAY</h2>
-        <p id="joinGameHelp">CONNECT TO SAME NETWORK<br>SCAN WITH CAMERA</p>
+        <h2 id="joinGameTitle">LOCAL GAME QR</h2>
+        <p id="joinGameHelp">SAME NETWORK · SCAN TO PLAY</p>
         <p id="joinGameStatus" role="status">Loading QR code…</p>
         <img id="joinGameQr" class="join-game-qr" alt="Scan to open Championship Squares" hidden>
-        <a id="joinGameLink" class="join-game-link" hidden></a>
-        <form method="dialog"><button autofocus>Close</button></form>
+        <div id="tunnelControls" hidden>
+            <p id="tunnelStatus">TUNNEL OFF</p>
+            <button type="button" id="tunnelToggleBtn">ENABLE TUNNEL</button>
+            <button type="button" id="registrationQrBtn" hidden>CREATE PLAYER QR</button>
+            <div id="playerQrControls" hidden>
+                <label id="playerQrLabel" for="playerQrSelect">PLAYER QR</label>
+                <select id="playerQrSelect"></select>
+                <button type="button" id="playerQrBtn">SHOW PLAYER QR</button>
+                <button type="button" id="resetPlayerQrBtn">RESET PLAYER LINK</button>
+            </div>
+        </div>
+        <form method="dialog"><button autofocus>CLOSE</button></form>
     </dialog>
     <div id="landing-overlay" class="landing-overlay">
 		<div class="landing-content">
 			<h1 class="landing-title" id="gameTitleLanding">CHAMPIONSHIP SQUARES</h1>
-			<div id="loginPanel">
+			<p id="publicJoinHelp" {% if not public_connection %}hidden{% endif %}>SCAN PLAYER QR</p>
+            <div id="loginPanel" {% if public_connection %}hidden{% endif %}>
                 <p>SELECT MODE</p>
                 <div class="landing-buttons">
                     <button id="adminLoginBtn" class="landing-btn">ADMIN</button>

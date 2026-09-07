@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Stephane Belliveau
 
 // Initialize variables
+let squareCosts = {};
+let pendingSquareDelete = null;
 const baseSize = 40;
 let currentSize = baseSize;
 // Update maxScore variable to be dynamic
@@ -177,6 +179,10 @@ const axesGroups = {
 const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 const teamLeftInput = document.getElementById('teamLeft');
 const teamRightInput = document.getElementById('teamRight');
+
+function squareScoreLabel(row, col) {
+    return `${teamLeftInput.value || 'AWAY'}: ${row} - ${teamRightInput.value || 'HOME'}: ${col}`;
+}
 let viewport = BoardGeometry.metrics(1, 1, maxScore + 1);
 let boardMeasured = false;
 const touchPointer = window.matchMedia('(pointer: coarse)');
@@ -535,9 +541,7 @@ function createGrid() {
         if (row === null || col === null) return;
         // Tie squares (diagonal) - show TIE
         const isTie = row === col;
-        const text = isTie
-          ? `TIE: ${row} - ${col}`
-          : `${teamLeftInput.value}: ${row} - ${teamRightInput.value}: ${col}`;
+        const text = isTie ? `TIE: ${row} - ${col}` : squareScoreLabel(row, col);
         tooltip.style("opacity", 1).text(text);
         const box = tooltip.node().getBoundingClientRect();
         tooltip.style('left', Math.max(8, Math.min(event.clientX + 12, window.innerWidth - box.width - 8)) + 'px')
@@ -1163,10 +1167,8 @@ function handleSquareClick(row, col) {
 		.map(initial => `${initial}`)
         .join(',');
 
-    // Build title with team/score info
-    const leftTeam = document.getElementById('teamLeft').value || 'Away';
-    const rightTeam = document.getElementById('teamRight').value || 'Home';
-    const scoreTitle = `${leftTeam}: ${row} - ${rightTeam}: ${col}`;
+    // Use the same short score label as the board hover and delete confirmation.
+    const scoreTitle = squareScoreLabel(row, col);
 
     showGenericPrompt({
         title: scoreTitle,
@@ -1327,6 +1329,7 @@ function showAlert(message, title = null, showCancel = false, callback = null) {
     const genericAlert = document.getElementById('genericAlert');
     const alertTitle = document.getElementById('genericAlertTitle');
     const alertMessage = document.getElementById('genericAlertMessage');
+    pendingSquareDelete = null;
     const okBtn = document.getElementById('genericAlertOkBtn');
     const cancelBtn = document.getElementById('genericAlertCancelBtn');
     
@@ -1346,11 +1349,13 @@ function showAlert(message, title = null, showCancel = false, callback = null) {
     
     okBtn.onclick = () => {
         genericAlert.style.display = 'none';
+        pendingSquareDelete = null;
         if (callback) callback(true);
     };
     
     cancelBtn.onclick = () => {
         genericAlert.style.display = 'none';
+        pendingSquareDelete = null;
         if (callback) callback(false);
     };
 }
@@ -1363,15 +1368,24 @@ function handleSquareDelete(row, col) {
     if (!isAdmin() && currentValue !== loginSession.player) return;
     
     const playerName = players[currentValue]?.name || 'Unknown Player';
+    if (!Object.hasOwn(squareCosts, `${row},${col}`)) {
+        showAlert('SYNCING — TRY AGAIN');
+        gameSync.refresh();
+        return;
+    }
+    const tokenCost = squareCosts[`${row},${col}`];
+    const away = teamLeftInput.value || 'AWAY';
+    const home = teamRightInput.value || 'HOME';
+    const scoreLabel = squareScoreLabel(row, col);
     showAlert(
-        `Player: ${currentValue} - ${playerName}`, 'Delete Square',
+        `${scoreLabel}\n${currentValue} — ${playerName}\nREFUND: ${tokenCost} ${tokenCost === 1 ? 'TOKEN' : 'TOKENS'}`, 'DELETE SQUARE?',
         true,
         (confirmed) => {
             if (confirmed) {
                 gameSync.mutate(() => fetch('/api/squares', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ row, col, value: '', expected_value: currentValue })
+                    body: JSON.stringify({ row, col, value: '', expected_value: currentValue, expected_cost: tokenCost })
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -1400,6 +1414,7 @@ function handleSquareDelete(row, col) {
             }
         }
     );
+    pendingSquareDelete = {row, col, owner: currentValue, cost: tokenCost, playerName, away, home};
 }
 
 // Update square display function with proper color handling
@@ -1948,6 +1963,19 @@ function applyGameState(data, { focusScore = false } = {}) {
         window.location.reload();
         return;
     }
+    gameSync.setConnection(data.connection);
+    if (pendingSquareDelete) {
+        const pending = pendingSquareDelete;
+        if (data.squares[pending.row]?.[pending.col] !== pending.owner ||
+            (data.square_costs?.[`${pending.row},${pending.col}`] || 1) !== pending.cost ||
+            data.players[pending.owner]?.name !== pending.playerName || currentSport !== data.sport ||
+            (data.teams.left || 'AWAY') !== pending.away ||
+            (data.teams.right || 'HOME') !== pending.home) {
+            document.getElementById('genericAlert').style.display = 'none';
+            pendingSquareDelete = null;
+        }
+    }
+    squareCosts = data.square_costs || {};
     const sportChanged = currentSport !== data.sport;
     const rebuild = maxScore !== data.max_score || mainGroup.select('.square').empty();
     const playersChanged = JSON.stringify(players) !== JSON.stringify(data.players);

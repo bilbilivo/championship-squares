@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" data-public="true">
+<head>
+    <meta charset="utf-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="{{ asset_url('js/request-security.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Join Championship Squares</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="registration-page">
+    <main class="registration-card">
+        <h1>JOIN GAME</h1>
+        <p>CREATE YOUR PLAYER</p>
+        <form id="registrationForm">
+            <input id="initial" aria-label="Player initial" maxlength="1" pattern="[A-Za-z]" placeholder="ID" required>
+            <input id="name" aria-label="Player name" maxlength="8" placeholder="NAME" required>
+            <button class="landing-btn">CREATE & PLAY</button>
+        </form>
+        <p id="status" role="status"></p>
+        <a id="rejoin" class="join-game-link" hidden>URL LINK</a>
+    </main>
+    <script>
+        const form = document.getElementById('registrationForm');
+        const initialInput = document.getElementById('initial');
+        const nameInput = document.getElementById('name');
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            const status = document.getElementById('status');
+            const button = form.querySelector('button');
+            button.disabled = true;
+            status.textContent = 'JOINING…';
+            try {
+                const response = await fetch('/api/public/register/' + {{ token | tojson }}, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({initial: initialInput.value.trim().toUpperCase(), name: nameInput.value.trim().toUpperCase()})
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'TRY AGAIN');
+                window.location.replace('/');
+            } catch (error) {
+                status.textContent = error.message || 'OFFLINE — TRY AGAIN';
+                button.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

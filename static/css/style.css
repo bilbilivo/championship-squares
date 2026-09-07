@@ -30,10 +30,81 @@
 }
 .join-game-dialog::backdrop { background: rgb(0 0 0 / 80%); }
 .join-game-dialog h2 { font-size: 18px; line-height: 1.6; margin: 0 0 12px; }
-.join-game-dialog p { font-size: 11px; line-height: 1.8; }
-.join-game-qr { display: block; width: min(100%, 280px); height: auto; margin: 16px auto; background: white; }
-.join-game-link { display: block; color: var(--retro-light); font: 8px/1.5 'Press Start 2P', monospace; text-transform: uppercase; white-space: nowrap; overflow-x: auto; margin: 12px 0 18px; }
+.join-game-dialog p { font-size: 13px; line-height: 1.8; margin: 6px 0; }
+.join-game-qr { display: block; width: min(100%, 260px, 30dvh); height: auto; margin: 10px auto; background: white; }
 .join-game-dialog [hidden] { display: none; }
+.join-game-dialog #tunnelControls { margin: 8px 0; }
+.join-game-dialog #tunnelControls button, .join-game-dialog #tunnelControls select { margin: 5px; }
+/* Public player registration uses the same arcade shell as the game landing page. */
+.registration-page {
+    display: grid;
+    min-height: 100vh;
+    min-height: 100dvh;
+    place-items: center;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    background: var(--retro-dark);
+}
+
+.registration-card {
+    width: min(100%, 480px);
+    padding: clamp(24px, 7vw, 40px);
+    text-align: center;
+    color: var(--retro-primary);
+    background: var(--retro-bg);
+    border: var(--pixel-border);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--retro-primary) 30%, transparent);
+}
+
+.registration-card h1 {
+    margin: 0 0 20px;
+    color: var(--retro-primary);
+    font-size: clamp(22px, 8vw, 36px);
+    line-height: 1.5;
+    letter-spacing: 2px;
+}
+
+.registration-card > p:not(#status) {
+    margin: 0 0 28px;
+    color: var(--retro-light);
+    font-size: clamp(11px, 3vw, 14px);
+    line-height: 1.8;
+}
+
+.registration-card form { display: grid; gap: 14px; }
+
+.registration-card input {
+    width: 100%;
+    min-height: 52px;
+    font: 12px/1.6 'Press Start 2P', monospace;
+    text-align: center;
+}
+
+.registration-card input {
+    padding: 10px;
+    color: var(--retro-primary);
+    caret-color: var(--retro-primary);
+    text-transform: uppercase;
+    background: var(--retro-dark);
+    border: var(--pixel-border);
+    border-radius: 0;
+}
+
+.registration-card input::placeholder { color: var(--retro-primary); opacity: 0.7; }
+
+.registration-card button {
+    width: 100%;
+    margin: 6px 0 0;
+}
+
+.registration-card #status {
+    min-height: 1.8em;
+    margin: 18px 0 0;
+    color: var(--retro-light);
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.registration-card a { display: block; margin-top: 20px; overflow-wrap: anywhere; color: var(--retro-light); }
 
 /* Local font */
 @font-face {
@@ -1524,17 +1595,25 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
 }
 @media (max-width: 600px) and (orientation: portrait) {
     .container {
+        min-height: 100vh;
+        min-height: 100svh;
         padding-top: max(5px, env(safe-area-inset-top, 0px));
         padding-left: max(5px, env(safe-area-inset-left, 0px));
         padding-right: max(5px, env(safe-area-inset-right, 0px));
         padding-bottom: max(5px, env(safe-area-inset-bottom, 0px));
     }
+    /* Browser toolbars expand/collapse on scroll; keep the board geometry stable. */
+    .board-panel {
+        height: max(320px, calc(100vh - 220px));
+        height: max(320px, calc(100svh - 220px));
+    }
     .title { overflow-wrap: anywhere; }
     .controls, .main-content, .board-panel, .legend-container { width: 100%; max-width: 100%; }
     .controls { padding: 4px; }
-    .team-selector { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+    .team-selector { grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
     .team-selection { align-self: stretch; }
-    .score { padding: 2px 4px; }
+    .team-selection select { height: 44px; padding: 4px 6px; }
+    .score { height: 44px; padding: 2px 4px; line-height: 1; }
     .multiplier-selector { gap: 2px; }
     .team-selection:first-child { grid-column: 1; grid-row: 1; }
     #leftScore { grid-column: 2; grid-row: 1; }
@@ -1581,7 +1660,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     }
     .join-game-btn span { display: none; }
     .game-header .join-game-btn {
-        position: static;
+        position: relative;
         flex: 0 0 auto;
         width: 1.4em;
         height: 1.4em;
@@ -1590,7 +1669,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         font-size: inherit;
         border: 0;
         box-shadow: none;
-        z-index: auto;
+        z-index: 1100;
     }
     .join-game-btn svg { width: 100%; height: 100%; }
     .game-header .title {
@@ -1604,8 +1683,26 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
 
 /* A readable pixel icon and comfortable tap target on portrait phones. */
 @media (max-width: 600px) and (orientation: portrait) {
-    .game-header { align-items: center; }
+    .game-header {
+        display: grid;
+        grid-template-columns: 60px minmax(0, 1fr) 44px;
+        align-items: start;
+    }
+    .game-header .session-controls { width: 60px; min-width: 0; }
+    .game-header #sessionLabel { font-size: 7.5px; letter-spacing: 0; }
+    .game-header .title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        font-size: clamp(9px, 2.8vw, 12px);
+        letter-spacing: clamp(0px, 0.15vw, 0.75px);
+        white-space: nowrap;
+    }
     .game-header .join-game-btn {
+        /* Cancel the fixed-control offsets now that this button is in the header grid. */
+        top: auto;
+        right: auto;
         width: 44px;
         height: 44px;
         min-height: 44px;
@@ -1614,6 +1711,9 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         color: var(--retro-dark);
         background: var(--retro-primary);
         border: 2px solid var(--retro-light);
+        box-shadow: 3px 3px 0 var(--retro-dark);
+        align-self: start;
+        transform: none;
     }
     .game-header .join-game-btn svg { width: 28px; height: 28px; }
     .game-header .join-game-btn:hover { transform: none; }
@@ -1680,6 +1780,57 @@ button:disabled, select:disabled { cursor: default; opacity: 0.65; }
     }
 }
 
+@media (orientation: landscape) {
+    .game-header {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+    }
+    .game-header .session-controls {
+        position: static;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .game-header .title {
+        min-width: 0;
+        min-height: 0;
+        padding: 0;
+    }
+    .game-header .join-game-btn {
+        position: static;
+        width: auto;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+        font-size: 9px;
+    }
+    .game-header .join-game-btn svg { width: 26px; height: 26px; }
+}
+
+@media (max-width: 767px) {
+    #playerLoginPanel #createPlayerForm,
+    .registration-card #registrationForm {
+        display: grid;
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 12px;
+        width: min(100%, 240px);
+        margin-inline: auto;
+    }
+    #createPlayerForm input,
+    #registrationForm input {
+        width: 100%;
+        min-width: 0;
+    }
+    #createPlayerForm button,
+    #registrationForm button {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin: 0;
+    }
+}
+
 @media (min-width: 768px) {
     #loginPanel > .landing-buttons {
         flex-direction: row;
@@ -1705,7 +1856,7 @@ button:disabled, select:disabled { cursor: default; opacity: 0.65; }
     cursor: not-allowed;
 }
 
-#createPlayerForm input:disabled, #createPlayerBtn:disabled {
+#createPlayerForm input:disabled, #createPlayerBtn:disabled, #registrationForm button:disabled {
     color: #888;
     border-color: #666;
     background: var(--retro-dark);
@@ -1716,3 +1867,54 @@ button:disabled, select:disabled { cursor: default; opacity: 0.65; }
 }
 #createPlayerForm input:disabled::placeholder { color: #888; }
 #teamSetupHelp { font-size: 12px; line-height: 1.8; }
+
+/* Compact retro prompts and stacked QR controls. */
+.join-game-dialog { box-sizing: border-box; }
+.join-game-dialog h2 { overflow-wrap: anywhere; }
+.join-game-link,
+.join-game-dialog button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    margin: 4px auto 8px;
+    box-sizing: border-box;
+    border: var(--pixel-border);
+    background: var(--retro-primary);
+    color: var(--retro-dark);
+    /* Every QR action uses the same pixel-font metrics. */
+    font: 12px/1.6 'Press Start 2P', monospace;
+    text-decoration: none;
+    white-space: normal;
+    overflow: visible;
+}
+.join-game-link {
+    display: flex;
+    width: 100%;
+    margin: 4px 0 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 2px 2px 0 var(--retro-dark);
+}
+.join-game-link:hover { background: var(--retro-light); transform: translateY(-2px); }
+.join-game-link:active { transform: translateY(2px); box-shadow: none; }
+.join-game-link:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.join-game-dialog #tunnelControls, #playerQrControls { display: grid; gap: 6px; }
+.join-game-dialog #tunnelControls[hidden], #playerQrControls[hidden] { display: none; }
+.join-game-dialog #tunnelControls button, .join-game-dialog #tunnelControls select {
+    margin: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    box-sizing: border-box;
+    font-size: 12px;
+    line-height: 1.6;
+}
+#playerQrLabel { display: block; margin-top: 8px; font-size: 13px; }
+#genericAlertMessage { white-space: pre-line; }
+#playerModeDialog button { min-height: 44px; }
+@media (max-width: 420px) {
+    .join-game-dialog { padding: 12px; }
+    .join-game-dialog h2 { font-size: 14px; }
+}

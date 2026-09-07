@@ -29,9 +29,34 @@ with 12 players, loaded claims, long team names, prompts, and a final celebratio
 - ADMIN sees New Game / Load Game and retains all controls.
 - PLAYER selects or creates a player and enters the current game directly.
 - Players can place/remove only their own tokens; other players and admin settings stay protected.
-- Change mode signs out; refresh restores the selected session.
+- ADMIN Change mode signs out; PLAYER MODE and QR show only BACK TO GAME and preserve the session. Refresh restores the selected session.
 - Deleting a player or resetting the game invalidates that player's session.
 - `tests/test_generate_fake_game.py` runs the generator against isolated Flask clients for every sport.
+
+## Cloudflare and dialog regression checks
+
+The Python suite includes direct host/LAN access, public admin rejection, CSRF,
+invite lifecycle, process cleanup, and stored-cost refunds. Browser checks are opt-in:
+
+```bash
+python -m pip install playwright
+python -m playwright install chromium
+SQUARES_BROWSER_TESTS=1 python -m pytest -q tests/test_browser_flows.py
+```
+
+These checks require OpenSSL and use temporary databases, loopback HTTP/HTTPS servers,
+and simulated tunnel ingress. Set `SQUARES_SCREENSHOTS=/tmp/squares-ui-check` to save
+phone/desktop screenshots. They do not start cloudflared or modify a live game.
+For the optional real Cloudflare smoke test, install `cloudflared`, then run:
+
+```bash
+SQUARES_REAL_TUNNEL_TESTS=1 python -m pytest -q tests/test_live_tunnel.py
+```
+
+This briefly exposes only a disposable game, checks player access and admin rejection,
+and shuts the tunnel down in cleanup. It requires public DNS and Cloudflare connectivity.
+For final physical-device verification, use a disposable game to check LAN ADMIN
+and cellular player access with a real Quick Tunnel.
 
 ## Overview
 

@@ -8,6 +8,7 @@ using a temporary database so tests never touch production data.
 import sys
 import pytest
 from pathlib import Path
+from flask.testing import FlaskClient
 
 # Ensure the project root is on sys.path so imports work
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -22,8 +23,22 @@ def _isolated_db(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "DB_PATH", temp_db)
 
 
+class CsrfClient(FlaskClient):
+    """Exercise real CSRF validation while keeping older domain tests concise."""
+    def open(self, *args, **kwargs):
+        if kwargs.get('method', 'GET').upper() not in {'GET', 'HEAD', 'OPTIONS'}:
+            headers = dict(kwargs.get('headers') or {})
+            if 'X-CSRF-Token' not in headers:
+                connection = {key: kwargs[key] for key in ('base_url', 'environ_overrides') if key in kwargs}
+                bootstrap = super().open('/api/csrf', method='GET', **connection)
+                if bootstrap.is_json and 'csrf_token' in bootstrap.json:
+                    headers['X-CSRF-Token'] = bootstrap.json['csrf_token']
+            kwargs['headers'] = headers
+        return super().open(*args, **kwargs)
+
+
 @pytest.fixture()
-def app():
+def app(monkeypatch):
     """Create a fresh Flask application with an isolated GameState."""
     # Import after DB_PATH has been patched (autouse fixture runs first)
     import app as app_module
@@ -36,6 +51,7 @@ def app():
     app_module.game_state = app_module.GameState()
 
     app_module.app.config["TESTING"] = True
+    monkeypatch.setattr(app_module.app, "test_client_class", CsrfClient)
     yield app_module.app
 
 
