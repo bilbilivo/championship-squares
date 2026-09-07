@@ -1,19 +1,30 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Stephane Belliveau
-from flask import Flask, Response, jsonify, render_template, request, session, stream_with_context, url_for
+from flask import Flask, Response, jsonify, redirect, render_template, request, session, stream_with_context, url_for
 from copy import deepcopy
 from functools import wraps
 import json
+import logging
+import re
+import hmac
 import os
+import atexit
+import queue
 import threading
 import socket
 import secrets
-from ipaddress import ip_address
-from urllib.parse import urlsplit, urlunsplit
+import shutil
+import subprocess
+import time
+from ipaddress import ip_address, ip_network
+from urllib.parse import quote, urlsplit, urlunsplit
 import qrcode
 from qrcode.image.svg import SvgPathImage
+from flask.sessions import SecureCookieSessionInterface
 from config import config
-from database import save_game_state as db_save_state, load_game_state as db_load_state, init_db
+from database import (delete_all_player_invites, delete_player_invite, init_db, invite_key_for_player, load_game_state as db_load_state,
+                      save_game_state as db_save_state,
+                      save_player_invite)
 
 # Check for lite mode from environment variable
 LITE_MODE = os.environ.get('LITE_MODE', '0') == '1'
@@ -24,12 +35,173 @@ app = Flask(__name__,
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
 
 
+TUNNEL_HOST = 'player-tunnel.invalid'
+LOCAL_NETWORKS = tuple(ip_network(net) for net in (
+    '127.0.0.0/8', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16',
+    '169.254.0.0/16', '::1/128', 'fc00::/7', 'fe80::/10',
+))
+
+
+class TunnelManager:
+    """Own one Quick Tunnel; keep its ingress distinguishable from LAN requests."""
+    def __init__(self):
+        self.process = None
+        self.url = None
+        self.registration_token = None
+        self.lock = threading.RLock()
+
+    def active(self):
+        with self.lock:
+            return self.process is not None and self.process.poll() is None and bool(self.url)
+
+    def start(self):
+        with self.lock:
+            if self.active():
+                return self.url
+            executable = shutil.which('cloudflared')
+            if not executable:
+                raise RuntimeError('INSTALL CLOUDFLARED FIRST')
+            self.stop()
+            lines = queue.Queue(maxsize=128)
+            finished = threading.Event()
+            try:
+                process = subprocess.Popen(
+                    [executable, 'tunnel', '--url', f"http://127.0.0.1:{config.config['port']}",
+                     '--http-host-header', TUNNEL_HOST],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                )
+                self.process = process
+
+                def read_output():
+                    try:
+                        for line in process.stdout:
+                            if not finished.is_set():
+                                try:
+                                    lines.put_nowait(line)
+                                except queue.Full:
+                                    pass
+                    finally:
+                        process.stdout.close()
+
+                threading.Thread(target=read_output, daemon=True).start()
+                deadline = time.monotonic() + 20
+                while time.monotonic() < deadline and process.poll() is None:
+                    try:
+                        line = lines.get(timeout=0.25)
+                    except queue.Empty:
+                        continue
+                    for word in line.split():
+                        candidate = word.rstrip('.,')
+                        if re.fullmatch(r'https://[a-z0-9]+(?:-[a-z0-9]+)*\.trycloudflare\.com', candidate):
+                            self.url = candidate
+                            self.registration_token = secrets.token_urlsafe(24)
+                            return self.url
+                raise RuntimeError('TUNNEL FAILED — TRY AGAIN')
+            except (OSError, RuntimeError) as error:
+                self.stop()
+                raise RuntimeError('TUNNEL FAILED — TRY AGAIN') from error
+            finally:
+                finished.set()
+
+    def stop(self):
+        with self.lock:
+            process = self.process
+            self.process = None
+            self.url = None
+            self.registration_token = None
+            if process and process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=3)
+
+
+tunnel = TunnelManager()
+atexit.register(tunnel.stop)
+
+
+def request_hostname():
+    return (urlsplit(request.host_url).hostname or '').lower().rstrip('.')
+
+
+def is_tunnel_request():
+    # Never depend on process liveness to recognize untrusted public ingress.
+    host = request_hostname()
+    return host == TUNNEL_HOST or host.endswith('.trycloudflare.com')
+
+
+def local_address(value):
+    try:
+        address = ip_address(value)
+        if getattr(address, 'ipv4_mapped', None):
+            address = address.ipv4_mapped
+        return any(address in network for network in LOCAL_NETWORKS)
+    except ValueError:
+        return False
+
+
+def is_local_request():
+    host = request_hostname()
+    local_names = {'localhost', socket.gethostname().lower(), socket.getfqdn().lower()}
+    return (not is_tunnel_request() and local_address(request.remote_addr or '') and
+            (local_address(host) or host in local_names or host == '0.0.0.0'))
+
+
+def csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_urlsafe(32)
+    return session['csrf_token']
+
+
+class ConnectionSessionInterface(SecureCookieSessionInterface):
+    def get_cookie_secure(self, app):
+        return is_tunnel_request() or request.is_secure
+
+
+app.session_interface = ConnectionSessionInterface()
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
+
+
+@app.before_request
+def protect_request():
+    if not is_tunnel_request() and not is_local_request():
+        return jsonify(error='UNTRUSTED CONNECTION'), 403
+    if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+        supplied = request.headers.get('X-CSRF-Token', '')
+        expected = session.get('csrf_token', '')
+        if not expected or not hmac.compare_digest(supplied.encode(), expected.encode()):
+            return jsonify(error='SESSION CHANGED — RETRY'), 403
+        origin = request.headers.get('Origin')
+        expected_origin = tunnel.url if is_tunnel_request() else request.host_url.rstrip('/')
+        if origin and origin != expected_origin:
+            return jsonify(error='INVALID REQUEST ORIGIN'), 403
+
+
+@app.route('/api/csrf')
+def csrf_bootstrap():
+    return jsonify(csrf_token=csrf_token())
+
+
+class RedactInviteTokens(logging.Filter):
+    def filter(self, record):
+        message = record.getMessage()
+        record.msg = re.sub(r'(/(?:api/public/register|join/[^/\s]+|join/register)/)[^?\s"/]+',
+                            r'\1[REDACTED]', message)
+        record.args = ()
+        return True
+
+
+logging.getLogger('werkzeug').addFilter(RedactInviteTokens())
+
+
 @app.context_processor
 def versioned_assets():
     def asset_url(filename):
         version = os.stat(os.path.join(app.static_folder, filename)).st_mtime_ns
         return url_for('static', filename=filename, v=version)
-    return {'asset_url': asset_url}
+    return {'asset_url': asset_url, 'csrf_token': csrf_token, 'public_connection': is_tunnel_request()}
 
 
 class GameEventStream:
@@ -86,6 +258,8 @@ def synchronized_game(view):
                 role = session.get('role')
                 if role not in {'admin', 'player'}:
                     return jsonify({'error': 'Please select ADMIN or PLAYER mode'}), 401
+                if not is_local_request() and role == 'admin':
+                    return jsonify({'error': 'ADMIN REQUIRES HOST OR LAN'}), 403
                 if role == 'player':
                     if view.__name__ != 'update_square':
                         return jsonify({'error': 'This action requires ADMIN mode'}), 403
@@ -121,7 +295,10 @@ def notify_game_change():
 def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    if request.path.startswith('/api/'):
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+        response.headers['X-CSRF-Token'] = csrf_token()
+    if request.path.startswith(('/api/', '/join/')) or request.path == '/':
         response.headers['Cache-Control'] = 'no-store'
     return response
 
@@ -414,23 +591,156 @@ def network_join_url():
     raise RuntimeError('Open the game using this PC’s network IP address, then try again.')
 
 
-@app.route('/api/join')
-def join_game():
-    try:
-        join_url = network_join_url()
-    except RuntimeError as error:
-        return jsonify(error=str(error)), 503
+def active_join_url():
+    return tunnel.url if tunnel.active() else network_join_url()
+
+
+def make_qr_response(join_url, **extra):
     code = qrcode.QRCode(box_size=8, border=4)
     code.add_data(join_url)
     code.make(fit=True)
     svg = code.make_image(image_factory=SvgPathImage).to_string().decode('utf-8')
-    response = jsonify(url=join_url, svg=svg)
+    response = jsonify(url=join_url, svg=svg, **extra)
     response.headers['Cache-Control'] = 'no-store'
     return response
 
 
+def require_local_admin():
+    if session.get('role') != 'admin':
+        return jsonify(error='This action requires ADMIN mode'), 403
+    if not is_local_request():
+        return jsonify(error='ADMIN REQUIRES HOST OR LAN'), 403
+    return None
+
+
+@app.route('/api/join')
+def join_game():
+    if is_tunnel_request():
+        return jsonify(error='SCAN PLAYER QR'), 403
+    if tunnel.active() and session.get('role') != 'admin':
+        return jsonify(error='ADMIN REQUIRED'), 403
+    try:
+        join_url = active_join_url()
+    except RuntimeError as error:
+        return jsonify(error=str(error)), 503
+    return make_qr_response(join_url, tunnel=tunnel.active())
+
+
+@app.route('/api/tunnel', methods=['GET', 'POST', 'DELETE'])
+def tunnel_control():
+    denied = require_local_admin()
+    if denied:
+        return denied
+    if request.method == 'POST':
+        try:
+            tunnel.start()
+        except RuntimeError as error:
+            return jsonify(error=str(error)), 503
+    elif request.method == 'DELETE':
+        tunnel.stop()
+    return jsonify(active=tunnel.active(), url=tunnel.url)
+
+
+def invite_token(initial, invite_key):
+    secret = app.secret_key.encode() if isinstance(app.secret_key, str) else app.secret_key
+    return hmac.new(secret, f'{initial}:{invite_key}'.encode(), 'sha256').hexdigest()
+
+
+def invite_url(initial, token):
+    return f'{tunnel.url.rstrip("/")}/join/{quote(initial)}/{token}'
+
+
+def locked_invites(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        with tunnel.lock, game_state_lock:
+            return view(*args, **kwargs)
+    return wrapped
+
+
+@app.route('/api/player-invites/<initial>', methods=['POST', 'DELETE'])
+@locked_invites
+def player_invite(initial):
+    denied = require_local_admin()
+    if denied:
+        return denied
+    if not tunnel.active():
+        return jsonify(error='Turn the tunnel on before generating player QR codes'), 409
+    initial = initial.upper()
+    if initial not in game_state.players:
+        return jsonify(error='Player not found'), 404
+    if request.method == 'DELETE':
+        delete_player_invite(initial)
+        return jsonify(success=True)
+    invite_key = invite_key_for_player(initial) or secrets.token_urlsafe(24)
+    token = invite_token(initial, invite_key)
+    save_player_invite(initial, invite_key, token)
+    return make_qr_response(invite_url(initial, token), player=initial, player_name=game_state.players[initial]['name'])
+
+
+@app.route('/api/player-registration-qr')
+@locked_invites
+def player_registration_qr():
+    denied = require_local_admin()
+    if denied:
+        return denied
+    if not tunnel.active():
+        return jsonify(error='Turn the tunnel on before generating a registration QR code'), 409
+    if not all(game_state.teams.get(side) for side in ('left', 'right')):
+        return jsonify(error='Select both teams before enabling player registration'), 409
+    return make_qr_response(f'{tunnel.url.rstrip("/")}/join/register/{tunnel.registration_token}')
+
+
+@app.route('/join/<initial>/<token>')
+@locked_invites
+def redeem_player_invite(initial, token):
+    initial = initial.upper()
+    invite_key = invite_key_for_player(initial)
+    valid = invite_key and hmac.compare_digest(token.encode(), invite_token(initial, invite_key).encode())
+    if not is_tunnel_request() or not tunnel.active() or not valid or initial not in game_state.players:
+        return render_template('link-expired.html'), 403
+    session.clear()
+    session['role'] = 'player'
+    session['player'] = initial
+    session['identity'] = game_state.player_identities.setdefault(initial, secrets.token_hex(16))
+    return redirect('/')
+
+
+@app.route('/join/register/<token>')
+@locked_invites
+def registration_page(token):
+    if not is_tunnel_request() or (not tunnel.active() or not hmac.compare_digest(token.encode(), (tunnel.registration_token or '').encode())):
+        return render_template('link-expired.html'), 403
+    return render_template('register.html', token=token)
+
+
+@app.route('/api/public/register/<token>', methods=['POST'])
+@locked_invites
+def public_register(token):
+    if not is_tunnel_request() or (not tunnel.active() or not hmac.compare_digest(token.encode(), (tunnel.registration_token or '').encode())):
+        return jsonify(error='This registration link is invalid or has expired.'), 403
+    with game_state_lock:
+        if not all(game_state.teams.get(side) for side in ('left', 'right')):
+            return jsonify(error='The host has not selected both teams yet.'), 403
+        data = request.get_json(silent=True) or {}
+        result, status = create_player(data)
+        if status != 200:
+            return jsonify(error=result), status
+        initial = data['initial'].strip().upper()
+        invite_key = secrets.token_urlsafe(24)
+        token = invite_token(initial, invite_key)
+        save_player_invite(initial, invite_key, token)
+        session.clear()
+        session['role'] = 'player'
+        session['player'] = initial
+        session['identity'] = game_state.player_identities.setdefault(initial, secrets.token_hex(16))
+        return jsonify(success=True, player=initial, rejoin_url=invite_url(initial, token))
+
+
 @app.route('/api/events')
 def game_events_stream():
+    if is_tunnel_request():
+        return jsonify(error='USE POLLING'), 409
     response = Response(
         stream_with_context(game_events.stream()),
         mimetype='text/event-stream',
@@ -444,6 +754,9 @@ def game_events_stream():
 def get_session():
     role = session.get('role')
     initial = session.get('player')
+    if role == 'admin' and not is_local_request():
+        session.clear()
+        role = None
     if role == 'player' and (initial not in game_state.players or
                             session.get('identity') != game_state.player_identities.get(initial)):
         session.clear()
@@ -459,6 +772,8 @@ def login():
     if not isinstance(data, dict) or data.get('role') not in ('admin', 'player'):
         return jsonify({'error': 'Choose ADMIN or PLAYER mode'}), 400
     role = data['role']
+    if not is_local_request():
+        return jsonify({'error': 'Use your player QR code to join this game'}), 403
     initial = None
     if role == 'player':
         if not isinstance(data.get('initial'), str) or not isinstance(data.get('name', ''), str):
@@ -488,11 +803,14 @@ def logout():
 
 
 @app.route('/api/reset', methods=['POST'])
+@locked_invites
 @synchronized_game
 def reset_game():
     try:
         # Reset the game state to initial values
         game_state.reset_state()
+        delete_all_player_invites()
+        tunnel.registration_token = secrets.token_urlsafe(24) if tunnel.active() else None
         
         # Save the fresh state
         if persist_game_state():
@@ -541,6 +859,10 @@ def get_state():
         winner_info = calculate_winner()
         return jsonify({
             'session': get_session().get_json(),
+            'connection': {'public': is_tunnel_request(), 'sync': 'poll' if is_tunnel_request() else 'sse'},
+            'square_costs': {f'{row},{col}': game_state.square_multipliers.get((row, col), 1)
+                             for row, values in enumerate(game_state.squares)
+                             for col, value in enumerate(values) if value},
             'squares': game_state.squares,
             'players': game_state.players,
             'teams': game_state.teams,
@@ -655,6 +977,8 @@ def update_square():
                     not isinstance(value, str) or value.upper() != initial)):
                 return jsonify({'error': 'You can only control your own tokens'}), 403
         square_key = (row, col)
+        if 'expected_cost' in data and data['expected_cost'] != game_state.square_multipliers.get(square_key, 1):
+            return jsonify(error='SQUARE CHANGED — TRY AGAIN'), 409
         if 'expected_value' in data and data['expected_value'] != current_value:
             return jsonify({'error': 'This square changed on another device. Please try again.'}), 409
         if value and (not isinstance(value, str) or value.upper() not in game_state.players):
@@ -702,35 +1026,35 @@ def update_square():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/players', methods=['POST'])
-@synchronized_game
-def add_player():
+def create_player(data):
+    """Create a player while the caller holds the game-state lock."""
     try:
-        data = request.json
+        if not isinstance(data, dict) or not isinstance(data.get('initial'), str) or not isinstance(data.get('name'), str):
+            return 'ENTER ID AND NAME', 400
         initial = data.get('initial', '').strip().upper()
         name = data.get('name', '').strip()
 
         if not initial or not name:
-            return jsonify({'error': 'Initial and name are required'}), 400
+            return 'Initial and name are required', 400
 
         # Validate initial is exactly 1 alphabetic character
-        if len(initial) != 1 or not initial.isalpha():
-            return jsonify({'error': 'Initial must be a single letter (A-Z)'}), 400
+        if not re.fullmatch('[A-Z]', initial):
+            return 'Initial must be a single letter (A-Z)', 400
 
         # Validate name length
         if len(name) > 8:
-            return jsonify({'error': 'Name must be 8 characters or less'}), 400
+            return 'Name must be 8 characters or less', 400
 
         if initial in game_state.players:
-            return jsonify({'error': 'Initial already taken'}), 400
+            return 'Initial already taken', 400
 
         if len(game_state.players) >= config.config['max_players']:
-            return jsonify({'error': 'Maximum number of players reached'}), 400
+            return 'Maximum number of players reached', 400
             
         try:
             player_index = game_state.get_next_player_index()
         except Exception:
-            return jsonify({'error': 'No more player slots available'}), 400
+            return 'No more player slots available', 400
 
         # Get tokens per player for current sport
         tokens_per_player = config.total_tokens.get(game_state.sport, 40)
@@ -745,12 +1069,18 @@ def add_player():
         persist_game_state()
         notify_game_change()
         
-        return jsonify({
-            'success': True, 
-            'playerIndex': player_index  # Frontend still uses this index for color selection
-        })
+        return player_index, 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return str(e), 500
+
+
+@app.route('/api/players', methods=['POST'])
+@synchronized_game
+def add_player():
+    player_index, status = create_player(request.get_json(silent=True) or {})
+    if status != 200:
+        return jsonify(error=player_index), status
+    return jsonify(success=True, playerIndex=player_index)
 
 @app.route('/api/players/<initial>', methods=['DELETE'])
 @synchronized_game
@@ -775,6 +1105,7 @@ def delete_player(initial):
             # Remove player from players dict
             del game_state.players[initial]
             game_state.player_identities.pop(initial, None)
+            delete_player_invite(initial)
             persist_game_state()
             notify_game_change()
             return jsonify({'success': True})

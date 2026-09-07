@@ -112,3 +112,24 @@ test('browsers without EventSource use fallback polling', () => {
     h.sync.start(); h.tick(); assert.equal(h.sources.length, 0);
     assert.equal(h.intervals.size, 1); assert.equal(h.requests.length, 1);
 });
+
+test('public connections poll without ever opening SSE', async () => {
+    const h = setup(); h.sync.setConnection({sync: 'poll'}); h.sync.start();
+    assert.equal(h.sources.length, 0); assert.equal(h.intervals.size, 1);
+    h.tick(); await h.respond(0, {version: 1});
+    [...h.intervals.values()][0].fn(); h.tick(); await h.respond(1, {version: 2});
+    assert.deepEqual(h.applied, [{version: 1}, {version: 2}]);
+    h.env.document.hidden = true; h.listeners.visibilitychange();
+    assert.equal(h.intervals.size, 0);
+    h.env.document.hidden = false; h.listeners.visibilitychange();
+    assert.equal(h.intervals.size, 1); assert.equal(h.sources.length, 0);
+    h.listeners.online(); assert.equal(h.intervals.size, 1);
+    h.sync.stop(); assert.equal(h.intervals.size, 0);
+});
+
+test('server capability switches an existing SSE connection to polling', () => {
+    const h = setup(); h.sync.start(); h.sources[0].onopen();
+    h.sync.setConnection({sync: 'poll'});
+    assert.equal(h.sources[0].closed, true); assert.equal(h.intervals.size, 1);
+    assert.equal(h.sources.length, 1);
+});

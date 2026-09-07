@@ -4,6 +4,7 @@ class GameSync {
     constructor(applyState, env = globalThis) {
         this.applyState = applyState;
         this.env = env;
+        this.pollOnly = Boolean(env.gameConnection?.public);
         this.active = false;
         this.pendingMutations = 0;
         this.generation = 0;
@@ -40,7 +41,7 @@ class GameSync {
         this.refresh();
         if (this.source) return;
         this.startFallback();
-        if (!this.env.EventSource) return;
+        if (this.pollOnly || !this.env.EventSource) return;
         this.source = new this.env.EventSource('/api/events');
         this.source.addEventListener('game-updated', () => this.refresh());
         this.source.onopen = () => {
@@ -49,6 +50,15 @@ class GameSync {
             this.refresh(); // Catch up after reconnect, including a server restart.
         };
         this.source.onerror = () => this.startFallback();
+    }
+
+    setConnection(connection) {
+        if (!connection) return;
+        const pollOnly = connection.sync === 'poll';
+        if (this.pollOnly === pollOnly) return;
+        this.pollOnly = pollOnly;
+        this.disconnect();
+        this.connect();
     }
 
     disconnect() {

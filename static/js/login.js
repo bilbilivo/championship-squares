@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 let loginSession = { role: null, player: null };
 const isAdmin = () => loginSession.role === 'admin';
+const publicConnection = () => typeof window !== 'undefined' && window.gameConnection?.public;
+function showPlayerMode() {
+    const dialog = document.getElementById('playerModeDialog');
+    document.getElementById('switchToAdminBtn').hidden = publicConnection();
+    if (!dialog.open) dialog.showModal();
+}
+
 
 function applyModeControls() {
     document.querySelectorAll('#teamLeft, #teamRight, #leftScore, #rightScore, #multiplierButtons button')
@@ -26,7 +33,9 @@ async function loginRequest(path, payload) {
 async function enterSession(session) {
     loginSession = session;
     applyModeControls();
-    document.getElementById('loginPanel').hidden = Boolean(session.role);
+    document.getElementById('loginPanel').hidden = Boolean(session.role) || publicConnection();
+    const publicHelp = document.getElementById('publicJoinHelp');
+    if (publicHelp) publicHelp.hidden = !publicConnection() || Boolean(session.role);
     document.getElementById('mainButtons').style.display = isAdmin() ? 'flex' : 'none';
     if (session.role === 'player') {
         const response = await fetch('/api/state', { cache: 'no-store' });
@@ -46,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try { await action(); }
         catch (error) {
             status.textContent = error.message;
-            document.getElementById('loginPanel').hidden = false;
+            document.getElementById('loginPanel').hidden = publicConnection();
         } finally {
             buttons.forEach(button => { button.disabled = false; });
             document.getElementById('startPlayerBtn').disabled = document.getElementById('existingPlayer').disabled;
@@ -91,13 +100,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             name: document.getElementById('loginName').value.trim().toUpperCase()
         })));
     };
-    const logout = () => run(async () => {
+    const logout = () => {
+        if (loginSession.role === 'player') { showPlayerMode(); return; }
+        return run(async () => {
+            await loginRequest('/api/logout', {});
+            gameSync.stop();
+            window.location.reload();
+        });
+    };
+    document.getElementById('logoutBtn').onclick = logout;
+    document.getElementById('landingLogoutBtn').onclick = logout;
+    document.getElementById('switchToAdminBtn').onclick = () => run(async () => {
+        // This control is only shown on local connections. Ending the player
+        // session returns localhost users to the ADMIN / PLAYER mode chooser.
+        document.getElementById('playerModeDialog').close();
         await loginRequest('/api/logout', {});
         gameSync.stop();
         window.location.reload();
     });
-    document.getElementById('logoutBtn').onclick = logout;
-    document.getElementById('landingLogoutBtn').onclick = logout;
     await run(async () => {
         const response = await fetch('/api/session', { cache: 'no-store' });
         if (!response.ok) throw new Error('Unable to restore session');

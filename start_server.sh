@@ -129,7 +129,11 @@ activate_venv() {
             fi
         fi
     fi
-    return $FIRST_RUN
+    # `activate_venv` is called as a standalone command while `set -e` is
+    # enabled.  Returning FIRST_RUN here makes a successful first-time setup
+    # return 1, which causes the launcher to exit before `start` launches the
+    # server.
+    return 0
 }
 
 cleanup_old_logs() {

@@ -14,8 +14,15 @@ http://localhost:8080
 
 ## Sessions and permissions
 
-Mode selection has no passwords: anyone can choose ADMIN or an existing player.
-All game mutations require a session cookie. Read-only game endpoints remain public.
+Direct host and trusted LAN connections can select ADMIN or an existing player without
+passwords. Cloudflare connections can only join through a player or registration link;
+ADMIN login and operations are blocked even if an admin cookie is supplied.
+All game mutations require a session cookie and CSRF token. Read-only game endpoints remain public.
+
+**GET `/api/csrf`** returns `{"csrf_token":"..."}` and sets the session cookie.
+Send this token as `X-CSRF-Token` on every POST/DELETE request. Login/logout rotate the
+session token; mutation responses return the current token in `X-CSRF-Token`.
+Missing or invalid tokens and cross-origin requests return **403**.
 
 | Action | ADMIN | PLAYER |
 | --- | --- | --- |
@@ -43,13 +50,18 @@ Creating a player joins the current game; it does not reset or change the sport.
 **POST `/api/logout`** clears the session. Deleted/reset players and server restarts
 require players to select their identity again.
 
-Retain cookies for subsequent requests:
+Retain cookies and the latest CSRF token for subsequent requests:
 
-```bash
-curl -c /tmp/squares-cookies.txt http://localhost:8080/api/login \
-  -H 'Content-Type: application/json' -d '{"role":"admin"}'
-curl -b /tmp/squares-cookies.txt -X POST http://localhost:8080/api/scores \
-  -H 'Content-Type: application/json' -d '{"left":7,"right":3}'
+```python
+import requests
+
+http = requests.Session()
+base = "http://localhost:8080"
+http.headers["X-CSRF-Token"] = http.get(base + "/api/csrf").json()["csrf_token"]
+response = http.post(base + "/api/login", json={"role": "admin"})
+response.raise_for_status()
+http.headers["X-CSRF-Token"] = response.headers["X-CSRF-Token"]
+http.post(base + "/api/scores", json={"left": 7, "right": 3}).raise_for_status()
 ```
 
 Missing login returns **401**; a forbidden player action or stale player identity
@@ -61,6 +73,11 @@ returns **403**. A square with a mismatched `expected_value` returns **409**.
 **GET** `/api/state`
 
 Returns all game data including squares, players, scores, and settings.
+
+Additional fields:
+- `connection`: `{"public":false,"sync":"sse"}` locally or `{"public":true,"sync":"poll"}` through Cloudflare. Public clients poll every five seconds; `/api/events` returns 409 for them.
+- `square_costs`: stored token costs for occupied cells, keyed by `"row,col"`, for example `{"1,0":4}`. A missing legacy purchase multiplier defaults to one. Deleting that square refunds its stored cost, regardless of the current multiplier.
+- Optional `expected_cost` on POST `/api/squares` rejects a changed purchase cost with 409, alongside the existing `expected_value` owner check.
 
 **Response:**
 - `squares`: 2D array of square assignments (player initials)
@@ -338,3 +355,24 @@ Increases bet value on a square. Available multipliers depend on sport (1x, 2x, 
 All changes are automatically saved to `game_state.db`. Game state persists between server restarts.
 
 Player self-registration requires both teams to be selected by ADMIN first.
+
+## Tunnel and player QR endpoints
+
+These controls require a direct host/LAN ADMIN session:
+
+| Endpoint | Behavior |
+| --- | --- |
+| GET/POST/DELETE `/api/tunnel` | Read/start/stop the temporary tunnel; returns `active` and `url`. |
+| GET `/api/player-registration-qr` | Registration QR, available after teams are selected. |
+| POST `/api/player-invites/<initial>` | Stable player QR; returns `url`, `svg`, `player`, and `player_name`. |
+| DELETE `/api/player-invites/<initial>` | Revoke future use of that player's old link; active sessions remain valid. |
+
+`/join/<initial>/<token>` redeems a player link and redirects to the board.
+`/join/register/<token>` serves the public registration form; POST
+`/api/public/register/<token>` creates and signs in a player using CSRF protection.
+Deleting a player revokes their link; game reset revokes player and registration links.
+Server restarts invalidate sessions and require newly displayed QR links.
+
+Cloudflared sends the fixed origin Host `player-tunnel.invalid`; it is always treated
+as public, regardless of tunnel process state. Forwarded headers never grant LAN privileges.
+Bearer-link pages and API responses disable caching; link tokens are redacted from application request logs.

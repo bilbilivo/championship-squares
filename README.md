@@ -98,6 +98,54 @@ other devices to the same Wi-Fi or local network and scan with their camera.
 When opened through localhost, the app detects the host PC's network address
 (for example, `http://192.168.1.175:8080/`). The QR code is generated locally.
 
+## Remote player links (free)
+
+For an occasional remote game, install [cloudflared](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/)
+on the host laptop. Open **QR CODE** as ADMIN and select **ENABLE TUNNEL**. The QR code
+then contains a temporary public URL. Use **CREATE PLAYER QR** for phone-based
+self-registration, or select an existing player and choose **SHOW PLAYER QR** to
+display that player's rejoin code. The host and trusted LAN devices keep Admin control locally; tunnel
+visitors can only create or join a player. Turn the tunnel off when the game ends.
+
+Quick Tunnel links are temporary and do not provide instant update events, so remote
+phones use explicit five-second polling. Local devices retain instant updates.
+
+ADMIN mode is passwordless on the trusted LAN. Public connections cannot enter ADMIN
+mode or use admin controls, even with an existing admin session. Player links grant
+access to one player: share them only with that player. Resetting a player link
+revokes the old link for future joins; active player sessions stay signed in.
+Game reset also expires the registration QR. Tunnel restarts change the public URL;
+server restarts invalidate sessions and require fresh QR links.
+
+API mutations require an `X-CSRF-Token` obtained from `/api/csrf` using the same
+session cookie. Browser requests handle this automatically.
+
+See [CLOUDFLARE.md](CLOUDFLARE.md) for the connectivity diagram, complete setup,
+security model, link lifecycle, and troubleshooting guide.
+
+### Install cloudflared (optional)
+
+`cloudflared` is only needed for remote player links; it is not needed to run the
+game on your local network.
+
+On Ubuntu or Debian, add Cloudflare's package repository, then install it:
+
+```bash
+sudo mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt-get update && sudo apt-get install cloudflared
+```
+
+On macOS with Homebrew:
+
+```bash
+brew install cloudflared
+```
+
+For Windows and other Linux distributions, use Cloudflare's
+[cloudflared download instructions](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/downloads/).
+
 ## Lite mode
 
 Use `--lite` to reduce visual effects on slower hardware. Use `--no-lite` to switch back.
@@ -131,6 +179,8 @@ Those errors usually mean the launcher was not using the project virtual environ
 that an earlier setup attempt left the virtual environment incomplete.
 
 ## Visual design guideline
+
+Keep on-screen text minimal, like retro video games. Prefer short labels and brief prompts. Remove redundant instructions while keeping essential action details.
 
 Prioritize **more content, less empty space** while preserving the retro look. Use compact player rows, modest gaps and padding, and responsive layouts that make full use of the screen. Keep text readable and touch controls easy to use; avoid decorative whitespace that reduces room for the board or players.
 
