@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [v2026.15] - 2026-09-12
+
 ### Added
 - Conventional Commit validation for pull request titles and non-merge commits
 - Contribution guidance and a pull request template for the review and squash-merge workflow
@@ -252,7 +254,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
-[Unreleased]: https://github.com/bilbilivo/championship-squares/compare/v2026.14...HEAD
+[Unreleased]: https://github.com/bilbilivo/championship-squares/compare/v2026.15...HEAD
+[v2026.15]: https://github.com/bilbilivo/championship-squares/compare/v2026.14...v2026.15
 [v2026.14]: https://github.com/bilbilivo/championship-squares/compare/v2026.13...v2026.14
 [v2026.13]: https://github.com/bilbilivo/championship-squares/compare/v2026.12...v2026.13
 [v2026.12]: https://github.com/bilbilivo/championship-squares/compare/v2026.11...v2026.12
