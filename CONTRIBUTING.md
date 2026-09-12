@@ -68,6 +68,8 @@ subject that should appear on `main`; GitHub must be configured to use that titl
 as the squash commit subject. The individual branch commits remain validated to
 keep review history understandable.
 
+After a successful merge, delete the remote source branch; GitHub can do this automatically when the PR is merged. Keep a local branch only when it is still needed for follow-up work.
+
 ## Repository Settings
 
 A repository administrator must configure the `main` ruleset or branch protection

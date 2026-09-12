@@ -169,6 +169,7 @@ Championship Squares follows a four-step release procedure:
 2. **Squash-merge the release pull request**:
    - Wait for required checks and review, then squash-merge into `main`.
    - Confirm the resulting commit on `main` has the subject `release: vYYYY.MM`.
+   - Delete the merged remote release branch after the merge.
 3. **Create and push the Git tag**:
    - A new version in `pyproject.toml` or `CHANGELOG.md` does **not** create a GitHub release by itself.
    - GitHub releases in this project are tag-backed, so the release does not exist until the tag exists on GitHub.
