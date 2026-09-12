@@ -430,6 +430,9 @@ class GameState:
         self.player_identities = {}
         self.teams = {'left': '', 'right': ''}
         self.scores = {'left': 0, 'right': 0}
+        # The latest end-game event is intentionally process-local. It lets
+        # connected browsers celebrate together without replaying after a restart.
+        self.celebration = None
         self.available_indices = list(range(max_players))
         self.current_multiplier = 1  # Default multiplier
 
@@ -984,6 +987,7 @@ def get_state():
             'available_multipliers': config.multipliers.get(game_state.sport, [1]),
             'multiplier_labels': config.multiplier_labels.get(game_state.sport, []),
             'tokens_per_player': config.total_tokens.get(game_state.sport, 40),
+            'celebration': game_state.celebration,
             'winner': winner_info
         })
     except Exception as e:
@@ -1002,65 +1006,85 @@ def get_winner():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def calculate_standings():
+    """Return the current standings response while the game lock is held."""
+    left_score = game_state.scores['left']
+    right_score = game_state.scores['right']
+
+    if left_score == right_score:
+        return {'success': False, 'error': 'Game is tied'}
+
+    winning_team = 'left' if left_score > right_score else 'right'
+
+    all_standings = []
+
+    for row in range(len(game_state.squares)):
+        for col in range(len(game_state.squares[0])):
+            square_value = game_state.squares[row][col]
+
+            if not square_value:
+                continue
+
+            square_predicts_left_wins = row > col
+            square_predicts_right_wins = col > row
+
+            if winning_team == 'left' and not square_predicts_left_wins:
+                continue
+            if winning_team == 'right' and not square_predicts_right_wins:
+                continue
+
+            distance = abs(row - left_score) + abs(col - right_score)
+
+            square_key = (row, col)
+            multiplier = game_state.square_multipliers.get(square_key, 1)
+
+            all_standings.append({
+                'player': square_value,
+                'player_name': game_state.players.get(square_value, {}).get('name', square_value),
+                'square': {'row': row, 'col': col},
+                'distance': distance,
+                'winning_team': winning_team,
+                'multiplier': multiplier
+            })
+
+    all_standings.sort(key=lambda x: (x['distance'], x['player_name']))
+    return {'success': True, 'standings': all_standings, 'winning_team': winning_team}
+
+
 @app.route('/api/standings', methods=['GET'])
 @synchronized_game
 def get_standings():
     """Get all players ranked by distance from current score"""
     try:
-        left_score = game_state.scores['left']
-        right_score = game_state.scores['right']
+        return jsonify(calculate_standings())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        # Determine which team is winning
-        if left_score == right_score:
+
+@app.route('/api/end-game', methods=['POST'])
+@synchronized_game
+def end_game():
+    """Publish an immutable end-game snapshot to connected browsers."""
+    try:
+        result = calculate_standings()
+        if not result['success']:
+            return jsonify(result), 400
+        if not result['standings']:
             return jsonify({
                 'success': False,
-                'error': 'Game is tied'
-            })
+                'error': 'No winner found. Make sure there are bets on the board and scores are set.'
+            }), 400
 
-        winning_team = 'left' if left_score > right_score else 'right'
-
-        # Collect all players with bets on the correct side
-        all_standings = []
-
-        for row in range(len(game_state.squares)):
-            for col in range(len(game_state.squares[0])):
-                square_value = game_state.squares[row][col]
-
-                if not square_value:
-                    continue
-
-                # Check if square predicts the correct winning team
-                square_predicts_left_wins = row > col
-                square_predicts_right_wins = col > row
-
-                if winning_team == 'left' and not square_predicts_left_wins:
-                    continue
-                if winning_team == 'right' and not square_predicts_right_wins:
-                    continue
-
-                distance = abs(row - left_score) + abs(col - right_score)
-
-                # Get multiplier used for this square
-                square_key = (row, col)
-                multiplier = game_state.square_multipliers.get(square_key, 1)
-
-                all_standings.append({
-                    'player': square_value,
-                    'player_name': game_state.players.get(square_value, {}).get('name', square_value),
-                    'square': {'row': row, 'col': col},
-                    'distance': distance,
-                    'winning_team': winning_team,
-                    'multiplier': multiplier
-                })
-
-        # Sort by distance, then by player name when equal
-        all_standings.sort(key=lambda x: (x['distance'], x['player_name']))
-
-        return jsonify({
-            'success': True,
-            'standings': all_standings,
-            'winning_team': winning_team
-        })
+        celebration = {
+            'id': secrets.token_urlsafe(16),
+            'teams': dict(game_state.teams),
+            'scores': dict(game_state.scores),
+            'winning_team': result['winning_team'],
+            'standings': result['standings']
+        }
+        game_state.celebration = celebration
+        notify_game_change()
+        return jsonify({'success': True, 'celebration': celebration})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

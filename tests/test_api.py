@@ -88,7 +88,7 @@ class TestStateEndpoint:
         state = client.get("/api/state").get_json()
         for key in ("squares", "players", "teams", "scores", "sport",
                      "max_score", "current_multiplier", "available_multipliers",
-                     "multiplier_labels", "tokens_per_player", "winner"):
+                     "multiplier_labels", "tokens_per_player", "celebration", "winner"):
             assert key in state, f"Missing key: {key}"
 
     def test_state_default_sport_is_nfl(self, client):
@@ -372,3 +372,64 @@ class TestStandingsEndpoint:
         assert len(data["standings"]) >= 2
         assert data["standings"][0]["player"] == "A"
         assert data["standings"][0]["distance"] < data["standings"][1]["distance"]
+
+
+# ---------------------------------------------------------------------------
+# /api/end-game
+# ---------------------------------------------------------------------------
+class TestEndGameEndpoint:
+    def setup_final_game(self, client):
+        post_json(client, "/api/teams", {"left": "BUF", "right": "KC"})
+        add_player(client, "A", "ALICE")
+        post_json(client, "/api/squares", {"row": 3, "col": 1, "value": "A"})
+        post_json(client, "/api/scores", {"left": 3, "right": 1})
+
+    def test_tied_game_is_rejected_without_event(self, client):
+        response = client.post("/api/end-game")
+        assert response.status_code == 400
+        assert response.get_json() == {"success": False, "error": "Game is tied"}
+        assert client.get("/api/state").get_json()["celebration"] is None
+
+    def test_game_without_eligible_standings_is_rejected(self, client):
+        post_json(client, "/api/scores", {"left": 3, "right": 1})
+        response = client.post("/api/end-game")
+        assert response.status_code == 400
+        assert response.get_json()["success"] is False
+        assert client.get("/api/state").get_json()["celebration"] is None
+
+    def test_success_returns_and_exposes_final_snapshot(self, client):
+        self.setup_final_game(client)
+        response = client.post("/api/end-game")
+        assert response.status_code == 200
+        celebration = response.get_json()["celebration"]
+        assert celebration["id"]
+        assert celebration["teams"] == {"left": "BUF", "right": "KC"}
+        assert celebration["scores"] == {"left": 3, "right": 1}
+        assert celebration["winning_team"] == "left"
+        assert celebration["standings"][0]["player_name"] == "ALICE"
+        assert client.get("/api/state").get_json()["celebration"] == celebration
+
+    def test_snapshot_is_unchanged_by_later_game_edits(self, client):
+        self.setup_final_game(client)
+        celebration = client.post("/api/end-game").get_json()["celebration"]
+        post_json(client, "/api/scores", {"left": 4, "right": 2})
+        post_json(client, "/api/teams", {"left": "MIA", "right": "NYJ"})
+        assert client.get("/api/state").get_json()["celebration"] == celebration
+
+    def test_repeated_end_game_creates_a_new_event(self, client):
+        self.setup_final_game(client)
+        first = client.post("/api/end-game").get_json()["celebration"]["id"]
+        second = client.post("/api/end-game").get_json()["celebration"]["id"]
+        assert first != second
+
+    def test_reset_clears_event(self, client):
+        self.setup_final_game(client)
+        client.post("/api/end-game")
+        client.post("/api/reset")
+        assert client.get("/api/state").get_json()["celebration"] is None
+
+    def test_player_cannot_end_game(self, client):
+        self.setup_final_game(client)
+        client.post("/api/logout")
+        client.post("/api/login", json={"role": "player", "initial": "A", "name": "ALICE"})
+        assert client.post("/api/end-game").status_code == 403

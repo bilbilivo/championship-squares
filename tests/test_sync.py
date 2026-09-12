@@ -34,6 +34,27 @@ def test_two_devices_receive_saved_changes_and_reconnect(client, events):
     assert 'A' in client.get('/api/state').json['players']
 
 
+def test_end_game_publishes_once_and_rejections_do_not_publish(client, events):
+    revision = events.snapshot()
+    assert client.post('/api/end-game').status_code == 400
+    assert events.snapshot() == revision
+
+    client.post('/api/teams', json={'left': 'BUF', 'right': 'KC'})
+    client.post('/api/players', json={'initial': 'A', 'name': 'Alice'})
+    client.post('/api/squares', json={'row': 3, 'col': 1, 'value': 'A'})
+    client.post('/api/scores', json={'left': 3, 'right': 1})
+    revision = events.snapshot()
+    response = client.post('/api/end-game')
+    assert response.status_code == 200
+    assert events.snapshot() == revision + 1
+    assert client.get('/api/state').json['celebration'] == response.json['celebration']
+
+    revision = events.snapshot()
+    client.post('/api/reset')
+    assert events.snapshot() == revision + 1
+    assert client.get('/api/state').json['celebration'] is None
+
+
 def test_stream_headers_and_initial_event(client, events):
     response = client.get('/api/events', buffered=False)
     try:
