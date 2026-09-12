@@ -4,6 +4,11 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.14] - 2026-09-12
+
+### Added
+- Synchronized end-game cinematics for browsers already viewing the game, with snapshot-based results and role-aware controls
+
 ## [v2026.13] - 2026-09-12
 
 ### Added
@@ -235,6 +240,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.14]: https://github.com/bilbilivo/championship-squares/compare/v2026.13...v2026.14
 [v2026.13]: https://github.com/bilbilivo/championship-squares/compare/v2026.12...v2026.13
 [v2026.12]: https://github.com/bilbilivo/championship-squares/compare/v2026.11...v2026.12
 [v2026.11]: https://github.com/bilbilivo/championship-squares/compare/v2026.10...v2026.11
