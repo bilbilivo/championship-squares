@@ -22,8 +22,9 @@ from urllib.parse import quote, urlsplit, urlunsplit
 import qrcode
 from qrcode.image.svg import SvgPathImage
 from flask.sessions import SecureCookieSessionInterface
-from config import config
+from config import config, load_flask_secret
 from database import (delete_all_player_invites, delete_player_invite, init_db, invite_key_for_player, load_game_state as db_load_state,
+                      load_last_tunnel_url, save_last_tunnel_url,
                       save_game_state as db_save_state,
                       save_player_invite)
 
@@ -33,7 +34,7 @@ LITE_MODE = os.environ.get('LITE_MODE', '0') == '1'
 app = Flask(__name__, 
            template_folder=str(config.template_dir),
            static_folder=str(config.static_dir))
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
+app.secret_key = load_flask_secret(config.base_dir)
 MAX_REQUEST_BYTES = 16 * 1024
 app.config['MAX_CONTENT_LENGTH'] = MAX_REQUEST_BYTES
 WAITRESS_OPTIONS = {
@@ -61,6 +62,8 @@ class TunnelManager:
         self.process = None
         self.url = None
         self.registration_token = None
+        self.hostname_changed = False
+        self.previous_url = None
         self.lock = threading.RLock()
 
     def active(self):
@@ -106,7 +109,11 @@ class TunnelManager:
                     for word in line.split():
                         candidate = word.rstrip('.,')
                         if re.fullmatch(r'https://[a-z0-9]+(?:-[a-z0-9]+)*\.trycloudflare\.com', candidate):
+                            previous_url = load_last_tunnel_url()
                             self.url = candidate
+                            self.hostname_changed = bool(previous_url and previous_url != candidate)
+                            self.previous_url = previous_url if self.hostname_changed else None
+                            save_last_tunnel_url(candidate)
                             self.registration_token = secrets.token_urlsafe(24)
                             return self.url
                 raise RuntimeError('TUNNEL FAILED — TRY AGAIN')
@@ -752,7 +759,12 @@ def tunnel_control():
             return jsonify(error=str(error)), 503
     elif request.method == 'DELETE':
         tunnel.stop()
-    return jsonify(active=tunnel.active(), url=tunnel.url)
+    return jsonify(
+        active=tunnel.active(),
+        url=tunnel.url,
+        hostname_changed=tunnel.hostname_changed if tunnel.active() else False,
+        previous_url=tunnel.previous_url if tunnel.active() else None,
+    )
 
 
 def invite_token(initial, invite_key):

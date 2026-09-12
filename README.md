@@ -112,13 +112,19 @@ visitors can only create or join a player. Turn the tunnel off when the game end
 Quick Tunnel links are temporary and do not provide instant update events, so remote
 phones use explicit five-second polling. Local devices retain instant updates.
 
+On first startup, Championship Squares creates a random signing key in the local
+`.flask-secret` file with owner-only permissions. Keep that file private and preserve
+it across application upgrades and restarts. You can instead provide
+`FLASK_SECRET_KEY` or point `FLASK_SECRET_KEY_FILE` at another protected file.
+Signing secrets are never stored in `game_state.db`, logs, or API responses.
+
 ADMIN mode is passwordless on the trusted LAN. Public connections cannot enter ADMIN
 mode or use admin controls, even with an existing admin session. Player links grant
 access to one player: share them only with that player. Resetting a player link
 revokes the old link for future joins; active player sessions stay signed in.
 Public game state is unavailable until a player link has been redeemed.
 Game reset also expires the registration QR. Tunnel restarts change the public URL;
-server restarts invalidate sessions and require fresh QR links.
+the admin QR dialog warns when a new address means links must be displayed and shared again.
 
 API mutations require an `X-CSRF-Token` obtained from `/api/csrf` using the same
 session cookie. Browser requests handle this automatically.

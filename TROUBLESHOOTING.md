@@ -635,6 +635,23 @@ sudo ufw allow 8080
 
 ---
 
+## Remote player link stopped working
+
+If the browser cannot reach the old `trycloudflare.com` address, the Quick Tunnel
+hostname changed. Reopen **QR CODE** as local ADMIN. When the status says **NEW
+ADDRESS · RESHARE PLAYER LINKS**, select each existing player, choose **SHOW PLAYER
+QR**, and share the refreshed URL. Do not delete or recreate the player.
+
+If the address loads the expired-link page with HTTP 403, check whether
+`.flask-secret`, `FLASK_SECRET_KEY`, or the file selected by
+`FLASK_SECRET_KEY_FILE` changed. Restore the original protected key when appropriate,
+or intentionally rotate each player link. Game reset, player deletion, and **RESET
+PLAYER LINK** also revoke links by design.
+
+Quick Tunnel hostnames are temporary. Use a named Cloudflare Tunnel or another
+stable public hostname when links must retain the same address across tunnel
+restarts; the built-in tunnel button does not create a named tunnel.
+
 ## Getting Help
 
 ### Information to Provide
