@@ -360,10 +360,11 @@ Tables:
 
 ### Flask Debug Mode
 ```bash
-FLASK_ENV=development FLASK_DEBUG=1 python app.py
+flask --app app run --debug --host 127.0.0.1 --port 8080
 ```
 
-Enables auto-reload on file changes and detailed error pages.
+Use this loopback-only command for auto-reload and detailed errors. Normal
+`python app.py` startup uses Waitress and does not expose the Flask debugger.
 
 ### Lite Mode
 ```bash

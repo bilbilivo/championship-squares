@@ -16,6 +16,7 @@ import secrets
 import shutil
 import subprocess
 import time
+import math
 from ipaddress import ip_address, ip_network
 from urllib.parse import quote, urlsplit, urlunsplit
 import qrcode
@@ -33,6 +34,18 @@ app = Flask(__name__,
            template_folder=str(config.template_dir),
            static_folder=str(config.static_dir))
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', os.urandom(24))
+MAX_REQUEST_BYTES = 16 * 1024
+app.config['MAX_CONTENT_LENGTH'] = MAX_REQUEST_BYTES
+WAITRESS_OPTIONS = {
+    'threads': 32,
+    'connection_limit': 100,
+    'channel_timeout': 45,
+    'cleanup_interval': 15,
+    'max_request_body_size': MAX_REQUEST_BYTES,
+    'max_request_header_size': MAX_REQUEST_BYTES,
+    'expose_tracebacks': False,
+    'clear_untrusted_proxy_headers': True,
+}
 
 
 TUNNEL_HOST = 'player-tunnel.invalid'
@@ -126,10 +139,20 @@ def request_hostname():
     return (urlsplit(request.host_url).hostname or '').lower().rstrip('.')
 
 
+def loopback_address(value):
+    try:
+        address = ip_address(value)
+        if getattr(address, 'ipv4_mapped', None):
+            address = address.ipv4_mapped
+        return address.is_loopback
+    except ValueError:
+        return False
+
+
 def is_tunnel_request():
-    # Never depend on process liveness to recognize untrusted public ingress.
-    host = request_hostname()
-    return host == TUNNEL_HOST or host.endswith('.trycloudflare.com')
+    # cloudflared connects over loopback and rewrites Host to this sentinel.
+    # Requiring both prevents directly reachable clients from spoofing public ingress.
+    return request_hostname() == TUNNEL_HOST and loopback_address(request.remote_addr or '')
 
 
 def local_address(value):
@@ -164,10 +187,88 @@ app.session_interface = ConnectionSessionInterface()
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
 
 
+class TokenBucketLimiter:
+    """Small in-process limiter for the app's single-process deployment model."""
+    def __init__(self):
+        self._buckets = {}
+        self._lock = threading.Lock()
+        self._last_cleanup = 0.0
+
+    def check(self, key, rate_per_minute, capacity):
+        now = time.monotonic()
+        refill_rate = rate_per_minute / 60.0
+        with self._lock:
+            tokens, updated = self._buckets.get(key, (float(capacity), now))
+            tokens = min(float(capacity), tokens + max(0.0, now - updated) * refill_rate)
+            allowed = tokens >= 1.0
+            if allowed:
+                tokens -= 1.0
+            self._buckets[key] = (tokens, now)
+            if now - self._last_cleanup >= 300:
+                cutoff = now - 600
+                self._buckets = {bucket_key: value for bucket_key, value in self._buckets.items()
+                                 if value[1] >= cutoff}
+                self._last_cleanup = now
+        retry_after = 0 if allowed else max(1, math.ceil((1.0 - tokens) / refill_rate))
+        return allowed, retry_after
+
+    def clear(self):
+        with self._lock:
+            self._buckets.clear()
+            self._last_cleanup = 0.0
+
+
+rate_limiter = TokenBucketLimiter()
+PUBLIC_PLAYER_READS = {'/api/state', '/api/winner', '/api/standings'}
+
+
+def public_client_address():
+    """Use Cloudflare's client address only on verified tunnel-origin traffic."""
+    forwarded = request.headers.get('CF-Connecting-IP', '')
+    try:
+        return str(ip_address(forwarded))
+    except ValueError:
+        return request.remote_addr or 'unknown'
+
+
+def valid_player_session():
+    initial = session.get('player')
+    return (session.get('role') == 'player' and initial in game_state.players and
+            session.get('identity') == game_state.player_identities.get(initial))
+
+
+def enforce_rate_limit(key, rate, capacity):
+    allowed, retry_after = rate_limiter.check(key, rate, capacity)
+    if allowed:
+        return None
+    response = jsonify(error='TOO MANY REQUESTS — TRY AGAIN')
+    response.status_code = 429
+    response.headers['Retry-After'] = str(retry_after)
+    return response
+
+
 @app.before_request
 def protect_request():
     if not is_tunnel_request() and not is_local_request():
         return jsonify(error='UNTRUSTED CONNECTION'), 403
+    if request.content_length is not None and request.content_length > app.config['MAX_CONTENT_LENGTH']:
+        return jsonify(error='REQUEST TOO LARGE'), 413
+    if is_tunnel_request():
+        client = public_client_address()
+        principal = session.get('identity') if valid_player_session() else client
+        limited = enforce_rate_limit(('public', principal), 120, 30)
+        if limited:
+            return limited
+        if request.path.startswith('/api/public/register/'):
+            limited = enforce_rate_limit(('registration', client), 12, 4)
+            if limited:
+                return limited
+        if request.path in PUBLIC_PLAYER_READS or request.path == '/api/squares':
+            if not valid_player_session():
+                return jsonify(error='PLAYER LINK REQUIRED'), 401
+            limited = enforce_rate_limit(('player', session['identity']), 60, 20)
+            if limited:
+                return limited
     if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
         supplied = request.headers.get('X-CSRF-Token', '')
         expected = session.get('csrf_token', '')
@@ -296,6 +397,16 @@ def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['Referrer-Policy'] = 'no-referrer'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+        "base-uri 'none'; frame-ancestors 'self'; form-action 'self'"
+    )
+    response.headers['Permissions-Policy'] = (
+        'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+    )
+    if is_tunnel_request():
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000'
     if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
         response.headers['X-CSRF-Token'] = csrf_token()
     if request.path.startswith(('/api/', '/join/')) or request.path == '/':
@@ -1206,6 +1317,12 @@ def update_multiplier():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def run_server():
+    """Serve the single-process application with bounded production settings."""
+    from waitress import serve
+    serve(app, host=config.config['host'], port=config.config['port'], **WAITRESS_OPTIONS)
+
+
 if __name__ == '__main__':
     # Ensure the template exists in the template directory
     index_template = config.template_dir / 'index.html'
@@ -1217,10 +1334,6 @@ if __name__ == '__main__':
             print(f"Error copying template: {e}")
             exit(1)
 
-    # Start the server with platform-specific configuration
-    app.run(
-        host=config.config['host'],
-        port=config.config['port'],
-        debug=config.config['debug'],
-        threaded=True
-    )
+    # Run one production-quality, threaded WSGI process. In-process game state
+    # and event broadcasting intentionally preclude multiple worker processes.
+    run_server()

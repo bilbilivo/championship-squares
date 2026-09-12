@@ -22,6 +22,7 @@ def enable_tunnel(monkeypatch):
 
 
 PUBLIC = 'https://blue-squares.trycloudflare.com'
+TUNNEL_ORIGIN = 'http://player-tunnel.invalid'
 
 
 def raw(app):
@@ -62,7 +63,19 @@ def test_forged_forwarding_cannot_create_local_access(app, base, peer):
     assert response.status_code == 403
 
 
-@pytest.mark.parametrize('base', [PUBLIC, 'http://player-tunnel.invalid'])
+@pytest.mark.parametrize('base,peer', [
+    (TUNNEL_ORIGIN, '192.168.1.20'),
+    (TUNNEL_ORIGIN, '8.8.8.8'),
+    (PUBLIC, '127.0.0.1'),
+])
+def test_tunnel_host_requires_fixed_host_and_loopback_source(app, base, peer):
+    device = raw(app)
+    response = device.get('/api/csrf', base_url=base,
+                          environ_overrides={'REMOTE_ADDR': peer})
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize('base', [TUNNEL_ORIGIN])
 def test_public_admin_cookie_is_rejected_even_when_tunnel_is_down(app, base):
     device = raw(app)
     assert post(device, '/api/login', {'role': 'admin'}).status_code == 200
@@ -90,8 +103,7 @@ def test_csrf_missing_wrong_cross_session_and_cross_origin(app):
     assert device.post('/api/reset', headers={'X-CSRF-Token': token}).status_code == 403
 
 
-@pytest.mark.parametrize('base,secure', [('http://localhost', False), (PUBLIC, True),
-                                         ('http://player-tunnel.invalid', True)])
+@pytest.mark.parametrize('base,secure', [('http://localhost', False), (TUNNEL_ORIGIN, True)])
 def test_session_cookie_and_sensitive_page_headers(app, base, secure):
     device = raw(app)
     response = device.get('/', base_url=base)
@@ -100,16 +112,79 @@ def test_session_cookie_and_sensitive_page_headers(app, base, secure):
     assert 'HttpOnly' in cookie and 'SameSite=Lax' in cookie
     assert response.headers['Cache-Control'] == 'no-store'
     assert response.headers['Referrer-Policy'] == 'no-referrer'
+    assert "script-src 'self'" in response.headers['Content-Security-Policy']
+    assert "object-src 'none'" in response.headers['Content-Security-Policy']
+    assert 'camera=()' in response.headers['Permissions-Policy']
+    assert ('Strict-Transport-Security' in response.headers) == secure
     expired = device.get('/join/A/expired', base_url=base)
     assert expired.status_code == 403
     assert b'LINK EXPIRED' in expired.data and b'ASK HOST' in expired.data
     assert expired.headers['Cache-Control'] == 'no-store'
 
 
-def test_public_uses_polling_and_local_uses_sse(client):
+def test_public_uses_polling_and_local_uses_sse(app, client, monkeypatch):
     assert client.get('/api/state').json['connection']['sync'] == 'sse'
-    assert client.get('/api/state', base_url=PUBLIC).json['connection'] == {'public': True, 'sync': 'poll'}
-    assert client.get('/api/events', base_url=PUBLIC).status_code == 409
+    assert raw(app).get('/api/state', base_url=TUNNEL_ORIGIN).status_code == 401
+    enable_tunnel(monkeypatch)
+    client.post('/api/players', json={'initial': 'A', 'name': 'ALICE'})
+    invite = client.post('/api/player-invites/A').json['url']
+    player = raw(app)
+    assert player.get(urlsplit(invite).path, base_url=TUNNEL_ORIGIN).status_code == 302
+    state = player.get('/api/state', base_url=TUNNEL_ORIGIN).json
+    assert state['connection'] == {'public': True, 'sync': 'poll'}
+    assert player.get('/api/events', base_url=TUNNEL_ORIGIN).status_code == 409
+
+
+@pytest.mark.parametrize('path', ['/api/state', '/api/winner', '/api/standings'])
+def test_public_game_reads_require_player_link(app, path):
+    assert raw(app).get(path, base_url=TUNNEL_ORIGIN).status_code == 401
+
+
+def test_request_body_limit(client):
+    response = client.post('/api/teams', json={'left': 'A' * 20000, 'right': 'B'})
+    assert response.status_code == 413
+
+
+def test_public_registration_rate_limit_returns_retry_after(app):
+    device = raw(app)
+    headers = {'CF-Connecting-IP': '203.0.113.44'}
+    token = device.get('/api/csrf', base_url=TUNNEL_ORIGIN, headers=headers).json['csrf_token']
+    headers['X-CSRF-Token'] = token
+    for attempt in range(4):
+        response = device.post(f'/api/public/register/bad-{attempt}', json={},
+                               base_url=TUNNEL_ORIGIN, headers=headers)
+        assert response.status_code == 403
+        headers['X-CSRF-Token'] = response.headers['X-CSRF-Token']
+    limited = device.post('/api/public/register/limited', json={},
+                          base_url=TUNNEL_ORIGIN, headers=headers)
+    assert limited.status_code == 429
+    assert int(limited.headers['Retry-After']) >= 1
+
+
+def test_token_bucket_refills(monkeypatch):
+    clock = [100.0]
+    monkeypatch.setattr(module.time, 'monotonic', lambda: clock[0])
+    limiter = module.TokenBucketLimiter()
+    assert limiter.check('player', 2, 2)[0]
+    assert limiter.check('player', 2, 2)[0]
+    allowed, retry_after = limiter.check('player', 2, 2)
+    assert not allowed and retry_after == 30
+    clock[0] += 30
+    assert limiter.check('player', 2, 2)[0]
+
+
+def test_production_server_uses_bounded_waitress_configuration(monkeypatch):
+    import waitress
+    observed = {}
+    monkeypatch.setattr(waitress, 'serve', lambda application, **options:
+                        observed.update(application=application, **options))
+    module.run_server()
+    assert observed['application'] is module.app
+    assert observed['threads'] == 32
+    assert observed['connection_limit'] == 100
+    assert observed['max_request_body_size'] == 16 * 1024
+    assert observed['max_request_header_size'] == 16 * 1024
+    assert observed['expose_tracebacks'] is False
 
 
 def test_reset_registration_and_player_delete_revoke_links(client, monkeypatch):
@@ -118,10 +193,10 @@ def test_reset_registration_and_player_delete_revoke_links(client, monkeypatch):
     invite = client.post('/api/player-invites/A').json['url']
     client.delete('/api/players/A')
     client.post('/api/players', json={'initial': 'A', 'name': 'AGAIN'})
-    assert client.get(urlsplit(invite).path, base_url=PUBLIC).status_code == 403
+    assert client.get(urlsplit(invite).path, base_url=TUNNEL_ORIGIN).status_code == 403
     client.post('/api/reset')
     assert module.tunnel.registration_token != 'registration-token'
-    assert client.get('/join/register/registration-token', base_url=PUBLIC).status_code == 403
+    assert client.get('/join/register/registration-token', base_url=TUNNEL_ORIGIN).status_code == 403
 
 
 def test_rotation_preserves_session_but_blocks_old_link(app, client, monkeypatch):
@@ -129,12 +204,12 @@ def test_rotation_preserves_session_but_blocks_old_link(app, client, monkeypatch
     client.post('/api/players', json={'initial': 'A', 'name': 'ALICE'})
     old = client.post('/api/player-invites/A').json['url']
     player = raw(app)
-    assert player.get(urlsplit(old).path, base_url=PUBLIC).status_code == 302
+    assert player.get(urlsplit(old).path, base_url=TUNNEL_ORIGIN).status_code == 302
     client.delete('/api/player-invites/A')
-    assert raw(app).get(urlsplit(old).path, base_url=PUBLIC).status_code == 403
-    assert player.get('/api/session', base_url=PUBLIC).json['role'] == 'player'
-    assert post(player, '/api/squares', {'row': 1, 'col': 0, 'value': 'A'}, PUBLIC).status_code == 200
-    assert post(player, '/api/players', {'initial': 'B', 'name': 'BOB'}, PUBLIC).status_code == 403
+    assert raw(app).get(urlsplit(old).path, base_url=TUNNEL_ORIGIN).status_code == 403
+    assert player.get('/api/session', base_url=TUNNEL_ORIGIN).json['role'] == 'player'
+    assert post(player, '/api/squares', {'row': 1, 'col': 0, 'value': 'A'}, TUNNEL_ORIGIN).status_code == 200
+    assert post(player, '/api/players', {'initial': 'B', 'name': 'BOB'}, TUNNEL_ORIGIN).status_code == 403
 
 
 def test_concurrent_invite_issuance_is_stable(app, client, monkeypatch):

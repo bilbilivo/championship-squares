@@ -130,12 +130,15 @@ Admin access remains local even while the tunnel is enabled:
 - Tunnel controls and player-link creation require a local ADMIN session.
 - Public requests cannot log into ADMIN mode or use admin-only endpoints.
 - `cloudflared` forwards origin requests with the fixed host
-  `player-tunnel.invalid`. The application treats that host—and
-  `*.trycloudflare.com` hosts used by tests—as public ingress.
-- Forwarded headers do not turn a public request into a trusted LAN request.
+  `player-tunnel.invalid` over loopback. Both conditions must match before the
+  application treats a request as public ingress; a spoofed Host is rejected.
+- Public game-state endpoints require a valid PLAYER session. Forwarded client
+  addresses are trusted only on verified tunnel-origin requests.
 - Non-GET requests require the session's `X-CSRF-Token`; the browser adds it
   automatically and the application checks the request origin when supplied.
 - Public session cookies are `Secure`, `HttpOnly`, and `SameSite=Lax`.
+- Requests are size- and rate-limited, and responses use a restrictive browser
+  security policy. Excess traffic receives HTTP 429 with `Retry-After`.
 - Invite tokens are redacted from Werkzeug request logs. QR and invite responses use
   `Cache-Control: no-store`.
 - Remote browsers use five-second state polling. Local browsers use server-sent

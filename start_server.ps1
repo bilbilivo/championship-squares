@@ -49,19 +49,28 @@ function Get-Python {
 }
 
 function Ensure-Venv {
-    if (Test-Path $VenvDir) { return }
-    Write-Host "First run — creating virtual environment..."
-    & python -m venv $VenvDir
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Failed to create virtual environment. Is Python installed?"
-        exit 1
+    if (-not (Test-Path $VenvDir)) {
+        Write-Host "First run — creating virtual environment..."
+        & python -m venv $VenvDir
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to create virtual environment. Is Python installed?"
+            exit 1
+        }
     }
     $venvPython = Join-Path $VenvDir "Scripts" "python.exe"
-    Write-Host "Installing dependencies..."
-    & $venvPython -m pip install $ScriptDir
+    & $venvPython -c "import flask, qrcode, waitress" 2>$null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Failed to install dependencies."
-        exit 1
+        Write-Host "Installing or updating dependencies..."
+        & $venvPython -m pip install --upgrade pip
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to update pip."
+            exit 1
+        }
+        & $venvPython -m pip install $ScriptDir
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: Failed to install dependencies."
+            exit 1
+        }
     }
 }
 

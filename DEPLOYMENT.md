@@ -106,7 +106,9 @@ sudo iptables -L -n | grep 8080
 
 ## Production Deployment
 
-Championship Squares uses Flask's built-in development server. Always start the application using the provided launcher scripts.
+Championship Squares uses one threaded Waitress process. Start it with the provided
+launcher scripts or `python app.py`; Flask's development server is reserved for
+loopback-only development.
 
 ### Using Launcher Scripts (Recommended)
 
@@ -126,21 +128,26 @@ These scripts:
 - Create virtual environment if needed
 - Install dependencies from pyproject.toml
 - Activate virtual environment
-- Start Flask server on port 8080
+- Start Waitress on port 8080
 
-### Manual Flask Startup
+### Manual Startup
 
-If you prefer to run Flask directly:
+If you prefer to run the application directly:
 
 ```bash
 python app.py
 ```
 
-This starts the server with configuration from `config.py` (port 8080, debug disabled).
+This starts Waitress with configuration from `config.py`, 32 request threads, bounded
+request sizes, and one shared in-process game state.
 
-### Running Behind Reverse Proxy (nginx)
+### Reverse proxies and public hosting
 
-For SSL, use nginx as a reverse proxy to the game server:
+Do not publish this passwordless-ADMIN application through a generic reverse proxy.
+The trusted LAN is the security boundary, and proxying all clients through loopback
+can erase the address information used to enforce it. Public remote access is
+supported only through the built-in player-only Cloudflare Quick Tunnel described in
+`CLOUDFLARE.md`.
 
 Multi-device play uses `/api/events` (server-sent events). Each active browser
 keeps one connection open and fetches state when a saved change is announced.
@@ -152,55 +159,6 @@ does this). Game state and notifications are shared in memory between its thread
 Do not use multiple worker processes or replicas with this implementation. A WSGI
 server needs enough threads for the connected browsers plus ordinary API requests.
 Multiple workers would require shared state and a shared notification broker.
-
-**Nginx config** `/etc/nginx/sites-available/championship-squares`:
-
-```nginx
-upstream championship_squares {
-    server 127.0.0.1:8080;
-}
-
-server {
-    listen 80;
-    server_name example.com;
-
-    location / {
-        proxy_pass http://championship_squares;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /api/ {
-        proxy_pass http://championship_squares;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_buffering off;
-        proxy_read_timeout 60s;
-    }
-}
-```
-
-**Enable site:**
-```bash
-sudo ln -s /etc/nginx/sites-available/championship-squares \
-           /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### SSL/TLS with Let's Encrypt
-
-Use Certbot for free SSL certificates:
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d example.com
-```
-
-Certbot automatically updates nginx config with SSL.
 
 ---
 
@@ -265,42 +223,10 @@ docker-compose up -d
 
 ## Cloud Platforms
 
-### Heroku
-
-1. **Install Heroku CLI**
-2. **Create Procfile:**
-   ```
-   web: python app.py
-   ```
-3. **Create app and deploy:**
-   ```bash
-   heroku create championship-squares
-   git push heroku main
-   ```
-
-### AWS EC2
-
-1. Launch Ubuntu 20.04 instance
-2. Install Python 3.10+
-3. Clone repository
-4. Run launcher script: `./start_server.sh`
-5. Attach security group allowing ports 80, 443, 8080
-
-### DigitalOcean App Platform
-
-1. Connect GitHub repository
-2. Auto-detect Python
-3. Set run command: `python app.py`
-4. Configure environment (optional)
-5. Deploy
-
-### PythonAnywhere
-
-1. Upload repository files
-2. Configure Python web app (Flask)
-3. Point WSGI file to app.py
-4. Reload web app
-5. Access via provided URL
+Generic cloud hosting is unsupported because it would expose passwordless ADMIN or
+require trusting proxy headers from infrastructure outside the app's current threat
+model. Use the Quick Tunnel for remote players. A conventional public deployment
+requires authenticated ADMIN access and an explicit trusted-proxy configuration first.
 
 ---
 
@@ -345,7 +271,7 @@ Game state stored in `game_state.db`. Backup strategies:
 
 ### Application Logs
 
-Flask logs server requests and errors to the terminal. To capture logs to a file:
+Waitress and the application log requests and errors to the terminal. To capture logs to a file:
 
 **Linux/macOS:**
 ```bash
@@ -389,9 +315,10 @@ No built-in metrics. For production monitoring, consider:
 
 ## Performance Tuning
 
-### Flask Configuration
+### Server Configuration
 
-Flask's development server is adequate for small to medium deployments. For basic tuning:
+The normal entry point uses 32 Waitress threads and a 100-connection ceiling. This
+leaves capacity for the app's long-lived local SSE connections while bounding abuse.
 
 **In config.py:**
 ```python
@@ -425,35 +352,19 @@ Flask typically uses 50-100 MB per instance. Enable lite mode for reduced memory
 LITE_MODE=1 ./start_server.sh
 ```
 
-### Caching Headers
-
-Add to nginx reverse proxy:
-
-```nginx
-location /static/ {
-    expires 30d;
-    add_header Cache-Control "public, immutable";
-}
-```
-
----
-
 ## Security Considerations
 
 ### Port 8080 Only
 
 The application has session-based ADMIN/PLAYER permissions, but mode selection has
-no password or identity verification: anyone can select ADMIN. Deploy with:
-- Reverse proxy (nginx with auth)
-- VPN/firewall (restrict IP access)
-- Local network only (trusted users)
+no password or identity verification: anyone on the host or LAN can select ADMIN.
+The LAN is therefore the security boundary. Use only a trusted private network; do
+not run on public Wi-Fi or expose port 8080 to the Internet.
 
-### HTTPS Required
+### HTTPS
 
-Always use HTTPS in production:
-- Self-signed certificates (internal)
-- Let's Encrypt (public)
-- AWS ACM (AWS deployments)
+LAN play uses local HTTP. The supported Quick Tunnel terminates public HTTPS at
+Cloudflare and receives HSTS responses; do not expose the HTTP origin port publicly.
 
 ### File Permissions
 
@@ -466,16 +377,11 @@ chown www-data:www-data game_state.db
 
 ### Rate Limiting
 
-Add rate limiting to nginx:
-
-```nginx
-limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
-
-location /api/ {
-    limit_req zone=api_limit burst=20 nodelay;
-    proxy_pass http://championship_squares;
-}
-```
+Verified tunnel traffic is limited in-process. Public traffic receives a general
+120-request/minute bucket per authenticated player or pre-login client address;
+registration attempts and authenticated player reads or mutations have stricter
+buckets. Requests over 16 KiB receive HTTP 413, and throttled requests receive HTTP
+429 with `Retry-After`.
 
 ---
 

@@ -109,6 +109,10 @@ activate_venv() {
 
     if [ "$FIRST_RUN" -eq 1 ]; then
         echo "Installing dependencies..."
+        if ! "$PYTHON" -m pip install --upgrade pip; then
+            echo "ERROR: Failed to update pip."
+            exit 1
+        fi
         if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
             echo "ERROR: Failed to install dependencies."
             echo "Check your internet connection and try again."
@@ -120,8 +124,12 @@ activate_venv() {
         install
     else
         # Check runtime dependencies, including upgrades to an existing install.
-        if ! "$PYTHON" -c "import flask, qrcode" 2>/dev/null; then
+        if ! "$PYTHON" -c "import flask, qrcode, waitress" 2>/dev/null; then
             echo "Dependencies missing or incomplete. Reinstalling..."
+            if ! "$PYTHON" -m pip install --upgrade pip; then
+                echo "ERROR: Failed to update pip."
+                exit 1
+            fi
             if ! "$PYTHON" -m pip install "$SCRIPT_DIR"; then
                 echo "ERROR: Failed to install dependencies."
                 echo "Try removing the venv folder and running again: rm -rf venv"
