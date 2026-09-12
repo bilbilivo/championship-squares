@@ -157,20 +157,25 @@ In `templates/index.html`, add CSS variables for the new sport in the theme sect
 
 ## Release Procedure
 
-Championship Squares follows a three-step release procedure:
+Championship Squares follows a four-step release procedure:
 
-1. **Prepare the release commit**:
+1. **Prepare and review the release pull request**:
+   - Create a release branch from an up-to-date `main`.
    - Update `pyproject.toml` to the new version.
    - Add a new entry summarizing the version, date, and major changes.
    - Update `CHANGELOG.md`, including the comparison link.
-   - Commit the release changes and push the release commit to `main`.
-2. **Create and push the Git tag**:
+   - Commit with `release: vYYYY.MM`, push the branch, and open a pull request
+     with that same title.
+2. **Squash-merge the release pull request**:
+   - Wait for required checks and review, then squash-merge into `main`.
+   - Confirm the resulting commit on `main` has the subject `release: vYYYY.MM`.
+3. **Create and push the Git tag**:
    - A new version in `pyproject.toml` or `CHANGELOG.md` does **not** create a GitHub release by itself.
    - GitHub releases in this project are tag-backed, so the release does not exist until the tag exists on GitHub.
    - Local tags are not enough. The tag must be pushed to `origin`.
    - Use `git tag -a vYYYY.MM -m "release: vYYYY.MM"` for annotated tags.
    - Push the tag with `git push origin vYYYY.MM`.
-3. **Publish the GitHub Release from that tag**:
+4. **Publish the GitHub Release from that tag**:
    - Use GitHub UI or `gh release create` to publish the release for the already-pushed tag.
    - Select the existing tag; do not rely on the version bump alone.
    - Attach detailed notes summarizing changes and provide comparison links (see CHANGELOG.md)
@@ -178,16 +183,25 @@ Championship Squares follows a three-step release procedure:
 ### Recommended Command Sequence
 
 ```bash
-# 1. Prepare and publish the release commit
+# 1. Prepare and publish the release branch
+git switch main
+git pull --ff-only
+git switch -c release/vYYYY.MM
 git add pyproject.toml CHANGELOG.md
 git commit -m "release: vYYYY.MM"
-git push origin main
+git push -u origin release/vYYYY.MM
+gh pr create --title "release: vYYYY.MM" --fill
 
-# 2. Create and publish the tag
+# 2. After review and required checks, squash-merge the PR
+gh pr merge --squash --delete-branch
+git switch main
+git pull --ff-only
+
+# 3. Tag the squash commit now on main
 git tag -a vYYYY.MM -m "release: vYYYY.MM"
 git push origin vYYYY.MM
 
-# 3. Publish the GitHub Release from the pushed tag
+# 4. Publish the GitHub Release from the pushed tag
 gh release create vYYYY.MM --title "vYYYY.MM"
 ```
 
@@ -199,12 +213,13 @@ Before calling a version "released", confirm all of the following:
 
 1. `pyproject.toml` version is updated
 2. `CHANGELOG.md` entry is added
-3. Release commit is pushed to `main`
-4. Annotated tag `vYYYY.MM` is created and pushed to GitHub
-5. GitHub Release is published from that tag
+3. Release PR passes required checks and review
+4. Release PR is squash-merged with subject `release: vYYYY.MM`
+5. Annotated tag `vYYYY.MM` is created on that `main` commit and pushed to GitHub
+6. GitHub Release is published from that tag
 
-If step 4 is missing, there is no new release yet, even if the version number is already committed on `main`.
-If step 5 is missing, the tag exists but the GitHub Release page still has not been published.
+If step 5 is missing, there is no new release yet, even if the version number is already committed on `main`.
+If step 6 is missing, the tag exists but the GitHub Release page still has not been published.
 
 ---
 

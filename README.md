@@ -235,6 +235,7 @@ powershell -ExecutionPolicy Bypass -File .\start_server.ps1 uninstall
 
 ## More documentation
 
+- `CONTRIBUTING.md`
 - `API_DOCUMENTATION.md`
 - `CONFIGURATION.md`
 - `DEPLOYMENT.md`
@@ -261,6 +262,7 @@ If you find this project useful, consider supporting it:
 
 ## Contributing
 
-Contributions welcome. Please open issues or submit pull requests.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for branch,
+commit, testing, pull request, and squash-merge requirements.
 
 Player self-registration requires both teams to be selected by ADMIN first.
