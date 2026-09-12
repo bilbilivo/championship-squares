@@ -21,8 +21,10 @@ remove it. Teams, scores, multipliers, game resets, and player management are ad
 Use **Change mode** to sign out and select another mode. Player sessions must reselect
 their player if the admin deletes that player, resets the game, or restarts the server.
 
-Mode selection does not require a password: anyone can choose ADMIN or an existing
-player. Permissions apply to the selected session and are enforced by the server.
+Mode selection does not require a password: anyone on the host or trusted LAN can
+choose ADMIN or an existing player. **The LAN is the security boundary:** an ADMIN
+can change or erase the full game, so do not run the app on public or hostile Wi-Fi.
+Permissions apply to the selected session and are enforced by the server.
 API clients must POST `/api/login` with `{"role": "admin"}` or
 `{"role": "player", "initial": "A"}` and retain the session cookie before modifying a game.
 
@@ -114,6 +116,7 @@ ADMIN mode is passwordless on the trusted LAN. Public connections cannot enter A
 mode or use admin controls, even with an existing admin session. Player links grant
 access to one player: share them only with that player. Resetting a player link
 revokes the old link for future joins; active player sessions stay signed in.
+Public game state is unavailable until a player link has been redeemed.
 Game reset also expires the registration QR. Tunnel restarts change the public URL;
 server restarts invalidate sessions and require fresh QR links.
 

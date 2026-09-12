@@ -25,7 +25,7 @@ self.config = {
 
 **Modifiable Settings:**
 - `port` - Server port (default 8080). Change to run multiple instances.
-- `debug` - Enable Flask debug mode (default False). Set to True for development.
+- `debug` - Legacy compatibility setting; normal startup uses Waitress without the Flask debugger.
 - `max_players` - Maximum player slots (default 12). Increase for larger groups.
 
 **Auto-Set (Platform-Aware):**
@@ -246,25 +246,14 @@ Increase in config:
 
 ## Debug Mode
 
-Enable detailed error output and auto-reload:
+Use Flask's development server explicitly on loopback for detailed errors and auto-reload:
 
-```python
-self.config = {
-    ...
-    'debug': True
-}
-```
-
-Or via environment variable:
 ```bash
-FLASK_DEBUG=1 python app.py
+flask --app app run --debug --host 127.0.0.1 --port 8080
 ```
 
-**Debug Mode Effects:**
-- Server restarts on file changes
-- Detailed error pages in browser
-- API validation errors show stack traces
-- Performance slightly degraded
+Never expose the debug server to the LAN or Internet. `python app.py` always uses
+the production Waitress server.
 
 ---
 
@@ -284,17 +273,8 @@ Affects:
 - Cleaner, faster rendering
 - Better for performance testing
 
-### FLASK_ENV
-Set development mode:
-```bash
-FLASK_ENV=development python app.py
-```
-
-### FLASK_DEBUG
-Enable debug mode:
-```bash
-FLASK_DEBUG=1 python app.py
-```
+`FLASK_ENV` and `FLASK_DEBUG` do not alter the `python app.py` Waitress entry point.
+Use the explicit loopback debug command above during development.
 
 ---
 

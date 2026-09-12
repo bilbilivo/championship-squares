@@ -2047,6 +2047,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainButtons = document.getElementById('mainButtons');
     const backToMainBtn = document.getElementById('backToMainBtn');
 
+    document.getElementById('teamLeft').addEventListener('change', () => updateTeamColors());
+    document.getElementById('teamRight').addEventListener('change', () => updateTeamColors());
+    document.getElementById('leftScore').addEventListener('click', () => updateScore('left'));
+    document.getElementById('rightScore').addEventListener('click', () => updateScore('right'));
+    document.getElementById('goToScoreBtn').addEventListener('click', goToScore);
+    document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard(0.8));
+    document.getElementById('zoomInBtn').addEventListener('click', () => zoomBoard(1.25));
+    const playersToggle = document.getElementById('playersToggleBtn');
+    playersToggle.addEventListener('click', () => togglePlayers(playersToggle));
+    document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
+    document.getElementById('resetGameBtn').addEventListener('click', () => resetGame());
+    document.getElementById('endGameBtn').addEventListener('click', endGame);
+    ['playerInitial', 'playerName'].forEach(id => {
+        document.getElementById(id).addEventListener('input', event => {
+            event.target.value = event.target.value.toUpperCase();
+        });
+    });
+
     // New Game button click
 	newGameBtn.addEventListener('click', () => resetGame(true));
 

@@ -119,20 +119,20 @@
 			<div class="team-selector">
 				<div class="team-selection">
 					<img id="leftHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Away Team">
-					<select aria-label="Away team" id="teamLeft" onchange="updateTeamColors()">
+					<select aria-label="Away team" id="teamLeft">
 						<option value="">SELECT AWAY TEAM</option>
 					</select>
 				</div>
-				<button type="button" aria-label="Edit away score" id="leftScore" class="score scoreboard-digit" onclick="updateScore('left')">0</button>
+				<button type="button" aria-label="Edit away score" id="leftScore" class="score scoreboard-digit">0</button>
 				<div class="multiplier-selector">
 					<div class="multiplier-label">MULTIPLIER</div>
 					<div class="multiplier-buttons" id="multiplierButtons">
 						<!-- Buttons will be dynamically generated based on sport -->
 					</div>
 				</div>
-				<button type="button" aria-label="Edit home score" id="rightScore" class="score scoreboard-digit" onclick="updateScore('right')">0</button>
+				<button type="button" aria-label="Edit home score" id="rightScore" class="score scoreboard-digit">0</button>
 				<div class="team-selection">
-					<select aria-label="Home team" id="teamRight" onchange="updateTeamColors()">
+					<select aria-label="Home team" id="teamRight">
 						<option value="">SELECT HOME TEAM</option>
 					</select>
 					<img id="rightHelmet" class="helmet-icon" src="data:image/svg+xml," alt="Home Team">
@@ -150,11 +150,11 @@
             </section>
             <aside class="legend-container">
                 <div class="board-toolbar" role="group" aria-label="Board navigation">
-                    <button class="reset-game-btn" onclick="goToScore()">Go to score</button>
-                    <button class="reset-game-btn" onclick="zoomBoard(0.8)" aria-label="Zoom out">−</button>
-                    <button class="reset-game-btn" onclick="zoomBoard(1.25)" aria-label="Zoom in">+</button>
+                    <button id="goToScoreBtn" class="reset-game-btn">Go to score</button>
+                    <button id="zoomOutBtn" class="reset-game-btn" aria-label="Zoom out">−</button>
+                    <button id="zoomInBtn" class="reset-game-btn" aria-label="Zoom in">+</button>
                 </div>
-                <button class="players-toggle" aria-expanded="true" aria-controls="playersPanel" onclick="togglePlayers(this)">Players ▾</button>
+                <button id="playersToggleBtn" class="players-toggle" aria-expanded="true" aria-controls="playersPanel">Players ▾</button>
                 <div id="playersPanel" class="players-panel">
                 <h2 style="text-align: center;">PLAYERS</h2>
                 <div class="player-form">
@@ -164,22 +164,20 @@
 							   maxlength="1"
 							   placeholder="ID"
 							   pattern="[A-Za-z]"
-							   style="text-transform: uppercase;"
-							   oninput="this.value = this.value.toUpperCase()" />
+							   style="text-transform: uppercase;" />
 						<input type="text"
 							   aria-label="Player name" id="playerName"
 							   maxlength="8"
 							   placeholder="NAME"
-							   style="text-transform: uppercase;"
-							   oninput="this.value = this.value.toUpperCase()" />
+							   style="text-transform: uppercase;" />
 					</div>
-					<button onclick="addPlayer()">Add Player</button>
+					<button id="addPlayerBtn">Add Player</button>
 				</div>
                 <div class="player-list" id="playerList"></div>
                 </div>
 				<div class="legend-controls">
-                    <button onclick="resetGame()" class="reset-game-btn">Reset Game</button>
-                    <button onclick="endGame()" class="end-game-btn">End Game</button>
+                    <button id="resetGameBtn" class="reset-game-btn">Reset Game</button>
+                    <button id="endGameBtn" class="end-game-btn">End Game</button>
                 </div>
             </aside>
         </div>

@@ -49,10 +49,12 @@ def app(monkeypatch):
 
     # Build a fresh GameState so every test starts clean
     app_module.game_state = app_module.GameState()
+    app_module.rate_limiter.clear()
 
     app_module.app.config["TESTING"] = True
     monkeypatch.setattr(app_module.app, "test_client_class", CsrfClient)
     yield app_module.app
+    app_module.rate_limiter.clear()
 
 
 @pytest.fixture()

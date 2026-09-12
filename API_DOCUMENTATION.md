@@ -17,12 +17,17 @@ http://localhost:8080
 Direct host and trusted LAN connections can select ADMIN or an existing player without
 passwords. Cloudflare connections can only join through a player or registration link;
 ADMIN login and operations are blocked even if an admin cookie is supplied.
-All game mutations require a session cookie and CSRF token. Read-only game endpoints remain public.
+The trusted LAN is the security boundary: anyone on it can choose ADMIN and fully
+control the game. All game mutations require a session cookie and CSRF token.
+Read-only game endpoints are available before login only on the trusted LAN; tunnel
+clients must first redeem a valid player or registration link.
 
 **GET `/api/csrf`** returns `{"csrf_token":"..."}` and sets the session cookie.
 Send this token as `X-CSRF-Token` on every POST/DELETE request. Login/logout rotate the
 session token; mutation responses return the current token in `X-CSRF-Token`.
 Missing or invalid tokens and cross-origin requests return **403**.
+Requests larger than 16 KiB return **413**. Verified tunnel traffic is rate-limited;
+exhausted limits return **429** with a `Retry-After` header.
 
 | Action | ADMIN | PLAYER |
 | --- | --- | --- |
@@ -73,6 +78,7 @@ returns **403**. A square with a mismatched `expected_value` returns **409**.
 **GET** `/api/state`
 
 Returns all game data including squares, players, scores, and settings.
+Tunnel requests without a valid PLAYER session return **401**.
 
 Additional fields:
 - `connection`: `{"public":false,"sync":"sse"}` locally or `{"public":true,"sync":"poll"}` through Cloudflare. Public clients poll every five seconds; `/api/events` returns 409 for them.
