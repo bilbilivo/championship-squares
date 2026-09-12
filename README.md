@@ -154,7 +154,10 @@ For Windows and other Linux distributions, use Cloudflare's
 Use `--lite` to reduce visual effects on slower hardware. Use `--no-lite` to switch back.
 End-game fireworks start automatically and run until the celebration closes,
 including in lite mode and when the browser reports reduced motion. Other effects
-continue to respect those settings.
+continue to respect those settings. When an admin presses End Game, browsers already
+viewing the game receive the same final-score snapshot through live synchronization.
+Reloading or joining afterward does not replay an old celebration. Closing is local;
+players see Close, while admins can Close or reset the game.
 The setting is persisted across restarts.
 
 ```bash

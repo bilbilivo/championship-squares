@@ -82,6 +82,7 @@ Tunnel requests without a valid PLAYER session return **401**.
 
 Additional fields:
 - `connection`: `{"public":false,"sync":"sse"}` locally or `{"public":true,"sync":"poll"}` through Cloudflare. Public clients poll every five seconds; `/api/events` returns 409 for them.
+- `celebration`: the latest transient end-game snapshot, or `null`. Browsers that were already viewing the game use its unique `id` to display each new cinematic once; new pages baseline an existing event without replaying it.
 - `square_costs`: stored token costs for occupied cells, keyed by `"row,col"`, for example `{"1,0":4}`. A missing legacy purchase multiplier defaults to one. Deleting that square refunds its stored cost, regardless of the current multiplier.
 - Optional `expected_cost` on POST `/api/squares` rejects a changed purchase cost with 409, alongside the existing `expected_value` owner check.
 
@@ -99,7 +100,8 @@ Additional fields:
 ### Reset Game
 **POST** `/api/reset`
 
-Clears all game data and returns to initial state. Players, scores, and squares are reset.
+Clears all game data and returns to initial state. Players, scores, squares, and any
+active celebration event are reset.
 
 **Request Body:** None
 
@@ -107,6 +109,34 @@ Clears all game data and returns to initial state. Players, scores, and squares 
 ```json
 {"success": true}
 ```
+
+---
+
+### End Game
+**POST** `/api/end-game`
+
+ADMIN-only. Captures the current teams, scores, winning side, and ranked standings,
+then notifies connected browsers to show the end-game cinematic. The event is held
+in memory only; it does not lock the board and is not restored after a server restart.
+
+**Request Body:** None
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "celebration": {
+    "id": "unique-event-id",
+    "teams": {"left": "BUF", "right": "KC"},
+    "scores": {"left": 21, "right": 17},
+    "winning_team": "left",
+    "standings": []
+  }
+}
+```
+
+A tied game or a game with no eligible squares returns **400** without publishing
+an event. A PLAYER request returns **403**.
 
 ---
 
