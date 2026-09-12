@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Per-client token-bucket limits for public tunnel traffic and stricter limits for player registration
 - Bounded Waitress production-server settings for connections, threads, timeouts, headers, and request bodies
 - Content Security Policy, Permissions Policy, and tunnel-only HSTS response headers
+- Synchronized end-game cinematics for browsers already viewing the game, with snapshot-based results and role-aware controls
 
 ### Changed
 - Require a valid player-link session before public game-state reads

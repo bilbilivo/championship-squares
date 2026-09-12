@@ -47,6 +47,14 @@ class TestResetState:
         game_state.reset_state()
         assert game_state.square_multipliers == {}
 
+    def test_celebration_is_transient_and_cleared(self, game_state):
+        import app as app_module
+        game_state.celebration = {"id": "old"}
+        assert game_state.save_state() is True
+        restored = app_module.GameState()
+        assert restored.load_state() is True
+        assert restored.celebration is None
+
 
 # ---------------------------------------------------------------------------
 # GameState.get_next_player_index / release_player_index

@@ -23,6 +23,8 @@ with 12 players, loaded claims, long team names, prompts, and a final celebratio
 - Go to score locates both low and maximum scores. Navigation sends no game-state writes.
 - Desktop player lists scroll independently; narrow-screen controls and dialog actions remain reachable.
 - Check keyboard pan/zoom, touch drag/pinch, and normal, lite, and reduced-motion rendering. End-game fireworks always start automatically; other effects retain their motion settings.
+- Open the same game in an ADMIN browser and a PLAYER browser. End Game must show the same teams, scores, winners, and top five on both; the player has only Close while the admin also has Reset.
+- Close one cinematic and confirm the other remains open. Reload or join after the event and confirm it is not replayed. A second End Game must replace an open cinematic, and Reset must close it on every connected browser.
 
 ## Login regression checks
 

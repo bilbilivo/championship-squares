@@ -1451,19 +1451,18 @@ function endGame() {
         true,
         (confirmed) => {
             if (confirmed) {
-                // Fetch standings data
-                fetch('/api/standings')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.standings && data.standings.length > 0) {
-                            showCelebration(data.standings, data.winning_team);
-                        } else {
-                            showAlert('No winner found. Make sure there are bets on the board and scores are set.', 'No Winner');
-                        }
-                    })
+                gameSync.mutate(async () => {
+                    const response = await fetch('/api/end-game', {method: 'POST'});
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        showAlert(data.error || 'No winner found.', 'No Winner');
+                        return;
+                    }
+                    celebrationSync.present(data.celebration);
+                })
                     .catch(error => {
-                        console.error('Error fetching standings:', error);
-                        showAlert('Failed to get standings data', 'Error');
+                        console.error('Error ending game:', error);
+                        showAlert('Failed to end game', 'Error');
                     });
             }
         }
@@ -1471,9 +1470,9 @@ function endGame() {
 }
 
 // Get team colors for celebration based on winning team
-function getTeamColors(winningTeam) {
-    const leftTeamCode = document.getElementById('teamLeft').value;
-    const rightTeamCode = document.getElementById('teamRight').value;
+function getTeamColors(winningTeam, teamCodes = null) {
+    const leftTeamCode = teamCodes?.left || document.getElementById('teamLeft').value;
+    const rightTeamCode = teamCodes?.right || document.getElementById('teamRight').value;
     const teams = getCurrentTeams();
 
     const leftTeam = teams[leftTeamCode];
@@ -1498,15 +1497,16 @@ function getTeamColors(winningTeam) {
 }
 
 // Show celebration overlay with Excitebike-style podium
-function showCelebration(standings, winningTeam) {
-    const teamColors = getTeamColors(winningTeam);
+function showCelebration(celebration, dismiss) {
+    const {standings, winning_team: winningTeam, teams, scores} = celebration;
+    const teamColors = getTeamColors(winningTeam, teams);
 
     // Find the minimum distance (winner distance)
     const winnerDistance = standings[0]?.distance || 0;
 
     // Get winners (all entries with minimum distance) - unique player names only, sorted
     const winners = standings.filter(s => s.distance === winnerDistance);
-    const uniqueWinnerNames = [...new Set(winners.map(w => players[w.player]?.name || w.player_name || w.player))].sort();
+    const uniqueWinnerNames = [...new Set(winners.map(w => w.player_name || w.player))].sort();
     const winnerNames = uniqueWinnerNames.length === 2
         ? uniqueWinnerNames.join(' & ')
         : uniqueWinnerNames.join(', ');
@@ -1517,12 +1517,12 @@ function showCelebration(standings, winningTeam) {
     let lastDistance = -1;
 
     // Get team info for score display
-    const leftTeamCode = document.getElementById('teamLeft').value;
-    const rightTeamCode = document.getElementById('teamRight').value;
+    const leftTeamCode = teams.left;
+    const rightTeamCode = teams.right;
 
     // Get final game score
-    const finalLeftScore = currentLeftScore;
-    const finalRightScore = currentRightScore;
+    const finalLeftScore = scores.left;
+    const finalRightScore = scores.right;
 
     const podiumHtml = top5.map((entry, index) => {
         // Update rank when distance changes
@@ -1532,7 +1532,6 @@ function showCelebration(standings, winningTeam) {
         }
 
         const isWinner = entry.distance === winnerDistance;
-        const playerName = players[entry.player]?.name || entry.player_name || entry.player;
         const distanceText = entry.distance === 0 ? 'PERFECT!' : `+${entry.distance}`;
         const scoreText = `${leftTeamCode} ${entry.square.row} - ${rightTeamCode} ${entry.square.col}`;
         const multiplierText = `${entry.multiplier || 1}x`;
@@ -1540,7 +1539,7 @@ function showCelebration(standings, winningTeam) {
         return `
             <div class="podium-entry ${isWinner ? 'winner' : 'other'}">
                 <span class="podium-rank">${currentRank}.</span>
-                <span class="podium-name" data-player-name="${playerName.replace(/"/g, '&quot;')}"></span>
+                <span class="podium-name" data-podium-index="${index}"></span>
                 <span class="podium-multiplier">${multiplierText}</span>
                 <span class="podium-score">${scoreText}</span>
                 <span class="podium-distance">${distanceText}</span>
@@ -1575,8 +1574,8 @@ function showCelebration(standings, winningTeam) {
                 ${podiumHtml}
             </div>
             <div class="celebration-actions">
-                <button class="celebration-btn reset-btn" id="celebrationResetBtn">RESET</button>
-                <button class="celebration-btn cancel-btn" id="celebrationCancelBtn">CANCEL</button>
+                ${isAdmin() ? '<button class="celebration-btn reset-btn" id="celebrationResetBtn">RESET</button>' : ''}
+                <button class="celebration-btn cancel-btn" id="celebrationCancelBtn">CLOSE</button>
             </div>
         </div>
     `;
@@ -1585,8 +1584,9 @@ function showCelebration(standings, winningTeam) {
 
     // Set player names via textContent to prevent XSS
     overlay.querySelector('#celebrationWinnerName').textContent = winnerNames;
-    overlay.querySelectorAll('.podium-name[data-player-name]').forEach(el => {
-        el.textContent = el.dataset.playerName;
+    overlay.querySelectorAll('.podium-name[data-podium-index]').forEach(el => {
+        const entry = top5[Number(el.dataset.podiumIndex)];
+        el.textContent = entry.player_name || entry.player;
     });
 
     const stopFireworks = CelebrationEffects.mount(overlay, teamColors.winner);
@@ -1601,16 +1601,18 @@ function showCelebration(standings, winningTeam) {
     }
 
     // Add click handlers for buttons
-    overlay.querySelector('#celebrationResetBtn').addEventListener('click', (e) => {
+    overlay.querySelector('#celebrationResetBtn')?.addEventListener('click', (e) => {
         e.stopPropagation();
-        closeCelebration();
+        dismiss();
         resetGame(true);
     });
 
     overlay.querySelector('#celebrationCancelBtn').addEventListener('click', (e) => {
         e.stopPropagation();
-        closeCelebration();
+        dismiss();
     });
+
+    return closeCelebration;
 }
 
 // Create confetti particles
@@ -2014,6 +2016,7 @@ function applyGameState(data, { focusScore = false } = {}) {
     highlightCurrentScore();
     highlightWinner(data.winner);
     applyModeControls();
+    celebrationSync.observe(data.celebration || null);
     if (loginSession.role === 'player' && !players[loginSession.player]) {
         gameSync.stop();
         window.location.reload();
@@ -2022,6 +2025,7 @@ function applyGameState(data, { focusScore = false } = {}) {
     if (focusScore || rebuild) goToScore();
 }
 
+const celebrationSync = new CelebrationSync(showCelebration);
 const gameSync = new GameSync(applyGameState);
 window.addEventListener('pagehide', () => gameSync.stop());
 window.addEventListener('pageshow', () => {
