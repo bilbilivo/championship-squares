@@ -4,6 +4,34 @@ All notable changes to Championship Squares will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v2026.13] - 2026-09-12
+
+### Added
+- Per-client token-bucket limits for public tunnel traffic and stricter limits for player registration
+- Bounded Waitress production-server settings for connections, threads, timeouts, headers, and request bodies
+- Content Security Policy, Permissions Policy, and tunnel-only HSTS response headers
+
+### Changed
+- Require a valid player-link session before public game-state reads
+- Verify tunnel ingress using both the fixed internal host and a loopback source address
+- Move inline JavaScript handlers into external scripts so pages comply with the stricter CSP
+- Streamline deployment, configuration, and tunnel-security documentation
+
+### Fixed
+- Reject oversized requests before endpoint processing
+- Prevent public clients from reaching tunnel routes by spoofing a Cloudflare hostname
+
+## [v2026.12] - 2026-09-07
+
+### Added
+- Optional Cloudflare Quick Tunnel support for remote player access without router configuration
+- Player-specific QR invitations, reusable rejoin links, and host-controlled link rotation
+- Public player registration links and browser-flow coverage for tunnel access
+
+### Security
+- Keep administrator access local while limiting public tunnel sessions to player-owned actions
+- Revoke invitations when players are deleted or the game is reset, and redact bearer paths from logs
+
 ## [v2026.11] - 2026-09-06
 
 ### Added
@@ -206,6 +234,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Team selection with sport-specific team rosters and color themes
 - 8-bit retro visual theme with sport-specific color schemes
 
+[v2026.13]: https://github.com/bilbilivo/championship-squares/compare/v2026.12...v2026.13
+[v2026.12]: https://github.com/bilbilivo/championship-squares/compare/v2026.11...v2026.12
 [v2026.11]: https://github.com/bilbilivo/championship-squares/compare/v2026.10...v2026.11
 [v2026.10]: https://github.com/bilbilivo/championship-squares/compare/v2026.09...v2026.10
 [v2026.09]: https://github.com/bilbilivo/championship-squares/compare/v2026.08...v2026.09
