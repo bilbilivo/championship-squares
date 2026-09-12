@@ -282,6 +282,26 @@ def test_tunnel_serializes_start_and_sets_fixed_origin_host(monkeypatch):
     assert process.terminated and not manager.active() and manager.url is None
 
 
+def test_tunnel_detects_and_remembers_changed_public_hostname(monkeypatch):
+    manager = module.TunnelManager()
+    saved = []
+    monkeypatch.setattr(module, 'load_last_tunnel_url',
+                        lambda: 'https://old-squares.trycloudflare.com')
+    monkeypatch.setattr(module, 'save_last_tunnel_url', saved.append)
+    monkeypatch.setattr(module.shutil, 'which', lambda _: '/bin/cloudflared')
+    monkeypatch.setattr(
+        module.subprocess,
+        'Popen',
+        lambda *a, **k: FakeProcess('https://blue-squares.trycloudflare.com\n'),
+    )
+
+    assert manager.start() == PUBLIC
+    assert manager.hostname_changed is True
+    assert manager.previous_url == 'https://old-squares.trycloudflare.com'
+    assert saved == [PUBLIC]
+    manager.stop()
+
+
 def test_tunnel_timeout_kills_and_clears_state(monkeypatch):
     manager = module.TunnelManager()
     process = FakeProcess('https://fake.trycloudflare.com.attacker.example\n')

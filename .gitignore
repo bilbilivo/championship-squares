@@ -11,6 +11,7 @@ game_state.json
 game_state.db
 .lite_mode
 .env
+.flask-secret
 .env.*
 server.pid
 server.log

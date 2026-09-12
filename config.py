@@ -1,7 +1,61 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 Stephane Belliveau
+import os
 import platform
+import secrets
 from pathlib import Path
+
+
+def load_flask_secret(base_dir=None):
+    """Load a stable signing secret without putting it in source or SQLite."""
+    configured = os.environ.get('FLASK_SECRET_KEY')
+    if configured is not None:
+        if not configured:
+            raise RuntimeError('FLASK_SECRET_KEY must not be empty')
+        return configured
+
+    root = Path(base_dir) if base_dir is not None else Path(__file__).parent.absolute()
+    secret_path = Path(os.environ.get('FLASK_SECRET_KEY_FILE', root / '.flask-secret'))
+    if secret_path.is_symlink():
+        raise RuntimeError(f'Refusing to use a symlink as the Flask secret file: {secret_path}')
+
+    try:
+        secret = secret_path.read_text(encoding='ascii').strip()
+    except FileNotFoundError:
+        secret = secrets.token_urlsafe(48)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, 'O_NOFOLLOW'):
+            flags |= os.O_NOFOLLOW
+        try:
+            descriptor = os.open(secret_path, flags, 0o600)
+        except FileExistsError:
+            secret = secret_path.read_text(encoding='ascii').strip()
+        except OSError as error:
+            raise RuntimeError(
+                f'Cannot create the Flask signing secret at {secret_path}; set FLASK_SECRET_KEY '
+                'or FLASK_SECRET_KEY_FILE to a protected writable location'
+            ) from error
+        else:
+            with os.fdopen(descriptor, 'w', encoding='ascii') as secret_file:
+                secret_file.write(f'{secret}\n')
+                secret_file.flush()
+                os.fsync(secret_file.fileno())
+    except OSError as error:
+        raise RuntimeError(
+            f'Cannot read the Flask signing secret at {secret_path}; set FLASK_SECRET_KEY '
+            'or FLASK_SECRET_KEY_FILE to a protected writable location'
+        ) from error
+
+    if len(secret) < 32:
+        raise RuntimeError(f'Flask signing secret at {secret_path} must contain at least 32 characters')
+    try:
+        secret_path.chmod(0o600)
+    except OSError:
+        # Windows ACLs do not map cleanly to POSIX modes. The file remains local
+        # and excluded from source control; administrators can apply an ACL.
+        pass
+    return secret
+
 
 class Config:
     def __init__(self):

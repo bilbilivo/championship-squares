@@ -45,12 +45,49 @@ def init_db():
                     token_hash TEXT NOT NULL,
                     invite_key TEXT
                 )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS app_metadata (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )''')
     columns = {row['name'] for row in c.execute('PRAGMA table_info(player_invites)')}
     if 'invite_key' not in columns:
         c.execute('ALTER TABLE player_invites ADD COLUMN invite_key TEXT')
 
     conn.commit()
     conn.close()
+
+
+def load_last_tunnel_url():
+    """Return the last non-secret Quick Tunnel URL used by this installation."""
+    conn = get_db()
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS app_metadata (
+                            key TEXT PRIMARY KEY,
+                            value TEXT NOT NULL
+                        )''')
+        row = conn.execute(
+            'SELECT value FROM app_metadata WHERE key = ?', ('last_tunnel_url',)
+        ).fetchone()
+        return row['value'] if row else None
+    finally:
+        conn.close()
+
+
+def save_last_tunnel_url(url):
+    """Remember the public URL so a changed Quick Tunnel can be reported."""
+    conn = get_db()
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS app_metadata (
+                            key TEXT PRIMARY KEY,
+                            value TEXT NOT NULL
+                        )''')
+        conn.execute(
+            'INSERT OR REPLACE INTO app_metadata (key, value) VALUES (?, ?)',
+            ('last_tunnel_url', url),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def save_player_invite(initial, invite_key, token):

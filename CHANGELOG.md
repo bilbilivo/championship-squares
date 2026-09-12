@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Conventional Commit validation for pull request titles and non-merge commits
 - Contribution guidance and a pull request template for the review and squash-merge workflow
 
+### Fixed
+- Stable, protected local Flask signing keys and explicit warnings when a Quick Tunnel restart changes the public address
+
 ### Changed
 - Route releases through reviewed pull requests before tagging and publishing
 

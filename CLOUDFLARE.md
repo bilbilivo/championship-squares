@@ -118,10 +118,15 @@ that player's session and opens the board. **RESET PLAYER LINK** revokes the old
 for future joins and creates a new one. A browser that already redeemed the old link
 remains signed in until its session becomes invalid.
 
-Deleting the player revokes the link. A server restart changes the application's
-default signing secret unless `FLASK_SECRET_KEY` is configured, so previously signed
-links and sessions should be treated as expired after a restart. A restarted Quick
-Tunnel also receives a different public hostname.
+Deleting the player or resetting the game revokes the link. The signing key is loaded
+from `.flask-secret` (or the configured environment/file setting), so the signed
+token remains valid across application restarts when the public hostname is
+unchanged. Replacing the signing key invalidates it.
+
+A restarted Quick Tunnel normally receives a different public hostname. The token
+may still be valid, but the old hostname no longer routes to this application. When
+the application detects a changed hostname, the QR dialog displays **NEW ADDRESS ·
+RESHARE PLAYER LINKS**.
 
 ## Trust boundary and security
 
@@ -137,6 +142,8 @@ Admin access remains local even while the tunnel is enabled:
 - Non-GET requests require the session's `X-CSRF-Token`; the browser adds it
   automatically and the application checks the request origin when supplied.
 - Public session cookies are `Secure`, `HttpOnly`, and `SameSite=Lax`.
+- The signing key stays in a protected local file or environment setting; it is
+  never stored in SQLite, logs, QR/API responses, or source control.
 - Requests are size- and rate-limited, and responses use a restrictive browser
   security policy. Excess traffic receives HTTP 429 with `Retry-After`.
 - Invite tokens are redacted from Werkzeug request logs. QR and invite responses use
@@ -159,8 +166,16 @@ When **DISABLE TUNNEL** is selected:
 - local host and LAN access continue normally; and
 - existing remote pages can no longer reach the game.
 
-Starting the tunnel again creates a new `trycloudflare.com` hostname, so display and
-scan fresh QR codes.
+Starting the tunnel again creates a new `trycloudflare.com` hostname. The application
+remembers the prior non-secret URL in `game_state.db` and warns the local admin when
+it changes. Display and share each player's QR code again; resetting or recreating
+the player is unnecessary because the existing invite key is reused.
+
+Quick Tunnels cannot provide durable URLs. Games that require one public URL across
+tunnel restarts need deployment support for a named Cloudflare Tunnel or another
+stable public hostname, configured with the same protected signing key and
+equivalent origin safeguards. The built-in **ENABLE TUNNEL** control starts only a
+Quick Tunnel.
 
 ## Troubleshooting
 

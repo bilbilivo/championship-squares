@@ -74,7 +74,9 @@
         const state = await request('/api/tunnel');
         if (!valid()) return;
         active = state.active;
-        tunnelStatus.textContent = active ? 'TUNNEL ON' : 'TUNNEL OFF';
+        tunnelStatus.textContent = active
+            ? (state.hostname_changed ? 'TUNNEL ON — NEW ADDRESS · RESHARE PLAYER LINKS' : 'TUNNEL ON')
+            : 'TUNNEL OFF';
         toggle.textContent = active ? 'DISABLE TUNNEL' : 'ENABLE TUNNEL';
         registration.hidden = playerControls.hidden = !active;
         if (active) {

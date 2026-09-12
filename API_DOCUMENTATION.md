@@ -398,7 +398,7 @@ These controls require a direct host/LAN ADMIN session:
 
 | Endpoint | Behavior |
 | --- | --- |
-| GET/POST/DELETE `/api/tunnel` | Read/start/stop the temporary tunnel; returns `active` and `url`. |
+| GET/POST/DELETE `/api/tunnel` | Read/start/stop the temporary tunnel; also reports `hostname_changed` and the non-secret `previous_url`. |
 | GET `/api/player-registration-qr` | Registration QR, available after teams are selected. |
 | POST `/api/player-invites/<initial>` | Stable player QR; returns `url`, `svg`, `player`, and `player_name`. |
 | DELETE `/api/player-invites/<initial>` | Revoke future use of that player's old link; active sessions remain valid. |
@@ -407,7 +407,9 @@ These controls require a direct host/LAN ADMIN session:
 `/join/register/<token>` serves the public registration form; POST
 `/api/public/register/<token>` creates and signs in a player using CSRF protection.
 Deleting a player revokes their link; game reset revokes player and registration links.
-Server restarts invalidate sessions and require newly displayed QR links.
+Existing-player tokens remain valid across restarts when the stable signing key and
+public hostname are unchanged. Quick Tunnel restarts normally change the hostname,
+which requires resharing URLs but not resetting players or their invite keys.
 
 Cloudflared sends the fixed origin Host `player-tunnel.invalid`; it is always treated
 as public, regardless of tunnel process state. Forwarded headers never grant LAN privileges.

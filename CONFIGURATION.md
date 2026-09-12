@@ -33,6 +33,23 @@ self.config = {
 
 ---
 
+## Signing Secret
+
+Flask session cookies and existing-player links are signed with one installation key.
+When `FLASK_SECRET_KEY` is unset, the application creates `.flask-secret` beside
+`config.py`, reuses it on later starts, and restricts it to the file owner on POSIX
+systems. The path is ignored by Git.
+
+For service or packaged deployments, set either:
+
+- `FLASK_SECRET_KEY` to a stable high-entropy value supplied by your secret manager; or
+- `FLASK_SECRET_KEY_FILE` to an absolute path containing at least 32 characters.
+
+`FLASK_SECRET_KEY` takes precedence. Never commit, log, share, or copy the value into
+`game_state.db`. Back up the protected file if player links must survive moving the
+installation. Deleting or replacing it intentionally invalidates signed sessions and
+existing-player links; display new player QR codes afterward.
+
 ## Sport Configuration
 
 All sports are defined in `config.py`. Each sport has three key settings:

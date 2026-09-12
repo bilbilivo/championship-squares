@@ -53,6 +53,44 @@ def test_player_qr_is_stable_until_player_is_deleted(client, monkeypatch):
     assert client.get('/api/session', base_url=TUNNEL_ORIGIN).json == {'role': 'player', 'player': 'A'}
 
 
+def test_stable_signing_secret_keeps_existing_player_link_valid(client, monkeypatch):
+    enable_tunnel(monkeypatch)
+    stable_secret = app_module.app.secret_key
+    assert client.post('/api/players', json={'initial': 'A', 'name': 'Alice'}).status_code == 200
+    invite = client.post('/api/player-invites/A').json['url']
+
+    # A new Flask process reads the same persisted secret.
+    monkeypatch.setattr(app_module.app, 'secret_key', stable_secret)
+    response = app_module.app.test_client().get(
+        urlsplit(invite).path, base_url=TUNNEL_ORIGIN, follow_redirects=False
+    )
+    assert response.status_code == 302
+
+
+def test_changed_signing_secret_invalidates_existing_player_link(client, monkeypatch):
+    enable_tunnel(monkeypatch)
+    assert client.post('/api/players', json={'initial': 'A', 'name': 'Alice'}).status_code == 200
+    invite = client.post('/api/player-invites/A').json['url']
+
+    monkeypatch.setattr(app_module.app, 'secret_key', 'b' * 64)
+    response = app_module.app.test_client().get(urlsplit(invite).path, base_url=TUNNEL_ORIGIN)
+    assert response.status_code == 403
+
+
+def test_tunnel_status_warns_when_public_hostname_changed(client, monkeypatch):
+    enable_tunnel(monkeypatch)
+    monkeypatch.setattr(app_module.tunnel, 'hostname_changed', True)
+    monkeypatch.setattr(app_module.tunnel, 'previous_url', 'https://old-squares.trycloudflare.com')
+
+    response = client.get('/api/tunnel')
+    assert response.json == {
+        'active': True,
+        'url': 'https://blue-squares.trycloudflare.com',
+        'hostname_changed': True,
+        'previous_url': 'https://old-squares.trycloudflare.com',
+    }
+
+
 def test_reset_revokes_existing_player_links(client, monkeypatch):
     enable_tunnel(monkeypatch)
     assert client.post('/api/players', json={'initial': 'A', 'name': 'Alice'}).status_code == 200
