@@ -1265,13 +1265,16 @@ def delete_player(initial):
 @synchronized_game
 def update_teams():
     try:
-        data = request.json
-        left_team = data.get('left', '')
-        right_team = data.get('right', '')
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict) or not {'left', 'right'} & data.keys():
+            return jsonify({'error': 'Select a team to update'}), 400
+        if any(not isinstance(data[side], str) for side in ('left', 'right') if side in data):
+            return jsonify({'error': 'Invalid team selection'}), 400
         
         # Update team state
-        game_state.teams['left'] = left_team
-        game_state.teams['right'] = right_team
+        for side in ('left', 'right'):
+            if side in data:
+                game_state.teams[side] = data[side]
         persist_game_state()
         notify_game_change()
         
