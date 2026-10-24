@@ -453,6 +453,7 @@ body {
 .main-content {
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(280px, 23vw, 340px);
+    grid-template-rows: auto minmax(0, 1fr);
     gap: 10px;
     min-height: 0;
     min-width: 0;
@@ -471,6 +472,8 @@ body {
 
 /* Legend Container */
 .legend-container {
+    grid-column: 2;
+    grid-row: 2;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -1470,9 +1473,10 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     outline: 3px solid #fff;
     outline-offset: -3px;
 }
-.board-panel { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-width: 0; min-height: 0; }
-.board-toolbar { flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(44px, 0.3fr) minmax(44px, 0.3fr); width: 100%; gap: 4px; }
+.board-panel { grid-column: 1; grid-row: 1 / span 2; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-width: 0; min-height: 0; }
+.board-toolbar { grid-column: 2; grid-row: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(44px, 0.3fr) minmax(44px, 0.3fr); width: 100%; gap: 4px; padding: 6px; background: var(--retro-bg); border: var(--pixel-border); }
 .board-toolbar button { min-width: 0; width: 100%; font-size: 11px; padding: 6px 8px; }
+#jumpToPlayersBtn { display: none; }
 /* Keep navigation controls level after clicks and touch browsers' sticky hover. */
 .board-toolbar button:hover { transform: none; }
 .board-toolbar button:active { transform: translateY(2px); }
@@ -1576,8 +1580,18 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         padding-right: max(8px, env(safe-area-inset-right, 0px));
         padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
     }
-    .main-content { grid-template-columns: minmax(0, 1fr); }
-    .board-panel { height: max(320px, calc(100dvh - 220px)); }
+    .main-content { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
+    .board-toolbar {
+        grid-column: 1;
+        grid-row: 1;
+        grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(44px, 0.5fr)) minmax(0, 1fr);
+        position: sticky;
+        top: env(safe-area-inset-top, 0px);
+        z-index: 10;
+    }
+    #jumpToPlayersBtn { display: block; }
+    .board-panel { grid-column: 1; grid-row: 2; height: max(320px, calc(100dvh - 220px)); }
+    .legend-container { grid-column: 1; grid-row: 3; }
     .team-selector { grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr); }
     .team-selection:first-child { grid-column: 1; grid-row: 1; }
     #leftScore { grid-column: 2; grid-row: 1; }
@@ -1610,10 +1624,10 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         padding-right: max(5px, env(safe-area-inset-right, 0px));
         padding-bottom: max(5px, env(safe-area-inset-bottom, 0px));
     }
-    /* Browser toolbars expand/collapse on scroll; keep the board geometry stable. */
+    /* Keep game controls reachable without a full-screen board scroll. */
     .board-panel {
-        height: max(320px, calc(100vh - 220px));
-        height: max(320px, calc(100svh - 220px));
+        height: clamp(300px, 48vh, 460px);
+        height: clamp(300px, 48svh, 460px);
     }
     .title { overflow-wrap: anywhere; }
     .controls, .main-content, .board-panel, .legend-container { width: 100%; max-width: 100%; }
@@ -1622,6 +1636,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     .team-selection { align-self: stretch; }
     .team-selection select { height: 44px; padding: 4px 6px; }
     .score { height: 44px; padding: 2px 4px; line-height: 1; }
+    #leftScore, #rightScore {
+        min-width: 50px;
+        border: 2px solid var(--retro-light);
+        background: var(--retro-dark);
+        font-size: clamp(22px, 6vw, 28px);
+    }
     .multiplier-selector { gap: 2px; }
     .team-selection:first-child { grid-column: 1; grid-row: 1; }
     #leftScore { grid-column: 2; grid-row: 1; }
@@ -1703,9 +1723,11 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
         align-items: center;
         justify-content: center;
         min-height: 44px;
-        font-size: clamp(9px, 2.8vw, 12px);
+        font-size: clamp(10px, 2.9vw, 13px);
         letter-spacing: clamp(0px, 0.15vw, 0.75px);
-        white-space: nowrap;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.45;
     }
     .game-header .join-game-btn {
         /* Cancel the fixed-control offsets now that this button is in the header grid. */
