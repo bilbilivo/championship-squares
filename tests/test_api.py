@@ -301,9 +301,19 @@ class TestSportEndpoint:
         assert state["players"]["A"]["bets"] == 0
 
     def test_all_valid_sports_accepted(self, client):
-        for sport in ("nfl", "nhl", "nba", "mlb", "olym", "fifa"):
+        for sport in ("nfl", "cfl", "nhl", "nba", "mlb", "olym", "fifa"):
             data, status = post_json(client, "/api/sport", {"sport": sport})
             assert status == 200, f"Sport {sport} rejected"
+
+    def test_cfl_uses_nfl_game_settings(self, client):
+        from config import config
+        data, status = post_json(client, "/api/sport", {"sport": "cfl"})
+        assert status == 200
+        assert config.max_scores["cfl"] == config.max_scores["nfl"]
+        assert config.multipliers["cfl"] == config.multipliers["nfl"]
+        assert config.multiplier_labels["cfl"] == config.multiplier_labels["nfl"]
+        assert config.total_tokens["cfl"] == config.total_tokens["nfl"]
+        assert data["max_score"] == config.max_scores["nfl"]
 
 
 # ---------------------------------------------------------------------------

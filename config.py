@@ -71,6 +71,7 @@ class Config:
         # Sport-specific max scores
         self.max_scores = {
             'nfl': 70,
+            'cfl': 70,
             'nhl': 12,
             'nba': 160,
             'mlb': 30,
@@ -81,6 +82,7 @@ class Config:
         # Sport-specific multiplier configurations
         self.multipliers = {
             'nfl': [1, 2, 4, 8],
+            'cfl': [1, 2, 4, 8],
             'nhl': [1, 2, 4],
             'nba': [1, 2, 4, 8],
             'mlb': [1, 2, 4, 8],
@@ -91,6 +93,7 @@ class Config:
         # Sport-specific multiplier labels (when to use each multiplier)
         self.multiplier_labels = {
             'nfl': ['<Q1', '<Q2', '<Q3', '<Q4'],
+            'cfl': ['<Q1', '<Q2', '<Q3', '<Q4'],
             'nhl': ['<P1', '<P2', '<P3'],
             'nba': ['<Q1', '<Q2', '<Q3', '<Q4'],
             'mlb': ['<I3', '<I6', '<I8', '<I9'],
@@ -101,6 +104,7 @@ class Config:
         # Sport-specific total tokens available for betting
         self.total_tokens = {
             'nfl': 40,
+            'cfl': 40,
             'nhl': 12,
             'nba': 48,
             'mlb': 20,
