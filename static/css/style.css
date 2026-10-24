@@ -127,6 +127,14 @@
     --nfl-logo-primary: #003087;    /* Dark Royal Blue */
     --nfl-logo-secondary: #DB1F26;  /* Bright Red */
 
+    /* CFL Theme (Red) */
+    --cfl-primary: #E63946;
+    --cfl-dark: #301014;
+    --cfl-light: #FF8D94;
+    --cfl-bg: #19070A;
+    --cfl-logo-primary: #D42027;
+    --cfl-logo-secondary: #FFFFFF;
+
     /* NHL Theme (Orange) */
     --nhl-primary: #F78F1E;  /* Main NHL orange */
     --nhl-dark: #331C04;     /* Darker shade for backgrounds */

@@ -84,6 +84,7 @@ function updateGameTitle(sport) {
     const titles = {
         'fifa': 'WORLD CUP SQUARES',
         'nfl': 'SUPER BOWL SQUARES',
+        'cfl': 'GREY CUP SQUARES',
         'nhl': 'SLAP SHOT SQUARES',
         'nba': 'SLAM DUNK SQUARES',
         'mlb': 'GRAND SLAM SQUARES',
@@ -380,6 +381,8 @@ function getCurrentTeams() {
     switch(currentSport) {
         case 'nfl':
             return NFL_TEAMS;
+        case 'cfl':
+            return CFL_TEAMS;
         case 'nhl':
             return NHL_TEAMS;
         case 'nba':
@@ -594,6 +597,18 @@ const NFL_TEAMS = {
     "TB": { name: "TAMPA BAY BUCCANEERS", colors: ["#D50A0A", "#34302B"] },
     "TEN": { name: "TENNESSEE TITANS", colors: ["#0C2340", "#4B92DB"] },
     "WAS": { name: "WASHINGTON COMMANDERS", colors: ["#773141", "#FFB612"] }
+};
+
+const CFL_TEAMS = {
+    "BC": { name: "BC LIONS", colors: ["#F15A22", "#000000"] },
+    "CGY": { name: "CALGARY STAMPEDERS", colors: ["#C8102E", "#000000"] },
+    "EDM": { name: "EDMONTON ELKS", colors: ["#2C5234", "#FFB81C"] },
+    "HAM": { name: "HAMILTON TIGER-CATS", colors: ["#FFB81C", "#000000"] },
+    "MTL": { name: "MONTREAL ALOUETTES", colors: ["#D42027", "#001F5B"] },
+    "OTT": { name: "OTTAWA REDBLACKS", colors: ["#AC1F2D", "#000000"] },
+    "SSK": { name: "SASKATCHEWAN ROUGHRIDERS", colors: ["#00693E", "#FFFFFF"] },
+    "TOR": { name: "TORONTO ARGONAUTS", colors: ["#13264B", "#5C93C1"] },
+    "WPG": { name: "WINNIPEG BLUE BOMBERS", colors: ["#003087", "#FFB81C"] }
 };
 
 // NHL Teams with primary and secondary colors
@@ -1863,9 +1878,10 @@ function resetGame(isNewGame = false) {
                         <h2 class="alert-title">SELECT SPORT</h2>
                         <div class="sport-grid">
                             <!-- <div class="sport-box" data-sport="fifa">FIFA</div> -->
-                            <div class="sport-box" data-sport="mlb">MLB</div>
+                            <!-- <div class="sport-box" data-sport="mlb">MLB</div> -->
                             <!-- <div class="sport-box" data-sport="nba">NBA</div> -->
                             <div class="sport-box" data-sport="nfl">NFL</div>
+                            <div class="sport-box" data-sport="cfl">CFL</div>
                             <div class="sport-box" data-sport="nhl">NHL</div>
                             <div class="sport-box" data-sport="olym">OLYM</div>
                         </div>

@@ -1288,7 +1288,7 @@ def update_sport():
         sport = data.get('sport', '').lower()
 
         # Validate sport
-        valid_sports = ['nfl', 'nhl', 'nba', 'mlb', 'olym', 'fifa']
+        valid_sports = ['nfl', 'cfl', 'nhl', 'nba', 'mlb', 'olym', 'fifa']
         if sport not in valid_sports:
             return jsonify({'error': 'Invalid sport selection'}), 400
 
