@@ -267,6 +267,13 @@ class TestTeamsEndpoint:
         state = client.get("/api/state").get_json()
         assert state["teams"] == {"left": "KC", "right": "SF"}
 
+    def test_updating_one_team_preserves_the_other(self, client):
+        post_json(client, "/api/teams", {"left": "KC", "right": "SF"})
+        post_json(client, "/api/teams", {"left": "BUF"})
+        assert client.get("/api/state").get_json()["teams"] == {"left": "BUF", "right": "SF"}
+        post_json(client, "/api/teams", {"right": "MIA"})
+        assert client.get("/api/state").get_json()["teams"] == {"left": "BUF", "right": "MIA"}
+
 
 # ---------------------------------------------------------------------------
 # /api/sport

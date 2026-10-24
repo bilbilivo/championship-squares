@@ -559,7 +559,7 @@ function createGrid() {
 
   // Update team names with adjusted positioning
   resetZoom();
-  updateTeamColors(false);
+  updateTeamColors();
   // Add this line at the end of the function
   setTimeout(highlightCurrentScore, 100); // Small delay to ensure DOM is updated
 }
@@ -906,19 +906,15 @@ function getContrastRatio(color1, color2) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
-// Add function to save team selections
-function saveTeams() {
+// Save only the side the admin edited so overlapping requests cannot clear the other team.
+function saveTeam(side) {
     if (!isAdmin()) return;
-    const leftTeam = document.getElementById('teamLeft').value;
-    const rightTeam = document.getElementById('teamRight').value;
+    const team = document.getElementById(side === 'left' ? 'teamLeft' : 'teamRight').value;
     
     gameSync.mutate(() => fetch('/api/teams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            left: leftTeam,
-            right: rightTeam
-        })
+        body: JSON.stringify({ [side]: team })
     })
     .then(response => response.json())
     .then(data => {
@@ -934,7 +930,7 @@ function saveTeams() {
 
 
 // Update team colors and visuals with new helmet colors
-function updateTeamColors(persist = true) {
+function updateTeamColors() {
     const leftSelect = document.getElementById('teamLeft');
     const rightSelect = document.getElementById('teamRight');
     const leftTeam = leftSelect.value;
@@ -1018,8 +1014,6 @@ function updateTeamColors(persist = true) {
 
     // Update team backgrounds
     updateTeamBackgrounds(leftTeam, rightTeam);
-	// Save team selections
-    if (persist) saveTeams();
 }
 
 // Update team backgrounds
@@ -2011,7 +2005,7 @@ function applyGameState(data, { focusScore = false } = {}) {
     const right = document.getElementById('teamRight');
     left.value = data.teams.left || '';
     right.value = data.teams.right || '';
-    updateTeamColors(false);
+    updateTeamColors();
     currentLeftScore = data.scores.left;
     currentRightScore = data.scores.right;
     document.getElementById('leftScore').textContent = currentLeftScore;
@@ -2067,8 +2061,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainButtons = document.getElementById('mainButtons');
     const backToMainBtn = document.getElementById('backToMainBtn');
 
-    document.getElementById('teamLeft').addEventListener('change', () => updateTeamColors());
-    document.getElementById('teamRight').addEventListener('change', () => updateTeamColors());
+    document.getElementById('teamLeft').addEventListener('change', () => {
+        updateTeamColors();
+        saveTeam('left');
+    });
+    document.getElementById('teamRight').addEventListener('change', () => {
+        updateTeamColors();
+        saveTeam('right');
+    });
     document.getElementById('leftScore').addEventListener('click', () => updateScore('left'));
     document.getElementById('rightScore').addEventListener('click', () => updateScore('right'));
     document.getElementById('goToScoreBtn').addEventListener('click', goToScore);
