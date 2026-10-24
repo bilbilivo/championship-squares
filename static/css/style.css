@@ -1637,10 +1637,15 @@ button:focus-visible, select:focus-visible, input:focus-visible, .board-svg:focu
     .team-selection select { height: 44px; padding: 4px 6px; }
     .score { height: 44px; padding: 2px 4px; line-height: 1; }
     #leftScore, #rightScore {
+        appearance: none;
+        display: grid;
+        place-items: center;
         min-width: 50px;
+        padding: 4px 0 0;
         border: 2px solid var(--retro-light);
         background: var(--retro-dark);
         font-size: clamp(22px, 6vw, 28px);
+        letter-spacing: 0;
     }
     .multiplier-selector { gap: 2px; }
     .team-selection:first-child { grid-column: 1; grid-row: 1; }
