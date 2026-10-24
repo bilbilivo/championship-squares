@@ -84,7 +84,7 @@ function updateGameTitle(sport) {
     const titles = {
         'fifa': 'WORLD CUP SQUARES',
         'nfl': 'SUPER BOWL SQUARES',
-        'cfl': 'GREY CUP SQUARES',
+        'cfl': 'GARDEZ-LE VOTRE SQUARES',
         'nhl': 'SLAP SHOT SQUARES',
         'nba': 'SLAM DUNK SQUARES',
         'mlb': 'GRAND SLAM SQUARES',
