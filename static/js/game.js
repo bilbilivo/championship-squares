@@ -1878,6 +1878,7 @@ function resetGame(isNewGame = false) {
                         <h2 class="alert-title">SELECT SPORT</h2>
                         <div class="sport-grid">
                             <!-- <div class="sport-box" data-sport="fifa">FIFA</div> -->
+                            <!-- <div class="sport-box" data-sport="mlb">MLB</div> -->
                             <!-- <div class="sport-box" data-sport="nba">NBA</div> -->
                             <div class="sport-box" data-sport="nfl">NFL</div>
                             <div class="sport-box" data-sport="cfl">CFL</div>
