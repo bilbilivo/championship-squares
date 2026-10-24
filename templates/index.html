@@ -141,6 +141,12 @@
 			</div>
         </div>
         <div class="main-content">
+			<div class="board-toolbar" role="group" aria-label="Board navigation">
+				<button id="goToScoreBtn" class="reset-game-btn">Go to score</button>
+				<button id="zoomOutBtn" class="reset-game-btn" aria-label="Zoom out">−</button>
+				<button id="zoomInBtn" class="reset-game-btn" aria-label="Zoom in">+</button>
+				<button id="jumpToPlayersBtn" class="reset-game-btn">Players</button>
+			</div>
 			<section class="board-panel" aria-label="Score board">
                 <div class="grid-container" id="grid">
 				<div class="team-name-top"></div>
@@ -150,11 +156,6 @@
 			</div>
             </section>
             <aside class="legend-container">
-                <div class="board-toolbar" role="group" aria-label="Board navigation">
-                    <button id="goToScoreBtn" class="reset-game-btn">Go to score</button>
-                    <button id="zoomOutBtn" class="reset-game-btn" aria-label="Zoom out">−</button>
-                    <button id="zoomInBtn" class="reset-game-btn" aria-label="Zoom in">+</button>
-                </div>
                 <button id="playersToggleBtn" class="players-toggle" aria-expanded="true" aria-controls="playersPanel">Players ▾</button>
                 <div id="playersPanel" class="players-panel">
                 <h2 style="text-align: center;">PLAYERS</h2>

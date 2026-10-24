@@ -2074,6 +2074,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('goToScoreBtn').addEventListener('click', goToScore);
     document.getElementById('zoomOutBtn').addEventListener('click', () => zoomBoard(0.8));
     document.getElementById('zoomInBtn').addEventListener('click', () => zoomBoard(1.25));
+    document.getElementById('jumpToPlayersBtn').addEventListener('click', () => {
+        const panel = document.getElementById('playersPanel');
+        const toggle = document.getElementById('playersToggleBtn');
+        if (panel.classList.contains('collapsed')) togglePlayers(toggle);
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     const playersToggle = document.getElementById('playersToggleBtn');
     playersToggle.addEventListener('click', () => togglePlayers(playersToggle));
     document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
