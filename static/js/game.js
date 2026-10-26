@@ -604,7 +604,7 @@ const CFL_TEAMS = {
     "CGY": { name: "CALGARY STAMPEDERS", colors: ["#C8102E", "#000000"] },
     "EDM": { name: "EDMONTON ELKS", colors: ["#2C5234", "#FFB81C"] },
     "HAM": { name: "HAMILTON TIGER-CATS", colors: ["#FFB81C", "#000000"] },
-    "MTL": { name: "MONTREAL ALOUETTES", colors: ["#D42027", "#001F5B"] },
+    "MTL": { name: "Alouettes de Montréal", colors: ["#D42027", "#001F5B"] },
     "OTT": { name: "OTTAWA REDBLACKS", colors: ["#AC1F2D", "#000000"] },
     "SSK": { name: "SASKATCHEWAN ROUGHRIDERS", colors: ["#00693E", "#FFFFFF"] },
     "TOR": { name: "TORONTO ARGONAUTS", colors: ["#13264B", "#5C93C1"] },
